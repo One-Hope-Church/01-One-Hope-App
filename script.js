@@ -780,6 +780,33 @@ function skipQuiz() {
     }, 1000);
 }
 
+// External Link Functions
+function openExternalLink(type) {
+    let url = '';
+    let message = '';
+    
+    switch(type) {
+        case 'small-group':
+            url = 'https://onehope.org/small-groups'; // Replace with actual URL
+            message = 'Opening small groups page...';
+            break;
+        case 'give':
+            url = 'https://onehope.org/give'; // Replace with actual URL
+            message = 'Opening giving page...';
+            break;
+        default:
+            showNotification('Link not available', 'error');
+            return;
+    }
+    
+    showNotification(message, 'info');
+    
+    // Open in new tab/window
+    setTimeout(() => {
+        window.open(url, '_blank');
+    }, 500);
+}
+
 // Events Functions
 function filterEvents(filter) {
     // Update filter buttons
