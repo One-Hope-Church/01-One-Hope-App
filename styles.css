@@ -918,7 +918,18 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #e1e5e9;
     line-height: 1.8;
-    margin-top: 1rem;
+    margin-top: 2rem;
+}
+
+.reading-detail-content .verse-reference-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
 }
 
 .reading-detail-content h2 {
@@ -927,6 +938,7 @@ body {
     font-weight: 600;
     margin-bottom: 1.5rem;
     margin-top: 0;
+    text-align: center;
 }
 
 .reading-detail-content h3 {
@@ -934,7 +946,8 @@ body {
     font-size: 1.2rem;
     font-weight: 600;
     margin: 1.5rem 0 1rem 0;
-    margin-top: 2rem;
+    margin-top: 1rem;
+    text-align: center;
 }
 
 .reading-detail-content p {
@@ -948,7 +961,7 @@ body {
     padding: 1.5rem;
     border-radius: 12px;
     margin: 1.5rem 0;
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 .detail-actions {
@@ -982,6 +995,10 @@ body {
     
     .reading-detail-content .scripture-text {
         background: #1a1a1a;
+    }
+    
+    .reading-detail-content .verse-reference-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
     }
 }
 

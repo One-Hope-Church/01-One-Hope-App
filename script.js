@@ -535,6 +535,7 @@ const readingSections = {
     'devotional': {
         title: 'Devotional: God\'s Love for Us',
         content: `
+            <div class="verse-reference-header">John 3:16</div>
             <h2>God's Love for Us</h2>
             <p>"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." - John 3:16</p>
             <p>Today's devotional focuses on the depth of God's love and how it transforms our lives when we truly understand it. As we read through today's passages, let's reflect on how God's love is demonstrated throughout Scripture and how it calls us to respond in faith and obedience.</p>
@@ -545,6 +546,7 @@ const readingSections = {
     'old-testament': {
         title: 'Old Testament: Genesis 15:1-21',
         content: `
+            <div class="verse-reference-header">Genesis 15:1-21</div>
             <h2>Genesis 15:1-21</h2>
             <h3>The Lord's Covenant with Abram</h3>
             <div class="scripture-text">
@@ -575,6 +577,7 @@ const readingSections = {
     'new-testament': {
         title: 'New Testament: Matthew 15:1-20',
         content: `
+            <div class="verse-reference-header">Matthew 15:1-20</div>
             <h2>Matthew 15:1-20</h2>
             <h3>Jesus and the Tradition of the Elders</h3>
             <div class="scripture-text">
@@ -604,6 +607,7 @@ const readingSections = {
     'psalms': {
         title: 'Psalms: Psalm 19:1-14',
         content: `
+            <div class="verse-reference-header">Psalm 19:1-14</div>
             <h2>Psalm 19:1-14</h2>
             <h3>The Heavens Declare the Glory of God</h3>
             <div class="scripture-text">
@@ -627,6 +631,7 @@ const readingSections = {
     'proverbs': {
         title: 'Proverbs: Proverbs 4:1-9',
         content: `
+            <div class="verse-reference-header">Proverbs 4:1-9</div>
             <h2>Proverbs 4:1-9</h2>
             <h3>A Father's Instruction to His Sons</h3>
             <div class="scripture-text">
