@@ -97,15 +97,118 @@
             </div>
 
             <div class="content">
+                <!-- Progress Section at Top -->
+                <div class="progress-header">
+                    <div class="xp-bar">
+                        <div class="xp-fill" style="width: 65%"></div>
+                        <span>Level 3 - 650 XP</span>
+                    </div>
+                    <div class="streak">
+                        <i class="fas fa-fire"></i>
+                        <span>7 day Bible streak</span>
+                    </div>
+                </div>
+
                 <!-- Today's Bible Reading -->
                 <div class="card">
                     <h3>Today's Bible Reading</h3>
                     <div class="bible-reading">
-                        <h4>John 3:16-21</h4>
-                        <p>"For God so loved the world that he gave his one and only Son..."</p>
-                        <button class="btn-secondary" onclick="markBibleComplete()">
-                            <i class="fas fa-check"></i> Mark as Complete
-                        </button>
+                        <div class="reading-date">
+                            <i class="fas fa-calendar-day"></i>
+                            <span>December 15, 2024</span>
+                        </div>
+                        
+                        <!-- Devotional -->
+                        <div class="reading-section">
+                            <div class="section-header">
+                                <h4><i class="fas fa-heart"></i> Devotional</h4>
+                                <button class="btn-small" onclick="markReadingComplete('devotional')" id="devotional-btn">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </div>
+                            <div class="reading-content">
+                                <h5>God's Love for Us</h5>
+                                <p>"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." - John 3:16</p>
+                                <p>Today's devotional focuses on the depth of God's love and how it transforms our lives when we truly understand it.</p>
+                            </div>
+                        </div>
+
+                        <!-- Old Testament -->
+                        <div class="reading-section">
+                            <div class="section-header">
+                                <h4><i class="fas fa-scroll"></i> Old Testament</h4>
+                                <button class="btn-small" onclick="markReadingComplete('old-testament')" id="old-testament-btn">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </div>
+                            <div class="reading-content">
+                                <h5>Genesis 15:1-21</h5>
+                                <p><strong>1</strong> After this, the word of the Lord came to Abram in a vision: "Do not be afraid, Abram. I am your shield, your very great reward."</p>
+                                <p><strong>2</strong> But Abram said, "Sovereign Lord, what can you give me since I remain childless and the one who will inherit my estate is Eliezer of Damascus?"</p>
+                                <p><strong>3</strong> And Abram said, "You have given me no children; so a servant in my household will be my heir."</p>
+                            </div>
+                        </div>
+
+                        <!-- New Testament -->
+                        <div class="reading-section">
+                            <div class="section-header">
+                                <h4><i class="fas fa-cross"></i> New Testament</h4>
+                                <button class="btn-small" onclick="markReadingComplete('new-testament')" id="new-testament-btn">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </div>
+                            <div class="reading-content">
+                                <h5>Matthew 15:1-20</h5>
+                                <p><strong>1</strong> Then some Pharisees and teachers of the law came to Jesus from Jerusalem and asked, "Why do your disciples break the tradition of the elders? They don't wash their hands before they eat!"</p>
+                                <p><strong>2</strong> Jesus replied, "And why do you break the command of God for the sake of your tradition?"</p>
+                                <p><strong>3</strong> For God said, 'Honor your father and mother' and 'Anyone who curses their father or mother is to be put to death.'</p>
+                            </div>
+                        </div>
+
+                        <!-- Psalms -->
+                        <div class="reading-section">
+                            <div class="section-header">
+                                <h4><i class="fas fa-music"></i> Psalms</h4>
+                                <button class="btn-small" onclick="markReadingComplete('psalms')" id="psalms-btn">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </div>
+                            <div class="reading-content">
+                                <h5>Psalm 19:1-14</h5>
+                                <p><strong>1</strong> The heavens declare the glory of God; the skies proclaim the work of his hands.</p>
+                                <p><strong>2</strong> Day after day they pour forth speech; night after night they reveal knowledge.</p>
+                                <p><strong>3</strong> They have no speech, they use no words; no sound is heard from them.</p>
+                            </div>
+                        </div>
+
+                        <!-- Proverbs -->
+                        <div class="reading-section">
+                            <div class="section-header">
+                                <h4><i class="fas fa-lightbulb"></i> Proverbs</h4>
+                                <button class="btn-small" onclick="markReadingComplete('proverbs')" id="proverbs-btn">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </div>
+                            <div class="reading-content">
+                                <h5>Proverbs 4:1-9</h5>
+                                <p><strong>1</strong> Listen, my sons, to a father's instruction; pay attention and gain understanding.</p>
+                                <p><strong>2</strong> I give you sound learning, so do not forsake my teaching.</p>
+                                <p><strong>3</strong> For I too was a son to my father, still tender, and cherished by my mother.</p>
+                            </div>
+                        </div>
+
+                        <!-- Daily Completion Status -->
+                        <div class="daily-completion">
+                            <div class="completion-progress">
+                                <div class="completion-bar">
+                                    <div class="completion-fill" id="daily-completion-fill" style="width: 0%"></div>
+                                </div>
+                                <span id="completion-text">0 of 5 sections completed</span>
+                            </div>
+                            <button class="btn-primary" onclick="markAllComplete()" id="mark-all-btn" disabled>
+                                <i class="fas fa-check-double"></i> Mark All Complete
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -122,21 +225,6 @@
                             <button class="btn-primary" onclick="showScreen('nextStepsScreen')">
                                 Learn More
                             </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Progress -->
-                <div class="card">
-                    <h3>Your Progress</h3>
-                    <div class="progress-section">
-                        <div class="xp-bar">
-                            <div class="xp-fill" style="width: 65%"></div>
-                            <span>Level 3 - 650 XP</span>
-                        </div>
-                        <div class="streak">
-                            <i class="fas fa-fire"></i>
-                            <span>7 day Bible streak</span>
                         </div>
                     </div>
                 </div>

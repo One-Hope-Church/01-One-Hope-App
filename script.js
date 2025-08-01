@@ -175,7 +175,66 @@ function updateUserInfo() {
 }
 
 // Bible Reading Functions
-function markBibleComplete() {
+let dailyReadings = {
+    devotional: false,
+    oldTestament: false,
+    newTestament: false,
+    psalms: false,
+    proverbs: false
+};
+
+function markReadingComplete(section) {
+    if (dailyReadings[section]) {
+        showNotification('Already completed!', 'info');
+        return;
+    }
+    
+    // Mark section as complete
+    dailyReadings[section] = true;
+    
+    // Update button
+    const button = document.getElementById(`${section}-btn`);
+    if (button) {
+        button.innerHTML = '<i class="fas fa-check"></i> Completed';
+        button.classList.add('completed');
+        button.disabled = true;
+    }
+    
+    // Update section styling
+    const sectionElement = button.closest('.reading-section');
+    if (sectionElement) {
+        sectionElement.classList.add('completed');
+    }
+    
+    // Update completion progress
+    updateDailyCompletion();
+    
+    // Check if all sections are complete
+    if (Object.values(dailyReadings).every(completed => completed)) {
+        markAllComplete();
+    }
+}
+
+function updateDailyCompletion() {
+    const completedCount = Object.values(dailyReadings).filter(completed => completed).length;
+    const totalSections = Object.keys(dailyReadings).length;
+    const percentage = (completedCount / totalSections) * 100;
+    
+    // Update progress bar
+    const progressFill = document.getElementById('daily-completion-fill');
+    const completionText = document.getElementById('completion-text');
+    const markAllBtn = document.getElementById('mark-all-btn');
+    
+    if (progressFill) progressFill.style.width = `${percentage}%`;
+    if (completionText) completionText.textContent = `${completedCount} of ${totalSections} sections completed`;
+    
+    // Enable mark all button if all sections are complete
+    if (markAllBtn) {
+        markAllBtn.disabled = completedCount < totalSections;
+    }
+}
+
+function markAllComplete() {
     const today = new Date().toDateString();
     
     // Check if already completed today
@@ -187,22 +246,27 @@ function markBibleComplete() {
     // Add to completed readings
     userProgress.bibleReadings.push(today);
     userProgress.streak += 1;
-    userProgress.xp += 50;
+    userProgress.xp += 100; // More XP for completing all sections
     
     // Update UI
     updateProgressUI();
     
     // Show success message
-    showNotification('Great job! +50 XP', 'success');
+    showNotification('Excellent! Daily reading complete! +100 XP', 'success');
     
-    // Update button state
-    const buttons = document.querySelectorAll('[onclick="markBibleComplete()"]');
-    buttons.forEach(button => {
-        button.innerHTML = '<i class="fas fa-check"></i> Completed';
-        button.classList.remove('btn-primary', 'btn-secondary');
-        button.classList.add('btn-secondary');
-        button.disabled = true;
-    });
+    // Update mark all button
+    const markAllBtn = document.getElementById('mark-all-btn');
+    if (markAllBtn) {
+        markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
+        markAllBtn.disabled = true;
+        markAllBtn.classList.remove('btn-primary');
+        markAllBtn.classList.add('btn-secondary');
+    }
+}
+
+// Legacy function for backward compatibility
+function markBibleComplete() {
+    markAllComplete();
 }
 
 function updateProgressUI() {

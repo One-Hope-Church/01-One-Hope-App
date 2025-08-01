@@ -271,6 +271,128 @@ body {
 }
 
 /* Bible Reading */
+.reading-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.reading-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+}
+
+.reading-section.completed {
+    background: #f0fff4;
+    border-color: #51cf66;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h4 {
+    color: #1a1a1a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.section-header h4 i {
+    color: #667eea;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    background: #fff;
+    color: #667eea;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-small:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+}
+
+.btn-small.completed {
+    background: #51cf66;
+    border-color: #51cf66;
+    color: white;
+}
+
+.reading-content h5 {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.reading-content p {
+    color: #333;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.reading-content p:last-child {
+    margin-bottom: 0;
+}
+
+.daily-completion {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #e1e5e9;
+}
+
+.completion-progress {
+    margin-bottom: 1rem;
+}
+
+.completion-bar {
+    background: #e1e5e9;
+    border-radius: 10px;
+    height: 12px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.completion-fill {
+    background: linear-gradient(90deg, #51cf66, #40c057);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.completion-progress span {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
 .bible-reading h4 {
     color: #667eea;
     margin-bottom: 0.5rem;
@@ -314,6 +436,19 @@ body {
     color: #666;
     margin-bottom: 1rem;
     font-size: 0.9rem;
+}
+
+/* Progress Header */
+.progress-header {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 /* Progress Section */
@@ -690,6 +825,40 @@ body {
     .step-item {
         background: #2d2d2d;
         border-color: #404040;
+    }
+    
+    .progress-header {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .reading-section {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .reading-section.completed {
+        background: #1a2e1a;
+        border-color: #51cf66;
+    }
+    
+    .reading-content p {
+        color: #ccc;
+    }
+    
+    .daily-completion {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .btn-small {
+        background: #2d2d2d;
+        border-color: #404040;
+        color: #667eea;
+    }
+    
+    .btn-small:hover {
+        background: #404040;
     }
 }
 
