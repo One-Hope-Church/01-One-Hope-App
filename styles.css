@@ -236,6 +236,17 @@ body {
     align-items: center;
     justify-content: center;
     color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+    background: #5a6fd8;
+    transform: scale(1.05);
+}
+
+.user-avatar:active {
+    transform: scale(0.95);
 }
 
 .streak-badge {

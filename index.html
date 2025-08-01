@@ -91,7 +91,7 @@
         <div id="homeScreen" class="app-screen active">
             <div class="header">
                 <h1>Welcome back, John</h1>
-                <div class="user-avatar">
+                <div class="user-avatar" onclick="showAppScreen('profileScreen')">
                     <i class="fas fa-user"></i>
                 </div>
             </div>
@@ -631,13 +631,13 @@
                 <i class="fas fa-book-open"></i>
                 <span>Bible</span>
             </button>
-            <button class="nav-item" onclick="showAppScreen('eventsScreen')">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Events</span>
-            </button>
             <button class="nav-item" onclick="showAppScreen('nextStepsScreen')">
                 <i class="fas fa-route"></i>
                 <span>Steps</span>
+            </button>
+            <button class="nav-item" onclick="showAppScreen('eventsScreen')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Events</span>
             </button>
             <button class="nav-item" onclick="showAppScreen('profileScreen')">
                 <i class="fas fa-user"></i>

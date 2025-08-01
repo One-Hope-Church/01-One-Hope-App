@@ -67,8 +67,8 @@ function updateNavigation(activeScreenId) {
     const navMap = {
         'homeScreen': 0,
         'bibleScreen': 1,
-        'eventsScreen': 2,
-        'nextStepsScreen': 3,
+        'nextStepsScreen': 2,
+        'eventsScreen': 3,
         'profileScreen': 4
     };
     
@@ -486,7 +486,7 @@ function handleSwipe(direction) {
     const currentScreen = document.querySelector('.app-screen.active');
     if (!currentScreen) return;
     
-    const screens = ['homeScreen', 'bibleScreen', 'eventsScreen', 'nextStepsScreen', 'profileScreen'];
+    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', 'eventsScreen', 'profileScreen'];
     const currentIndex = screens.indexOf(currentScreen.id);
     
     if (direction === 'left' && currentIndex < screens.length - 1) {
