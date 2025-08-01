@@ -300,6 +300,17 @@ body {
     border-radius: 12px;
     border: 1px solid #e1e5e9;
     transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.reading-section:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.reading-section:active {
+    transform: translateY(0);
 }
 
 .reading-section.completed {
@@ -325,6 +336,20 @@ body {
 
 .section-header h4 i {
     color: #667eea;
+}
+
+.section-status {
+    color: #667eea;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.section-status.completed {
+    color: #51cf66;
+}
+
+.section-status.completed i {
+    transform: rotate(45deg);
 }
 
 .btn-small {
@@ -877,6 +902,77 @@ body {
     
     .btn-small:hover {
         background: #404040;
+    }
+    
+    .reading-section:hover {
+        background: #404040;
+    }
+}
+
+/* Reading Detail Screen */
+.reading-detail-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+    line-height: 1.8;
+}
+
+.reading-detail-content h2 {
+    color: #667eea;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.reading-detail-content h3 {
+    color: #1a1a1a;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem 0;
+}
+
+.reading-detail-content p {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.reading-detail-content .scripture-text {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+}
+
+.detail-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* Dark mode support for reading detail */
+@media (prefers-color-scheme: dark) {
+    .reading-detail-content {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .reading-detail-content h2 {
+        color: #667eea;
+    }
+    
+    .reading-detail-content h3 {
+        color: #fff;
+    }
+    
+    .reading-detail-content p {
+        color: #ccc;
+    }
+    
+    .reading-detail-content .scripture-text {
+        background: #1a1a1a;
     }
 }
 

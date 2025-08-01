@@ -192,25 +192,28 @@ function markReadingComplete(section) {
     // Mark section as complete
     dailyReadings[section] = true;
     
-    // Update buttons on both home and Bible pages
+    // Update buttons on home page
     const homeButton = document.getElementById(`${section}-btn`);
-    const bibleButton = document.getElementById(`${section}-btn-bible`);
+    if (homeButton) {
+        homeButton.innerHTML = '<i class="fas fa-check"></i> Completed';
+        homeButton.classList.add('completed');
+        homeButton.disabled = true;
+    }
     
-    [homeButton, bibleButton].forEach(button => {
-        if (button) {
-            button.innerHTML = '<i class="fas fa-check"></i> Completed';
-            button.classList.add('completed');
-            button.disabled = true;
-        }
-    });
+    // Update status indicators on Bible page
+    const statusElement = document.getElementById(`${section}-status`);
+    if (statusElement) {
+        statusElement.innerHTML = '<i class="fas fa-check"></i>';
+        statusElement.classList.add('completed');
+    }
     
     // Update section styling on both pages
-    [homeButton, bibleButton].forEach(button => {
-        if (button) {
-            const sectionElement = button.closest('.reading-section');
-            if (sectionElement) {
-                sectionElement.classList.add('completed');
-            }
+    const homeSection = homeButton ? homeButton.closest('.reading-section') : null;
+    const bibleSection = statusElement ? statusElement.closest('.reading-section') : null;
+    
+    [homeSection, bibleSection].forEach(section => {
+        if (section) {
+            section.classList.add('completed');
         }
     });
     
@@ -505,6 +508,157 @@ document.addEventListener('touchend', function(event) {
     }
     lastTouchEnd = now;
 }, false);
+
+// Reading Section Data
+const readingSections = {
+    'devotional': {
+        title: 'Devotional: God\'s Love for Us',
+        content: `
+            <h2>God's Love for Us</h2>
+            <p>"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." - John 3:16</p>
+            <p>Today's devotional focuses on the depth of God's love and how it transforms our lives when we truly understand it. As we read through today's passages, let's reflect on how God's love is demonstrated throughout Scripture and how it calls us to respond in faith and obedience.</p>
+            <p>Consider how the Lord's covenant with Abram, Jesus' teachings about tradition, the psalmist's praise of creation, and the wisdom of Proverbs all point to God's loving character and His desire for our spiritual growth.</p>
+            <p>Take a moment to reflect on how God's love has been evident in your life today, and how you can share that love with others.</p>
+        `
+    },
+    'old-testament': {
+        title: 'Old Testament: Genesis 15:1-21',
+        content: `
+            <h2>Genesis 15:1-21</h2>
+            <h3>The Lord's Covenant with Abram</h3>
+            <div class="scripture-text">
+                <p><strong>1</strong> After this, the word of the Lord came to Abram in a vision: "Do not be afraid, Abram. I am your shield, your very great reward."</p>
+                <p><strong>2</strong> But Abram said, "Sovereign Lord, what can you give me since I remain childless and the one who will inherit my estate is Eliezer of Damascus?"</p>
+                <p><strong>3</strong> And Abram said, "You have given me no children; so a servant in my household will be my heir."</p>
+                <p><strong>4</strong> Then the word of the Lord came to him: "This man will not be your heir, but a son who is your own flesh and blood will be your heir."</p>
+                <p><strong>5</strong> He took him outside and said, "Look up at the sky and count the stars—if indeed you can count them." Then he said to him, "So shall your offspring be."</p>
+                <p><strong>6</strong> Abram believed the Lord, and he credited it to him as righteousness.</p>
+                <p><strong>7</strong> He also said to him, "I am the Lord, who brought you out of Ur of the Chaldeans to give you this land to take possession of it."</p>
+                <p><strong>8</strong> But Abram said, "Sovereign Lord, how can I know that I will gain possession of it?"</p>
+                <p><strong>9</strong> So the Lord said to him, "Bring me a heifer, a goat and a ram, each three years old, along with a dove and a young pigeon."</p>
+                <p><strong>10</strong> Abram brought all these to him, cut them in two and arranged the halves opposite each other; the birds, however, he did not cut in half.</p>
+                <p><strong>11</strong> Then birds of prey came down on the carcasses, but Abram drove them away.</p>
+                <p><strong>12</strong> As the sun was setting, Abram fell into a deep sleep, and a thick and dreadful darkness came over him.</p>
+                <p><strong>13</strong> Then the Lord said to him, "Know for certain that for four hundred years your descendants will be strangers in a country not their own and that they will be enslaved and mistreated there.</p>
+                <p><strong>14</strong> But I will punish the nation they serve as slaves, and afterward they will come out with great possessions.</p>
+                <p><strong>15</strong> You, however, will go to your ancestors in peace and be buried at a good old age.</p>
+                <p><strong>16</strong> In the fourth generation your descendants will come back here, for the sin of the Amorites has not yet reached its full measure."</p>
+                <p><strong>17</strong> When the sun had set and darkness had fallen, a smoking firepot with a blazing torch appeared and passed between the pieces.</p>
+                <p><strong>18</strong> On that day the Lord made a covenant with Abram and said, "To your descendants I give this land, from the Wadi of Egypt to the great river, the Euphrates—</p>
+                <p><strong>19</strong> the land of the Kenites, Kenizzites, Kadmonites,</p>
+                <p><strong>20</strong> Hittites, Perizzites, Rephaites,</p>
+                <p><strong>21</strong> Amorites, Canaanites, Girgashites and Jebusites."</p>
+            </div>
+        `
+    },
+    'new-testament': {
+        title: 'New Testament: Matthew 15:1-20',
+        content: `
+            <h2>Matthew 15:1-20</h2>
+            <h3>Jesus and the Tradition of the Elders</h3>
+            <div class="scripture-text">
+                <p><strong>1</strong> Then some Pharisees and teachers of the law came to Jesus from Jerusalem and asked, "Why do your disciples break the tradition of the elders? They don't wash their hands before they eat!"</p>
+                <p><strong>2</strong> Jesus replied, "And why do you break the command of God for the sake of your tradition?</p>
+                <p><strong>3</strong> For God said, 'Honor your father and mother' and 'Anyone who curses their father or mother is to be put to death.'</p>
+                <p><strong>4</strong> But you say that if anyone declares that what might have been used to help their father or mother is 'devoted to God,'</p>
+                <p><strong>5</strong> they are not to 'honor their father or mother' with it. Thus you nullify the word of God for the sake of your tradition.</p>
+                <p><strong>6</strong> You hypocrites! Isaiah was right when he prophesied about you:</p>
+                <p><strong>7</strong> "'These people honor me with their lips, but their hearts are far from me.</p>
+                <p><strong>8</strong> They worship me in vain; their teachings are merely human rules.'"</p>
+                <p><strong>9</strong> Jesus called the crowd to him and said, "Listen and understand.</p>
+                <p><strong>10</strong> What goes into someone's mouth does not defile them, but what comes out of their mouth, that is what defiles them."</p>
+                <p><strong>11</strong> Then the disciples came to him and asked, "Do you know that the Pharisees were offended when they heard this?"</p>
+                <p><strong>12</strong> He replied, "Every plant that my heavenly Father has not planted will be pulled up by the roots.</p>
+                <p><strong>13</strong> Leave them; they are blind guides. If the blind lead the blind, both will fall into a pit."</p>
+                <p><strong>14</strong> Peter said, "Explain the parable to us."</p>
+                <p><strong>15</strong> "Are you still so dull?" Jesus asked them.</p>
+                <p><strong>16</strong> "Don't you see that whatever enters the mouth goes into the stomach and then out of the body?</p>
+                <p><strong>17</strong> But the things that come out of a person's mouth come from the heart, and these defile them.</p>
+                <p><strong>18</strong> For out of the heart come evil thoughts—murder, adultery, sexual immorality, theft, false testimony, slander.</p>
+                <p><strong>19</strong> These are what defile a person; but eating with unwashed hands does not defile them."</p>
+                <p><strong>20</strong> Then the disciples came to him and asked, "Do you know that the Pharisees were offended when they heard this?"</p>
+            </div>
+        `
+    },
+    'psalms': {
+        title: 'Psalms: Psalm 19:1-14',
+        content: `
+            <h2>Psalm 19:1-14</h2>
+            <h3>The Heavens Declare the Glory of God</h3>
+            <div class="scripture-text">
+                <p><strong>1</strong> The heavens declare the glory of God; the skies proclaim the work of his hands.</p>
+                <p><strong>2</strong> Day after day they pour forth speech; night after night they reveal knowledge.</p>
+                <p><strong>3</strong> They have no speech, they use no words; no sound is heard from them.</p>
+                <p><strong>4</strong> Yet their voice goes out into all the earth, their words to the ends of the world. In the heavens God has pitched a tent for the sun.</p>
+                <p><strong>5</strong> It is like a bridegroom coming out of his chamber, like a champion rejoicing to run his course.</p>
+                <p><strong>6</strong> It rises at one end of the heavens and makes its circuit to the other; nothing is deprived of its warmth.</p>
+                <p><strong>7</strong> The law of the Lord is perfect, refreshing the soul. The statutes of the Lord are trustworthy, making wise the simple.</p>
+                <p><strong>8</strong> The precepts of the Lord are right, giving joy to the heart. The commands of the Lord are radiant, giving light to the eyes.</p>
+                <p><strong>9</strong> The fear of the Lord is pure, enduring forever. The decrees of the Lord are firm, and all of them are righteous.</p>
+                <p><strong>10</strong> They are more precious than gold, than much pure gold; they are sweeter than honey, than honey from the honeycomb.</p>
+                <p><strong>11</strong> By them your servant is warned; in keeping them there is great reward.</p>
+                <p><strong>12</strong> But who can discern their own errors? Forgive my hidden faults.</p>
+                <p><strong>13</strong> Keep your servant also from willful sins; may they not rule over me. Then I will be blameless, innocent of great transgression.</p>
+                <p><strong>14</strong> May these words of my mouth and this meditation of my heart be pleasing in your sight, Lord, my Rock and my Redeemer.</p>
+            </div>
+        `
+    },
+    'proverbs': {
+        title: 'Proverbs: Proverbs 4:1-9',
+        content: `
+            <h2>Proverbs 4:1-9</h2>
+            <h3>A Father's Instruction to His Sons</h3>
+            <div class="scripture-text">
+                <p><strong>1</strong> Listen, my sons, to a father's instruction; pay attention and gain understanding.</p>
+                <p><strong>2</strong> I give you sound learning, so do not forsake my teaching.</p>
+                <p><strong>3</strong> For I too was a son to my father, still tender, and cherished by my mother.</p>
+                <p><strong>4</strong> Then he taught me, and he said to me, "Take hold of my words with all your heart; keep my commands, and you will live.</p>
+                <p><strong>5</strong> Get wisdom, get understanding; do not forget my words or turn away from them.</p>
+                <p><strong>6</strong> Do not forsake wisdom, and she will protect you; love her, and she will watch over you.</p>
+                <p><strong>7</strong> The beginning of wisdom is this: Get wisdom. Though it cost all you have, get understanding.</p>
+                <p><strong>8</strong> Cherish her, and she will exalt you; embrace her, and she will honor you.</p>
+                <p><strong>9</strong> She will give you a garland to grace your head and present you with a glorious crown."</p>
+            </div>
+        `
+    }
+};
+
+let currentReadingSection = null;
+
+// Reading Section Functions
+function openReadingSection(section) {
+    currentReadingSection = section;
+    
+    // Update detail screen content
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('reading-detail-content');
+    
+    if (detailTitle && detailContent && readingSections[section]) {
+        detailTitle.textContent = readingSections[section].title;
+        detailContent.innerHTML = readingSections[section].content;
+    }
+    
+    // Show detail screen
+    showAppScreen('readingDetailScreen');
+}
+
+function closeReadingSection() {
+    // Automatically mark the section as complete when navigating back
+    if (currentReadingSection) {
+        markReadingComplete(currentReadingSection);
+        currentReadingSection = null;
+    }
+    
+    // Return to Bible screen
+    showAppScreen('bibleScreen');
+}
+
+function markCurrentSectionComplete() {
+    if (currentReadingSection) {
+        markReadingComplete(currentReadingSection);
+        closeReadingSection();
+    }
+}
 
 // Events Functions
 function filterEvents(filter) {
