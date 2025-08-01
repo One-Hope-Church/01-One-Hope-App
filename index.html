@@ -85,6 +85,80 @@
         </div>
     </div>
 
+    <!-- Welcome Quiz Screen -->
+    <div id="welcomeQuizScreen" class="screen">
+        <div class="quiz-container">
+            <div class="quiz-header">
+                <h1>Welcome to One Hope!</h1>
+                <p>Let's personalize your spiritual journey</p>
+            </div>
+            
+            <div class="quiz-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quiz-progress-fill" style="width: 0%"></div>
+                </div>
+                <span id="quiz-progress-text">Question 1 of 2</span>
+            </div>
+
+            <div class="quiz-content">
+                <!-- Question 1 -->
+                <div class="quiz-question" id="question-1">
+                    <h3>What's your current spiritual journey stage?</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'exploring')">
+                            <i class="fas fa-search"></i>
+                            <span>Exploring faith</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'believer')">
+                            <i class="fas fa-heart"></i>
+                            <span>New believer</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'growing')">
+                            <i class="fas fa-seedling"></i>
+                            <span>Growing in faith</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'mature')">
+                            <i class="fas fa-tree"></i>
+                            <span>Mature believer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question" id="question-2" style="display: none;">
+                    <h3>What area would you like to focus on most?</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'bible')">
+                            <i class="fas fa-book-open"></i>
+                            <span>Bible study & reading</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'prayer')">
+                            <i class="fas fa-pray"></i>
+                            <span>Prayer life</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'community')">
+                            <i class="fas fa-users"></i>
+                            <span>Community & fellowship</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'service')">
+                            <i class="fas fa-hands-helping"></i>
+                            <span>Serving others</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-actions">
+                <button class="btn-secondary" onclick="skipQuiz()">
+                    <i class="fas fa-clock"></i> Skip for now
+                </button>
+                <button class="btn-primary" onclick="nextQuizQuestion()" id="next-quiz-btn" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main App Container -->
     <div id="mainApp" class="screen">
         <!-- Home Screen -->

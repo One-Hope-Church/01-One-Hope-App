@@ -1,0 +1,118 @@
+{
+    "appName": "One Hope Next Step",
+    "theme": {
+      "colorMode": "light",
+      "primaryColor": "#00A0DF",
+      "backgroundColor": "#F8FAFC",
+      "cardBackground": "#FFFFFF",
+      "textColor": "#1A1A1A",
+      "subtextColor": "#6B7280",
+      "highlightColor": "#00A0DF",
+      "buttonOutlineColor": "#00A0DF",
+      "badgeColors": ["#00A0DF", "#2563EB", "#10B981", "#F59E0B", "#EF4444"]
+    },
+    "typography": {
+      "fontFamily": "Helvetica Neue / Inter / System",
+      "fontSizes": {
+        "heading": 24,
+        "subheading": 18,
+        "body": 16,
+        "caption": 14
+      },
+      "fontWeight": {
+        "regular": 400,
+        "medium": 500,
+        "bold": 700
+      }
+    },
+    "layout": {
+      "spacing": 16,
+      "borderRadius": 16,
+      "cardElevation": 1,
+      "paddingHorizontal": 24,
+      "sectionSpacing": 32
+    },
+    "navigation": {
+      "type": "bottomTabs",
+      "tabs": [
+        { "icon": "home", "label": "Home" },
+        { "icon": "book-open", "label": "Bible" },
+        { "icon": "target", "label": "Next Step" },
+        { "icon": "user", "label": "Profile" },
+        { "icon": "menu", "label": "More" }
+      ],
+      "activeColor": "#00A0DF",
+      "inactiveColor": "#94A3B8"
+    },
+    "components": {
+      "card": {
+        "background": "#FFFFFF",
+        "borderRadius": 16,
+        "padding": 20,
+        "shadowColor": "#000000",
+        "shadowOpacity": 0.04
+      },
+      "button": {
+        "default": {
+          "background": "#00A0DF",
+          "textColor": "#FFFFFF",
+          "borderRadius": 999,
+          "paddingVertical": 12,
+          "paddingHorizontal": 24
+        },
+        "outline": {
+          "background": "#FFFFFF",
+          "borderColor": "#00A0DF",
+          "textColor": "#00A0DF"
+        }
+      },
+      "badge": {
+        "background": "#F1F5F9",
+        "borderRadius": 12,
+        "labelColor": "#1E293B",
+        "progressColor": "#00A0DF"
+      },
+      "header": {
+        "background": "#FFFFFF",
+        "textColor": "#1A1A1A",
+        "fontSize": 20,
+        "iconColor": "#00A0DF"
+      },
+      "tabs": {
+        "activeTabBackground": "#E0F2FE",
+        "inactiveTabBackground": "#F8FAFC",
+        "tabTextColor": "#1A1A1A",
+        "tabHighlightColor": "#00A0DF"
+      },
+      "chip": {
+        "background": "#E0F2FE",
+        "textColor": "#0369A1",
+        "borderRadius": 999,
+        "paddingHorizontal": 12,
+        "paddingVertical": 6
+      }
+    },
+    "icons": {
+      "style": "outline",
+      "library": "Heroicons / Lucide",
+      "defaultColor": "#00A0DF"
+    },
+    "interactions": {
+      "tapFeedback": "scale",
+      "hoverEffect": "light-shadow",
+      "transition": {
+        "type": "fade-slide",
+        "duration": 180
+      }
+    },
+    "alerts": {
+      "toast": {
+        "position": "top",
+        "backgroundColor": "#00A0DF",
+        "textColor": "#FFFFFF",
+        "borderRadius": 12,
+        "duration": 3000
+      }
+    }
+  }
+  

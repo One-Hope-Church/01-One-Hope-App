@@ -9,6 +9,14 @@ let userProgress = {
     currentStep: 'baptism'
 };
 
+// Quiz State
+let quizState = {
+    currentQuestion: 1,
+    totalQuestions: 2,
+    answers: {},
+    isNewUser: false
+};
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-navigate from splash screen after 3 seconds
@@ -153,7 +161,10 @@ function handleSignup(e) {
         updateUserInfo();
         
         showNotification('Account created successfully!', 'success');
-        showScreen('mainApp');
+        
+        // Show welcome quiz for new users
+        quizState.isNewUser = true;
+        showScreen('welcomeQuizScreen');
     }, 1500);
 }
 
@@ -658,6 +669,100 @@ function markCurrentSectionComplete() {
         markReadingComplete(currentReadingSection);
         closeReadingSection();
     }
+}
+
+// Quiz Functions
+function selectQuizOption(questionNumber, option) {
+    // Store the answer
+    quizState.answers[`question${questionNumber}`] = option;
+    
+    // Update UI to show selected option
+    const questionElement = document.getElementById(`question-${questionNumber}`);
+    const options = questionElement.querySelectorAll('.quiz-option');
+    
+    options.forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    
+    // Find and select the clicked option
+    const selectedOption = Array.from(options).find(opt => 
+        opt.getAttribute('onclick').includes(option)
+    );
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+    
+    // Enable next button
+    const nextBtn = document.getElementById('next-quiz-btn');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
+}
+
+function nextQuizQuestion() {
+    if (quizState.currentQuestion < quizState.totalQuestions) {
+        // Hide current question
+        const currentQuestion = document.getElementById(`question-${quizState.currentQuestion}`);
+        currentQuestion.style.display = 'none';
+        
+        // Show next question
+        quizState.currentQuestion++;
+        const nextQuestion = document.getElementById(`question-${quizState.currentQuestion}`);
+        nextQuestion.style.display = 'block';
+        
+        // Update progress
+        updateQuizProgress();
+        
+        // Update button text
+        const nextBtn = document.getElementById('next-quiz-btn');
+        if (nextBtn) {
+            if (quizState.currentQuestion === quizState.totalQuestions) {
+                nextBtn.textContent = 'Complete Quiz';
+            } else {
+                nextBtn.textContent = 'Next Question';
+            }
+            nextBtn.disabled = true;
+        }
+        
+        // Clear previous selections
+        const options = nextQuestion.querySelectorAll('.quiz-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+    } else {
+        // Quiz completed
+        completeQuiz();
+    }
+}
+
+function updateQuizProgress() {
+    const progressFill = document.getElementById('quiz-progress-fill');
+    const progressText = document.getElementById('quiz-progress-text');
+    
+    if (progressFill && progressText) {
+        const percentage = (quizState.currentQuestion / quizState.totalQuestions) * 100;
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `Question ${quizState.currentQuestion} of ${quizState.totalQuestions}`;
+    }
+}
+
+function completeQuiz() {
+    // Store quiz results (in a real app, this would be saved to backend)
+    currentUser.quizResults = quizState.answers;
+    
+    showNotification('Quiz completed! Personalizing your experience...', 'success');
+    
+    setTimeout(() => {
+        showScreen('mainApp');
+        quizState.isNewUser = false;
+    }, 1500);
+}
+
+function skipQuiz() {
+    showNotification('Quiz skipped. You can take it later from your profile.', 'info');
+    
+    setTimeout(() => {
+        showScreen('mainApp');
+        quizState.isNewUser = false;
+    }, 1000);
 }
 
 // Events Functions
