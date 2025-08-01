@@ -208,76 +208,29 @@
                             <i class="fas fa-calendar-day"></i>
                             <span>December 15, 2024</span>
                         </div>
-                        
-                        <!-- Old Testament -->
-                        <div class="reading-section">
-                            <div class="section-header">
-                                <h4><i class="fas fa-scroll"></i> Old Testament</h4>
-                                <button class="btn-small" onclick="markReadingComplete('old-testament')" id="old-testament-btn">
-                                    <i class="fas fa-check"></i> Complete
-                                </button>
-                            </div>
-                            <div class="reading-content">
-                                <h5>Genesis 15:1-21</h5>
-                                <p class="verse-reference">The Lord's covenant with Abram</p>
-                            </div>
-                        </div>
-
-                        <!-- New Testament -->
-                        <div class="reading-section">
-                            <div class="section-header">
-                                <h4><i class="fas fa-cross"></i> New Testament</h4>
-                                <button class="btn-small" onclick="markReadingComplete('new-testament')" id="new-testament-btn">
-                                    <i class="fas fa-check"></i> Complete
-                                </button>
-                            </div>
-                            <div class="reading-content">
-                                <h5>Matthew 15:1-20</h5>
-                                <p class="verse-reference">Jesus and the tradition of the elders</p>
-                            </div>
-                        </div>
-
-                        <!-- Psalms -->
-                        <div class="reading-section">
-                            <div class="section-header">
-                                <h4><i class="fas fa-music"></i> Psalms</h4>
-                                <button class="btn-small" onclick="markReadingComplete('psalms')" id="psalms-btn">
-                                    <i class="fas fa-check"></i> Complete
-                                </button>
-                            </div>
-                            <div class="reading-content">
-                                <h5>Psalm 19:1-14</h5>
-                                <p class="verse-reference">The heavens declare the glory of God</p>
-                            </div>
-                        </div>
-
-                        <!-- Proverbs -->
-                        <div class="reading-section">
-                            <div class="section-header">
-                                <h4><i class="fas fa-lightbulb"></i> Proverbs</h4>
-                                <button class="btn-small" onclick="markReadingComplete('proverbs')" id="proverbs-btn">
-                                    <i class="fas fa-check"></i> Complete
-                                </button>
-                            </div>
-                            <div class="reading-content">
-                                <h5>Proverbs 4:1-9</h5>
-                                <p class="verse-reference">A father's instruction to his sons</p>
-                            </div>
-                        </div>
-
-                        <!-- Daily Completion Status -->
-                        <div class="daily-completion">
-                            <div class="completion-progress">
-                                <div class="completion-bar">
-                                    <div class="completion-fill" id="daily-completion-fill" style="width: 0%"></div>
-                                </div>
-                                <span id="completion-text">0 of 4 sections completed</span>
-                            </div>
-                            <button class="btn-primary" onclick="markAllComplete()" id="mark-all-btn" disabled>
-                                <i class="fas fa-check-double"></i> Mark All Complete
+                        <div class="bible-button-container">
+                            <button class="btn-primary bible-button" onclick="showAppScreen('bibleScreen')">
+                                <i class="fas fa-book-open"></i>
+                                Read Today's Bible Passages
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="btn-secondary quick-action-btn" onclick="openExternalLink('small-group')">
+                            <i class="fas fa-users"></i>
+                            Find a Small Group
+                        </button>
+                        <button class="btn-secondary quick-action-btn" onclick="openExternalLink('give')">
+                            <i class="fas fa-heart"></i>
+                            Give
+                        </button>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
