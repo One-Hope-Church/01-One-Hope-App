@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Hope - Grow Your Faith</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="screen active">
+        <div class="splash-content">
+            <div class="logo">
+                <i class="fas fa-cross"></i>
+                <h1>One Hope</h1>
+            </div>
+            <p class="tagline">Grow Your Faith, One Step at a Time</p>
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>Welcome Back</h1>
+                <p>Sign in to continue your journey</p>
+            </div>
+            <form class="auth-form" id="loginForm">
+                <div class="input-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-primary">Sign In</button>
+            </form>
+            <div class="auth-links">
+                <a href="#" onclick="showScreen('forgotPasswordScreen')">Forgot Password?</a>
+                <p>Don't have an account? <a href="#" onclick="showScreen('signupScreen')">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Screen -->
+    <div id="signupScreen" class="screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>Create Account</h1>
+                <p>Start your spiritual journey today</p>
+            </div>
+            <form class="auth-form" id="signupForm">
+                <div class="input-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" required>
+                </div>
+                <div class="input-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" required>
+                </div>
+                <div class="input-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" required>
+                </div>
+                <div class="input-group">
+                    <label for="referralCode">Referral Code (Optional)</label>
+                    <input type="text" id="referralCode">
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+            <div class="auth-links">
+                <p>Already have an account? <a href="#" onclick="showScreen('loginScreen')">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="mainApp" class="screen">
+        <!-- Home Screen -->
+        <div id="homeScreen" class="app-screen active">
+            <div class="header">
+                <h1>Welcome back, John</h1>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Today's Bible Reading -->
+                <div class="card">
+                    <h3>Today's Bible Reading</h3>
+                    <div class="bible-reading">
+                        <h4>John 3:16-21</h4>
+                        <p>"For God so loved the world that he gave his one and only Son..."</p>
+                        <button class="btn-secondary" onclick="markBibleComplete()">
+                            <i class="fas fa-check"></i> Mark as Complete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Next Step -->
+                <div class="card">
+                    <h3>Your Next Step</h3>
+                    <div class="next-step">
+                        <div class="step-icon">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Get Baptized</h4>
+                            <p>Take the next step in your faith journey</p>
+                            <button class="btn-primary" onclick="showScreen('nextStepsScreen')">
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="card">
+                    <h3>Your Progress</h3>
+                    <div class="progress-section">
+                        <div class="xp-bar">
+                            <div class="xp-fill" style="width: 65%"></div>
+                            <span>Level 3 - 650 XP</span>
+                        </div>
+                        <div class="streak">
+                            <i class="fas fa-fire"></i>
+                            <span>7 day Bible streak</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bible Screen -->
+        <div id="bibleScreen" class="app-screen">
+            <div class="header">
+                <h1>Bible Reading</h1>
+                <div class="streak-badge">
+                    <i class="fas fa-fire"></i>
+                    <span>7</span>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="reading-plan">
+                    <h3>One Year Bible Plan</h3>
+                    <div class="plan-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 15%"></div>
+                        </div>
+                        <span>Day 55 of 365</span>
+                    </div>
+                </div>
+
+                <div class="daily-reading">
+                    <h4>Today's Reading: John 3:16-21</h4>
+                    <div class="scripture-text">
+                        <p><strong>16</strong> For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.</p>
+                        <p><strong>17</strong> For God did not send his Son into the world to condemn the world, but to save the world through him.</p>
+                        <p><strong>18</strong> Whoever believes in him is not condemned, but whoever does not believe stands condemned already because they have not believed in the name of God's one and only Son.</p>
+                        <p><strong>19</strong> This is the verdict: Light has come into the world, but people loved darkness instead of light because their deeds were evil.</p>
+                        <p><strong>20</strong> Everyone who does evil hates the light, and will not come into the light for fear that their deeds will be exposed.</p>
+                        <p><strong>21</strong> But whoever lives by the truth comes into the light, so that it may be seen plainly that what they have done has been done in the sight of God.</p>
+                    </div>
+                    <button class="btn-primary" onclick="markBibleComplete()">
+                        <i class="fas fa-check"></i> Mark as Read
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps Screen -->
+        <div id="nextStepsScreen" class="app-screen">
+            <div class="header">
+                <h1>Next Steps</h1>
+            </div>
+
+            <div class="content">
+                <div class="steps-list">
+                    <div class="step-item completed">
+                        <div class="step-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Faith in Jesus</h4>
+                            <p>Accept Jesus Christ as your Lord and Savior</p>
+                            <div class="step-status">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Completed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-item active">
+                        <div class="step-icon">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Baptism</h4>
+                            <p>Publicly declare your faith through baptism</p>
+                            <button class="btn-primary" onclick="completeStep('baptism')">
+                                Mark as Completed
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Join a Group</h4>
+                            <p>Connect with other believers in community</p>
+                            <button class="btn-secondary" disabled>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-icon">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Start Serving</h4>
+                            <p>Use your gifts to serve others</p>
+                            <button class="btn-secondary" disabled>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Screen -->
+        <div id="profileScreen" class="app-screen">
+            <div class="header">
+                <h1>Profile</h1>
+            </div>
+
+            <div class="content">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3>John Doe</h3>
+                    <p>john.doe@email.com</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">Level</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">650</div>
+                        <div class="stat-label">XP</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">2</div>
+                        <div class="stat-label">Steps Completed</div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-secondary" onclick="showScreen('settingsScreen')">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                    <button class="btn-danger" onclick="signOut()">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="showAppScreen('homeScreen')">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" onclick="showAppScreen('bibleScreen')">
+                <i class="fas fa-book-open"></i>
+                <span>Bible</span>
+            </button>
+            <button class="nav-item" onclick="showAppScreen('nextStepsScreen')">
+                <i class="fas fa-route"></i>
+                <span>Steps</span>
+            </button>
+            <button class="nav-item" onclick="showAppScreen('profileScreen')">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
