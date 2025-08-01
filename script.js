@@ -67,8 +67,9 @@ function updateNavigation(activeScreenId) {
     const navMap = {
         'homeScreen': 0,
         'bibleScreen': 1,
-        'nextStepsScreen': 2,
-        'profileScreen': 3
+        'eventsScreen': 2,
+        'nextStepsScreen': 3,
+        'profileScreen': 4
     };
     
     const navItems = document.querySelectorAll('.nav-item');
@@ -404,7 +405,7 @@ function handleSwipe(direction) {
     const currentScreen = document.querySelector('.app-screen.active');
     if (!currentScreen) return;
     
-    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', 'profileScreen'];
+    const screens = ['homeScreen', 'bibleScreen', 'eventsScreen', 'nextStepsScreen', 'profileScreen'];
     const currentIndex = screens.indexOf(currentScreen.id);
     
     if (direction === 'left' && currentIndex < screens.length - 1) {
@@ -423,6 +424,36 @@ document.addEventListener('touchend', function(event) {
     }
     lastTouchEnd = now;
 }, false);
+
+// Events Functions
+function filterEvents(filter) {
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // In a real app, this would filter the events
+    // For now, just show a notification
+    showNotification(`Showing ${filter} events`, 'info');
+}
+
+function rsvpEvent(eventId) {
+    // In a real app, this would send RSVP to server
+    showNotification('RSVP sent successfully!', 'success');
+    
+    // Update button state
+    const button = event.target;
+    button.innerHTML = '<i class="fas fa-check"></i> RSVP\'d';
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-secondary');
+    button.disabled = true;
+}
+
+function addToCalendar(eventId) {
+    // In a real app, this would add to device calendar
+    showNotification('Added to calendar!', 'success');
+}
 
 // Initialize progress UI
 updateProgressUI(); 

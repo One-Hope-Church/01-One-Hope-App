@@ -245,6 +245,127 @@
             </div>
         </div>
 
+        <!-- Events Screen -->
+        <div id="eventsScreen" class="app-screen">
+            <div class="header">
+                <h1>Events</h1>
+                <div class="events-filter">
+                    <button class="filter-btn active" onclick="filterEvents('all')">All</button>
+                    <button class="filter-btn" onclick="filterEvents('upcoming')">Upcoming</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="events-list">
+                    <div class="event-item featured">
+                        <div class="event-date">
+                            <div class="date-day">15</div>
+                            <div class="date-month">DEC</div>
+                        </div>
+                        <div class="event-content">
+                            <div class="event-badge">Featured</div>
+                            <h4>Christmas Eve Service</h4>
+                            <p class="event-time"><i class="fas fa-clock"></i> 6:00 PM - 8:00 PM</p>
+                            <p class="event-location"><i class="fas fa-map-marker-alt"></i> Main Sanctuary</p>
+                            <p class="event-description">Join us for a special Christmas Eve celebration with carols, candlelight, and the Christmas story.</p>
+                            <div class="event-actions">
+                                <button class="btn-primary" onclick="rsvpEvent('christmas-eve')">
+                                    <i class="fas fa-calendar-plus"></i> RSVP
+                                </button>
+                                <button class="btn-secondary" onclick="addToCalendar('christmas-eve')">
+                                    <i class="fas fa-calendar"></i> Add to Calendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">
+                            <div class="date-day">18</div>
+                            <div class="date-month">DEC</div>
+                        </div>
+                        <div class="event-content">
+                            <h4>Bible Study: The Book of John</h4>
+                            <p class="event-time"><i class="fas fa-clock"></i> 7:00 PM - 8:30 PM</p>
+                            <p class="event-location"><i class="fas fa-map-marker-alt"></i> Room 201</p>
+                            <p class="event-description">Weekly Bible study exploring the Gospel of John. All are welcome!</p>
+                            <div class="event-actions">
+                                <button class="btn-primary" onclick="rsvpEvent('bible-study')">
+                                    <i class="fas fa-calendar-plus"></i> RSVP
+                                </button>
+                                <button class="btn-secondary" onclick="addToCalendar('bible-study')">
+                                    <i class="fas fa-calendar"></i> Add to Calendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">
+                            <div class="date-day">22</div>
+                            <div class="date-month">DEC</div>
+                        </div>
+                        <div class="event-content">
+                            <h4>Youth Group: Christmas Party</h4>
+                            <p class="event-time"><i class="fas fa-clock"></i> 6:30 PM - 9:00 PM</p>
+                            <p class="event-location"><i class="fas fa-map-marker-alt"></i> Youth Center</p>
+                            <p class="event-description">Fun Christmas party for youth with games, food, and fellowship.</p>
+                            <div class="event-actions">
+                                <button class="btn-primary" onclick="rsvpEvent('youth-party')">
+                                    <i class="fas fa-calendar-plus"></i> RSVP
+                                </button>
+                                <button class="btn-secondary" onclick="addToCalendar('youth-party')">
+                                    <i class="fas fa-calendar"></i> Add to Calendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">
+                            <div class="date-day">25</div>
+                            <div class="date-month">DEC</div>
+                        </div>
+                        <div class="event-content">
+                            <h4>Christmas Day Service</h4>
+                            <p class="event-time"><i class="fas fa-clock"></i> 10:00 AM - 11:30 AM</p>
+                            <p class="event-location"><i class="fas fa-map-marker-alt"></i> Main Sanctuary</p>
+                            <p class="event-description">Celebrate the birth of Jesus with our Christmas Day service.</p>
+                            <div class="event-actions">
+                                <button class="btn-primary" onclick="rsvpEvent('christmas-day')">
+                                    <i class="fas fa-calendar-plus"></i> RSVP
+                                </button>
+                                <button class="btn-secondary" onclick="addToCalendar('christmas-day')">
+                                    <i class="fas fa-calendar"></i> Add to Calendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-item">
+                        <div class="event-date">
+                            <div class="date-day">29</div>
+                            <div class="date-month">DEC</div>
+                        </div>
+                        <div class="event-content">
+                            <h4>Prayer Meeting</h4>
+                            <p class="event-time"><i class="fas fa-clock"></i> 6:00 PM - 7:00 PM</p>
+                            <p class="event-location"><i class="fas fa-map-marker-alt"></i> Prayer Room</p>
+                            <p class="event-description">Join us for a time of prayer and intercession for our community.</p>
+                            <div class="event-actions">
+                                <button class="btn-primary" onclick="rsvpEvent('prayer-meeting')">
+                                    <i class="fas fa-calendar-plus"></i> RSVP
+                                </button>
+                                <button class="btn-secondary" onclick="addToCalendar('prayer-meeting')">
+                                    <i class="fas fa-calendar"></i> Add to Calendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Profile Screen -->
         <div id="profileScreen" class="app-screen">
             <div class="header">
@@ -299,6 +420,10 @@
             <button class="nav-item" onclick="showAppScreen('bibleScreen')">
                 <i class="fas fa-book-open"></i>
                 <span>Bible</span>
+            </button>
+            <button class="nav-item" onclick="showAppScreen('eventsScreen')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Events</span>
             </button>
             <button class="nav-item" onclick="showAppScreen('nextStepsScreen')">
                 <i class="fas fa-route"></i>
