@@ -259,6 +259,9 @@ function updateDailyCompletion() {
     if (progressFillBible) progressFillBible.style.width = `${percentage}%`;
     if (completionTextBible) completionTextBible.textContent = `${completedCount} of ${totalSections} sections completed`;
     if (markAllBtnBible) markAllBtnBible.disabled = completedCount < totalSections;
+    
+    // Update steps completed count in profile
+    updateStepsCompletedCount();
 }
 
 function markAllComplete() {
@@ -318,6 +321,10 @@ function updateProgressUI() {
     });
     
     // Update profile stats
+    updateStepsCompletedCount();
+}
+
+function updateStepsCompletedCount() {
     const statNumbers = document.querySelectorAll('.stat-number');
     if (statNumbers.length >= 4) {
         statNumbers[0].textContent = userProgress.level;
@@ -360,6 +367,9 @@ function completeStep(stepId) {
         statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
         stepContent.appendChild(statusDiv);
     }
+    
+    // Update steps completed count
+    updateStepsCompletedCount();
     
     showNotification('Step completed! +100 XP', 'success');
 }

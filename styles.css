@@ -918,6 +918,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #e1e5e9;
     line-height: 1.8;
+    margin-top: 1rem;
 }
 
 .reading-detail-content h2 {
@@ -925,6 +926,7 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 1.5rem;
+    margin-top: 0;
 }
 
 .reading-detail-content h3 {
@@ -932,6 +934,7 @@ body {
     font-size: 1.2rem;
     font-weight: 600;
     margin: 1.5rem 0 1rem 0;
+    margin-top: 2rem;
 }
 
 .reading-detail-content p {
@@ -945,11 +948,17 @@ body {
     padding: 1.5rem;
     border-radius: 12px;
     margin: 1.5rem 0;
+    margin-top: 2rem;
 }
 
 .detail-actions {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+}
+
+#readingDetailScreen .header {
+    padding-bottom: 1.5rem;
 }
 
 /* Dark mode support for reading detail */
