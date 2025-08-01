@@ -192,21 +192,29 @@ function markReadingComplete(section) {
     // Mark section as complete
     dailyReadings[section] = true;
     
-    // Update button
-    const button = document.getElementById(`${section}-btn`);
-    if (button) {
-        button.innerHTML = '<i class="fas fa-check"></i> Completed';
-        button.classList.add('completed');
-        button.disabled = true;
-    }
+    // Update buttons on both home and Bible pages
+    const homeButton = document.getElementById(`${section}-btn`);
+    const bibleButton = document.getElementById(`${section}-btn-bible`);
     
-    // Update section styling
-    const sectionElement = button.closest('.reading-section');
-    if (sectionElement) {
-        sectionElement.classList.add('completed');
-    }
+    [homeButton, bibleButton].forEach(button => {
+        if (button) {
+            button.innerHTML = '<i class="fas fa-check"></i> Completed';
+            button.classList.add('completed');
+            button.disabled = true;
+        }
+    });
     
-    // Update completion progress
+    // Update section styling on both pages
+    [homeButton, bibleButton].forEach(button => {
+        if (button) {
+            const sectionElement = button.closest('.reading-section');
+            if (sectionElement) {
+                sectionElement.classList.add('completed');
+            }
+        }
+    });
+    
+    // Update completion progress on both pages
     updateDailyCompletion();
     
     // Check if all sections are complete
@@ -220,18 +228,23 @@ function updateDailyCompletion() {
     const totalSections = Object.keys(dailyReadings).length;
     const percentage = (completedCount / totalSections) * 100;
     
-    // Update progress bar
-    const progressFill = document.getElementById('daily-completion-fill');
-    const completionText = document.getElementById('completion-text');
-    const markAllBtn = document.getElementById('mark-all-btn');
+    // Update progress bars on both pages
+    const progressFillHome = document.getElementById('daily-completion-fill');
+    const progressFillBible = document.getElementById('daily-completion-fill-bible');
+    const completionTextHome = document.getElementById('completion-text');
+    const completionTextBible = document.getElementById('completion-text-bible');
+    const markAllBtnHome = document.getElementById('mark-all-btn');
+    const markAllBtnBible = document.getElementById('mark-all-btn-bible');
     
-    if (progressFill) progressFill.style.width = `${percentage}%`;
-    if (completionText) completionText.textContent = `${completedCount} of ${totalSections} sections completed`;
+    // Update home page
+    if (progressFillHome) progressFillHome.style.width = `${percentage}%`;
+    if (completionTextHome) completionTextHome.textContent = `${completedCount} of ${totalSections} sections completed`;
+    if (markAllBtnHome) markAllBtnHome.disabled = completedCount < totalSections;
     
-    // Enable mark all button if all sections are complete
-    if (markAllBtn) {
-        markAllBtn.disabled = completedCount < totalSections;
-    }
+    // Update Bible page
+    if (progressFillBible) progressFillBible.style.width = `${percentage}%`;
+    if (completionTextBible) completionTextBible.textContent = `${completedCount} of ${totalSections} sections completed`;
+    if (markAllBtnBible) markAllBtnBible.disabled = completedCount < totalSections;
 }
 
 function markAllComplete() {
@@ -254,14 +267,18 @@ function markAllComplete() {
     // Show success message
     showNotification('Excellent! Daily reading complete! +100 XP', 'success');
     
-    // Update mark all button
-    const markAllBtn = document.getElementById('mark-all-btn');
-    if (markAllBtn) {
-        markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
-        markAllBtn.disabled = true;
-        markAllBtn.classList.remove('btn-primary');
-        markAllBtn.classList.add('btn-secondary');
-    }
+    // Update mark all buttons on both pages
+    const markAllBtnHome = document.getElementById('mark-all-btn');
+    const markAllBtnBible = document.getElementById('mark-all-btn-bible');
+    
+    [markAllBtnHome, markAllBtnBible].forEach(btn => {
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
+            btn.disabled = true;
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
+        }
+    });
 }
 
 // Legacy function for backward compatibility

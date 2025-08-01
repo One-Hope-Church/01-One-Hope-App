@@ -360,6 +360,13 @@ body {
     margin-bottom: 0;
 }
 
+.verse-reference {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 .daily-completion {
     margin-top: 2rem;
     padding: 1.5rem;
