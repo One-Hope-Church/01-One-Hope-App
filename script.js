@@ -743,22 +743,25 @@ function showAssessmentQuestion(questionIndex) {
 }
 
 function handleConditionalQuestions() {
-    // Handle salvation date question
+    // Only show conditional questions if we're on the appropriate question
+    const currentQuestionId = getQuestionId(assessmentState.currentQuestion);
+    
+    // Handle salvation date question - only show if we're on the salvation question and answer is 'yes'
     const salvationStatus = assessmentState.answers['salvation_status'];
     const salvationDateQuestion = document.getElementById('question-salvation-date');
     if (salvationDateQuestion) {
-        if (salvationStatus === 'yes') {
+        if (currentQuestionId === 'salvation' && salvationStatus === 'yes') {
             salvationDateQuestion.style.display = 'block';
         } else {
             salvationDateQuestion.style.display = 'none';
         }
     }
     
-    // Handle leadership ready question
+    // Handle leadership ready question - only show if we're on the leadership question and answer is 'no'
     const leadershipStatus = assessmentState.answers['leadership'];
     const leadershipReadyQuestion = document.getElementById('question-leadership-ready');
     if (leadershipReadyQuestion) {
-        if (leadershipStatus === 'no') {
+        if (currentQuestionId === 'leadership' && leadershipStatus === 'no') {
             leadershipReadyQuestion.style.display = 'block';
         } else {
             leadershipReadyQuestion.style.display = 'none';
