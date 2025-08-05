@@ -728,8 +728,7 @@ function showAssessmentQuestion(questionIndex) {
         currentQuestion.style.display = 'block';
     }
     
-    // Handle conditional questions based on previous answers
-    handleConditionalQuestions();
+
     
     // Reset radio button selections for current question only
     if (currentQuestion) {
@@ -745,32 +744,7 @@ function showAssessmentQuestion(questionIndex) {
     }
 }
 
-function handleConditionalQuestions() {
-    // Only show conditional questions if we're on the appropriate question
-    const currentQuestionId = getQuestionId(assessmentState.currentQuestion);
-    
-    // Handle salvation date question - only show if we're on the salvation question and answer is 'yes'
-    const salvationStatus = assessmentState.answers['salvation_status'];
-    const salvationDateQuestion = document.getElementById('question-salvation-date');
-    if (salvationDateQuestion) {
-        if (currentQuestionId === 'salvation' && salvationStatus === 'yes') {
-            salvationDateQuestion.style.display = 'block';
-        } else {
-            salvationDateQuestion.style.display = 'none';
-        }
-    }
-    
-    // Handle leadership ready question - only show if we're on the leadership question and answer is 'no'
-    const leadershipStatus = assessmentState.answers['leadership'];
-    const leadershipReadyQuestion = document.getElementById('question-leadership-ready');
-    if (leadershipReadyQuestion) {
-        if (currentQuestionId === 'leadership' && leadershipStatus === 'no') {
-            leadershipReadyQuestion.style.display = 'block';
-        } else {
-            leadershipReadyQuestion.style.display = 'none';
-        }
-    }
-}
+
 
 function getQuestionId(index) {
     const questionIds = [
@@ -781,22 +755,37 @@ function getQuestionId(index) {
     return questionIds[index];
 }
 
+function showConditionalQuestion(questionType) {
+    // Hide all questions
+    document.querySelectorAll('.assessment-question').forEach(q => {
+        q.style.display = 'none';
+    });
+    
+    // Show the conditional question
+    const conditionalQuestion = document.getElementById(`question-${questionType}`);
+    if (conditionalQuestion) {
+        conditionalQuestion.style.display = 'block';
+    }
+    
+    // Update button text
+    const nextBtn = document.getElementById('next-assessment-btn');
+    if (nextBtn) {
+        nextBtn.textContent = 'Continue to Next Question';
+        nextBtn.disabled = true;
+    }
+}
+
 function selectAssessmentOption(questionName, value) {
     assessmentState.answers[questionName] = value;
     
     // Handle conditional logic for salvation date
     if (questionName === 'salvation_status') {
-        const salvationDateQuestion = document.getElementById('question-salvation-date');
         if (value === 'yes') {
-            // Show salvation date question
-            if (salvationDateQuestion) {
-                salvationDateQuestion.style.display = 'block';
-            }
+            // Show salvation date question as separate screen
+            showConditionalQuestion('salvation-date');
+            return; // Don't enable next button yet
         } else {
-            // Hide salvation date question and clear the value
-            if (salvationDateQuestion) {
-                salvationDateQuestion.style.display = 'none';
-            }
+            // Clear salvation date value
             assessmentState.answers['salvation_date'] = '';
             const dateInput = document.getElementById('salvation_date');
             if (dateInput) {
@@ -807,22 +796,17 @@ function selectAssessmentOption(questionName, value) {
     
     // Handle conditional logic for leadership ready question
     if (questionName === 'leadership') {
-        const leadershipReadyQuestion = document.getElementById('question-leadership-ready');
         if (value === 'no') {
-            // Show leadership ready question
-            if (leadershipReadyQuestion) {
-                leadershipReadyQuestion.style.display = 'block';
-            }
+            // Show leadership ready question as separate screen
+            showConditionalQuestion('leadership-ready');
+            return; // Don't enable next button yet
         } else {
-            // Hide leadership ready question and clear the value
-            if (leadershipReadyQuestion) {
-                leadershipReadyQuestion.style.display = 'none';
-            }
+            // Clear leadership ready value
             assessmentState.answers['leadership_ready'] = '';
         }
     }
     
-    // Enable next button
+    // Enable next button for regular questions
     const nextBtn = document.getElementById('next-assessment-btn');
     if (nextBtn) {
         nextBtn.disabled = false;
@@ -830,28 +814,28 @@ function selectAssessmentOption(questionName, value) {
 }
 
 function nextAssessmentQuestion() {
-    if (assessmentState.currentQuestion < assessmentState.totalQuestions - 1) {
-        assessmentState.currentQuestion++;
-        
-        // Check if we need to skip conditional questions
-        const currentQuestionId = getQuestionId(assessmentState.currentQuestion);
-        
-        // Skip salvation date question if salvation status is not 'yes'
-        if (currentQuestionId === 'salvation-date' && assessmentState.answers['salvation_status'] !== 'yes') {
+    // Check if we're currently on a conditional question
+    const currentQuestion = document.querySelector('.assessment-question[style*="block"]');
+    if (currentQuestion) {
+        const questionId = currentQuestion.id;
+        if (questionId === 'question-salvation-date' || questionId === 'question-leadership-ready') {
+            // We're on a conditional question, move to next main question
             assessmentState.currentQuestion++;
-        }
-        
-        // Skip leadership ready question if leadership is not 'no'
-        if (currentQuestionId === 'leadership-ready' && assessmentState.answers['leadership'] !== 'no') {
-            assessmentState.currentQuestion++;
-        }
-        
-        // Make sure we don't go beyond the total questions
-        if (assessmentState.currentQuestion >= assessmentState.totalQuestions) {
-            completeAssessment();
+            showAssessmentQuestion(assessmentState.currentQuestion);
+            updateAssessmentProgress();
+            
+            // Reset button text
+            const nextBtn = document.getElementById('next-assessment-btn');
+            if (nextBtn) {
+                nextBtn.textContent = 'Next Question';
+            }
             return;
         }
-        
+    }
+    
+    // Regular question flow
+    if (assessmentState.currentQuestion < assessmentState.totalQuestions - 1) {
+        assessmentState.currentQuestion++;
         showAssessmentQuestion(assessmentState.currentQuestion);
         updateAssessmentProgress();
     } else {
