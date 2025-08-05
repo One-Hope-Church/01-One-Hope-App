@@ -1321,6 +1321,168 @@ body {
     margin: 0;
 }
 
+/* Results Splash Screen Styles */
+.results-container {
+    padding: 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.results-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 1rem;
+}
+
+.results-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.results-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.results-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.result-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    animation: fadeInUp 0.6s ease;
+}
+
+.result-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #00A0DF, #0090C9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+    font-size: 2rem;
+}
+
+.result-card h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.result-card p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.result-card h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.recommendations {
+    text-align: left;
+    margin: 1.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.recommendations li {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.encouragement {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 1.5rem 0;
+}
+
+.results-cta {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.results-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 160, 223, 0.3);
+}
+
+.team-signature {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 2rem;
+    line-height: 1.4;
+}
+
+.results-actions {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.results-actions .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .results-container {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+    
+    .result-card {
+        background: var(--card-bg);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .result-card h2,
+    .result-card h3,
+    .recommendations li {
+        color: var(--text-primary);
+    }
+    
+    .result-card p,
+    .team-signature {
+        color: var(--text-secondary);
+    }
+}
+
 /* Welcome Quiz Screen */
 .quiz-container {
     padding: 2rem;

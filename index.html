@@ -344,6 +344,122 @@
         </div>
     </div>
 
+    <!-- Assessment Results Splash Screen -->
+    <div id="assessmentResultsScreen" class="screen">
+        <div class="results-container">
+            <div class="results-header">
+                <img src="images/01_OneHopePrimary_Light.png" alt="One Hope Church" class="results-logo">
+                <h1>Your Spiritual Journey</h1>
+                <p>Based on your assessment, here's what we recommend for your next step</p>
+            </div>
+            
+            <div class="results-content">
+                <!-- Foundation Focus Results -->
+                <div class="result-card" id="foundation-results" style="display: none;">
+                    <div class="result-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h2>Hey <span id="user-first-name">there</span>,</h2>
+                    <p>We're so glad you took the Spiritual Steps Assessment. From your responses, it looks like this is a season to focus on the foundation of your faith.</p>
+                    
+                    <h3>Here's what we'd love to help you with:</h3>
+                    <ul class="recommendations">
+                        <li>Starting a real relationship with Jesus</li>
+                        <li>Getting baptized</li>
+                        <li>Making Sunday church a weekly rhythm</li>
+                        <li>Building a habit of Bible reading and prayer</li>
+                    </ul>
+                    
+                    <p class="encouragement">You don't have to do it all at once—just pick the next thing that feels right and let us help.</p>
+                    
+                    <button class="btn-primary results-cta" onclick="openExternalLink('next-step')">
+                        🎯 Your Next Step
+                    </button>
+                    
+                    <p class="team-signature">We're with you. You're not alone.<br>—The One Hope Team</p>
+                </div>
+
+                <!-- Connect Focus Results -->
+                <div class="result-card" id="connect-results" style="display: none;">
+                    <div class="result-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h2>Hey <span id="user-first-name-connect">there</span>,</h2>
+                    <p>We believe spiritual growth happens best when you're connected—and it looks like now might be the perfect time for you to take that step.</p>
+                    
+                    <h3>Here are two ways to plug in:</h3>
+                    <ul class="recommendations">
+                        <li><strong>Join a Small Group</strong> — Find people to grow with</li>
+                        <li><strong>Start serving on the Serve Team</strong> — Make a difference and meet new friends while you do</li>
+                    </ul>
+                    
+                    <p class="encouragement">Tap the button below and we'll help you find your people.</p>
+                    
+                    <button class="btn-primary results-cta" onclick="openExternalLink('connect')">
+                        👥 Connect Me
+                    </button>
+                    
+                    <p class="team-signature">Let's grow together.<br>—The One Hope Team</p>
+                </div>
+
+                <!-- Give & Go Focus Results -->
+                <div class="result-card" id="give-go-results" style="display: none;">
+                    <div class="result-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h2>Hey <span id="user-first-name-give">there</span>,</h2>
+                    <p>God's called each of us to live with purpose—and part of that is learning how to give and go.</p>
+                    
+                    <h3>This might be the season where your next step looks like:</h3>
+                    <ul class="recommendations">
+                        <li>Giving consistently</li>
+                        <li>Inviting someone to church</li>
+                        <li>Praying for someone far from God</li>
+                        <li>Or even sharing your faith story</li>
+                    </ul>
+                    
+                    <p class="encouragement">You don't have to be perfect—you just need to be willing.</p>
+                    
+                    <button class="btn-primary results-cta" onclick="openExternalLink('give-go')">
+                        🙏 Take My Next Step
+                    </button>
+                    
+                    <p class="team-signature">Let's do this together.<br>—The One Hope Team</p>
+                </div>
+
+                <!-- Lead Focus Results -->
+                <div class="result-card" id="lead-results" style="display: none;">
+                    <div class="result-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h2>Hey <span id="user-first-name-lead">there</span>,</h2>
+                    <p>You're already growing—but now it may be time to start helping others grow too.</p>
+                    
+                    <h3>From what you shared, it looks like you're ready for more:</h3>
+                    <ul class="recommendations">
+                        <li>Leading a group or Serve Team</li>
+                        <li>Mentoring someone new in their faith</li>
+                        <li>Or just living with purpose on mission every day</li>
+                    </ul>
+                    
+                    <p class="encouragement">If you're ready, we'd love to connect with you and help you take your next leadership step.</p>
+                    
+                    <button class="btn-primary results-cta" onclick="openExternalLink('lead')">
+                        🔥 I'm Ready to Lead
+                    </button>
+                    
+                    <p class="team-signature">We believe in you.<br>—The One Hope Team</p>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <button class="btn-secondary" onclick="skipResults()">
+                    <i class="fas fa-arrow-right"></i> Continue to App
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Welcome Quiz Screen (Replaced by Spiritual Assessment) -->
     <!-- <div id="welcomeQuizScreen" class="screen"> -->
         <div class="quiz-container">

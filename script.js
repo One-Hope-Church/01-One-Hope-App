@@ -871,10 +871,72 @@ function completeAssessment() {
     // Mark assessment as completed
     assessmentState.isNewUser = false;
     
-    // Show main app
+    // Show results splash page
+    showAssessmentResults();
+}
+
+function showAssessmentResults() {
+    // Update user name in all result cards
+    const firstName = currentUser.firstName || currentUser.name.split(' ')[0];
+    document.querySelectorAll('#user-first-name, #user-first-name-connect, #user-first-name-give, #user-first-name-lead').forEach(element => {
+        element.textContent = firstName;
+    });
+    
+    // Determine which results to show based on assessment answers
+    const results = determineAssessmentResults();
+    
+    // Hide all result cards
+    document.querySelectorAll('.result-card').forEach(card => {
+        card.style.display = 'none';
+    });
+    
+    // Show the appropriate result card
+    const resultCard = document.getElementById(`${results.focus}-results`);
+    if (resultCard) {
+        resultCard.style.display = 'block';
+    }
+    
+    // Show results screen
+    showScreen('assessmentResultsScreen');
+}
+
+function determineAssessmentResults() {
+    const answers = assessmentState.answers;
+    
+    // Foundation Focus Logic
+    if (answers.salvation_status === 'no' || 
+        answers.baptism_status === 'no' || 
+        answers.sunday_attendance <= 2 || 
+        answers.bible_prayer <= 2) {
+        return { focus: 'foundation', priority: 'Start' };
+    }
+    
+    // Connect Focus Logic
+    if (answers.small_group === 'no' || answers.serve_team === 'no') {
+        return { focus: 'connect', priority: 'Grow' };
+    }
+    
+    // Give & Go Focus Logic
+    if (answers.giving_status <= 2 || 
+        answers.invite_pray <= 2 || 
+        answers.share_story === 'no') {
+        return { focus: 'give-go', priority: 'Grow' };
+    }
+    
+    // Lead Focus Logic
+    if (answers.leadership === 'yes' || 
+        answers.leadership_ready === 'yes' || 
+        answers.mission_living >= 3) {
+        return { focus: 'lead', priority: 'Lead & Multiply' };
+    }
+    
+    // Default to Give & Go if no specific conditions met
+    return { focus: 'give-go', priority: 'Grow' };
+}
+
+function skipResults() {
     showScreen('mainApp');
     showAppScreen('homeScreen');
-    
     showNotification('Welcome to One Hope Next Step!', 'success');
 }
 
@@ -892,24 +954,42 @@ function openExternalLink(type) {
     
     switch(type) {
         case 'small-group':
-            url = 'https://onehope.org/small-groups'; // Replace with actual URL
-            message = 'Opening small groups page...';
+            url = 'https://onehopechurch.com/small-groups';
+            message = 'Opening Small Groups page...';
             break;
         case 'give':
-            url = 'https://onehope.org/give'; // Replace with actual URL
-            message = 'Opening giving page...';
+            url = 'https://onehopechurch.com/give';
+            message = 'Opening Give page...';
+            break;
+        case 'watch-message':
+            url = 'https://onehopechurch.com/messages';
+            message = 'Opening Messages page...';
+            break;
+        case 'next-step':
+            url = 'https://onehopechurch.com/next-steps';
+            message = 'Opening Next Steps page...';
+            break;
+        case 'connect':
+            url = 'https://onehopechurch.com/connect';
+            message = 'Opening Connect page...';
+            break;
+        case 'give-go':
+            url = 'https://onehopechurch.com/give-go';
+            message = 'Opening Give & Go resources...';
+            break;
+        case 'lead':
+            url = 'https://onehopechurch.com/lead';
+            message = 'Opening Leadership opportunities...';
             break;
         default:
-            showNotification('Link not available', 'error');
-            return;
+            url = 'https://onehopechurch.com';
+            message = 'Opening One Hope Church website...';
     }
     
     showNotification(message, 'info');
-    
-    // Open in new tab/window
     setTimeout(() => {
         window.open(url, '_blank');
-    }, 500);
+    }, 1000);
 }
 
 // Events Functions
