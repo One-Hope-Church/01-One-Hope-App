@@ -13,7 +13,7 @@ let userProgress = {
 let assessmentState = {
     currentQuestion: 0,
     answers: {},
-    totalQuestions: 12, // Fixed: should be 12 questions total
+    totalQuestions: 11, // Fixed: should be 11 questions total
     isNewUser: false
 };
 
@@ -722,10 +722,16 @@ function showAssessmentQuestion(questionIndex) {
     // Get the main question to show
     const questionId = getQuestionId(questionIndex);
     
+    // Debug logging
+    console.log('Showing question:', questionIndex, 'with ID:', questionId);
+    
     // Show current question
     const currentQuestion = document.getElementById(`question-${questionId}`);
     if (currentQuestion) {
         currentQuestion.style.display = 'block';
+        console.log('Question found and displayed');
+    } else {
+        console.log('Question not found:', `question-${questionId}`);
     }
     
 
