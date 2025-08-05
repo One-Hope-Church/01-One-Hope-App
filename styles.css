@@ -1326,7 +1326,7 @@ body {
     padding: 2rem;
     max-width: 600px;
     margin: 0 auto;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
@@ -1362,8 +1362,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
-    overflow-y: auto;
 }
 
 .result-card {
