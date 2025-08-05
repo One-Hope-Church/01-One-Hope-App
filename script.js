@@ -9,11 +9,11 @@ let userProgress = {
     currentStep: 'baptism'
 };
 
-// Quiz State
-let quizState = {
-    currentQuestion: 1,
-    totalQuestions: 2,
+// Assessment State
+let assessmentState = {
+    currentQuestion: 0,
     answers: {},
+    totalQuestions: 11,
     isNewUser: false
 };
 
@@ -99,6 +99,13 @@ function setupFormHandlers() {
     if (signupForm) {
         signupForm.addEventListener('submit', handleSignup);
     }
+    
+    // Assessment radio buttons
+    document.addEventListener('change', function(e) {
+        if (e.target.type === 'radio' && e.target.name) {
+            selectAssessmentOption(e.target.name, e.target.value);
+        }
+    });
 }
 
 function handleLogin(e) {
@@ -162,9 +169,10 @@ function handleSignup(e) {
         
         showNotification('Account created successfully!', 'success');
         
-        // Show welcome quiz for new users
-        quizState.isNewUser = true;
-        showScreen('welcomeQuizScreen');
+        // Show spiritual assessment for new users
+        assessmentState.isNewUser = true;
+        showScreen('spiritualAssessmentScreen');
+        initializeAssessment();
     }, 1500);
 }
 
@@ -686,98 +694,105 @@ function markCurrentSectionComplete() {
     }
 }
 
-// Quiz Functions
-function selectQuizOption(questionNumber, option) {
-    // Store the answer
-    quizState.answers[`question${questionNumber}`] = option;
-    
-    // Update UI to show selected option
-    const questionElement = document.getElementById(`question-${questionNumber}`);
-    const options = questionElement.querySelectorAll('.quiz-option');
-    
-    options.forEach(opt => {
-        opt.classList.remove('selected');
+// Assessment Functions
+function initializeAssessment() {
+    assessmentState.currentQuestion = 0;
+    assessmentState.answers = {};
+    showAssessmentQuestion(0);
+    updateAssessmentProgress();
+}
+
+function showAssessmentQuestion(questionIndex) {
+    // Hide all questions
+    document.querySelectorAll('.assessment-question').forEach(q => {
+        q.style.display = 'none';
     });
     
-    // Find and select the clicked option
-    const selectedOption = Array.from(options).find(opt => 
-        opt.getAttribute('onclick').includes(option)
-    );
-    if (selectedOption) {
-        selectedOption.classList.add('selected');
+    // Show current question
+    const currentQuestion = document.getElementById(`question-${getQuestionId(questionIndex)}`);
+    if (currentQuestion) {
+        currentQuestion.style.display = 'block';
     }
     
+    // Reset radio button selections
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.checked = false;
+    });
+    
+    // Disable next button
+    const nextBtn = document.getElementById('next-assessment-btn');
+    if (nextBtn) {
+        nextBtn.disabled = true;
+    }
+}
+
+function getQuestionId(index) {
+    const questionIds = [
+        'salvation', 'baptism', 'attendance', 'bible-prayer', 'giving',
+        'small-group', 'serve-team', 'invite-pray', 'share-story', 'leadership',
+        'leadership-ready', 'mission-living'
+    ];
+    return questionIds[index];
+}
+
+function selectAssessmentOption(questionName, value) {
+    assessmentState.answers[questionName] = value;
+    
     // Enable next button
-    const nextBtn = document.getElementById('next-quiz-btn');
+    const nextBtn = document.getElementById('next-assessment-btn');
     if (nextBtn) {
         nextBtn.disabled = false;
     }
 }
 
-function nextQuizQuestion() {
-    if (quizState.currentQuestion < quizState.totalQuestions) {
-        // Hide current question
-        const currentQuestion = document.getElementById(`question-${quizState.currentQuestion}`);
-        currentQuestion.style.display = 'none';
+function nextAssessmentQuestion() {
+    if (assessmentState.currentQuestion < assessmentState.totalQuestions - 1) {
+        assessmentState.currentQuestion++;
         
-        // Show next question
-        quizState.currentQuestion++;
-        const nextQuestion = document.getElementById(`question-${quizState.currentQuestion}`);
-        nextQuestion.style.display = 'block';
-        
-        // Update progress
-        updateQuizProgress();
-        
-        // Update button text
-        const nextBtn = document.getElementById('next-quiz-btn');
-        if (nextBtn) {
-            if (quizState.currentQuestion === quizState.totalQuestions) {
-                nextBtn.textContent = 'Complete Quiz';
-            } else {
-                nextBtn.textContent = 'Next Question';
+        // Check if we need to skip conditional question
+        if (assessmentState.currentQuestion === 10) { // leadership-ready question
+            if (assessmentState.answers['leadership'] !== 'no') {
+                assessmentState.currentQuestion++; // Skip to mission-living
             }
-            nextBtn.disabled = true;
         }
         
-        // Clear previous selections
-        const options = nextQuestion.querySelectorAll('.quiz-option');
-        options.forEach(opt => opt.classList.remove('selected'));
+        showAssessmentQuestion(assessmentState.currentQuestion);
+        updateAssessmentProgress();
     } else {
-        // Quiz completed
-        completeQuiz();
+        completeAssessment();
     }
 }
 
-function updateQuizProgress() {
-    const progressFill = document.getElementById('quiz-progress-fill');
-    const progressText = document.getElementById('quiz-progress-text');
+function updateAssessmentProgress() {
+    const progressFill = document.getElementById('assessment-progress-fill');
+    const progressText = document.getElementById('assessment-progress-text');
     
     if (progressFill && progressText) {
-        const percentage = (quizState.currentQuestion / quizState.totalQuestions) * 100;
+        const percentage = (assessmentState.currentQuestion / assessmentState.totalQuestions) * 100;
         progressFill.style.width = `${percentage}%`;
-        progressText.textContent = `Question ${quizState.currentQuestion} of ${quizState.totalQuestions}`;
+        progressText.textContent = `Question ${assessmentState.currentQuestion + 1} of ${assessmentState.totalQuestions}`;
     }
 }
 
-function completeQuiz() {
-    // Store quiz results (in a real app, this would be saved to backend)
-    currentUser.quizResults = quizState.answers;
+function completeAssessment() {
+    // Store assessment results
+    currentUser.assessmentResults = assessmentState.answers;
     
-    showNotification('Quiz completed! Personalizing your experience...', 'success');
+    // Mark assessment as completed
+    assessmentState.isNewUser = false;
     
-    setTimeout(() => {
-        showScreen('mainApp');
-        quizState.isNewUser = false;
-    }, 1500);
+    // Show main app
+    showScreen('mainApp');
+    showAppScreen('homeScreen');
+    
+    showNotification('Welcome to One Hope Next Step!', 'success');
 }
 
-function skipQuiz() {
-    showNotification('Quiz skipped. You can take it later from your profile.', 'info');
-    
-    setTimeout(() => {
-        showScreen('mainApp');
-        quizState.isNewUser = false;
-    }, 1000);
+function skipAssessment() {
+    assessmentState.isNewUser = false;
+    showScreen('mainApp');
+    showAppScreen('homeScreen');
+    showNotification('Welcome to One Hope Next Step!', 'success');
 }
 
 // External Link Functions

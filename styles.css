@@ -117,7 +117,7 @@ body {
 
 /* Splash Screen */
 #splashScreen {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #00A0DF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -238,7 +238,7 @@ body {
 }
 
 .auth-links a {
-    color: #667eea;
+    color: #00A0DF;
     text-decoration: none;
     font-weight: 500;
 }
@@ -255,7 +255,7 @@ body {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #667eea;
+    color: #00A0DF;
     font-size: 1.2rem;
     cursor: pointer;
     padding: 0.5rem;
@@ -267,7 +267,7 @@ body {
 }
 
 .back-button:hover {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(0, 160, 223, 0.1);
     transform: translateY(-50%) scale(1.1);
 }
 
@@ -313,7 +313,7 @@ body {
 .user-avatar {
     width: 40px;
     height: 40px;
-    background: #667eea;
+    background: #00A0DF;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -324,7 +324,7 @@ body {
 }
 
 .user-avatar:hover {
-    background: #5a6fd8;
+    background: #0090C9;
     transform: scale(1.05);
 }
 
@@ -428,11 +428,23 @@ body {
 }
 
 .section-status.completed {
-    color: var(--success-color);
+    background: var(--success-color);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(81, 207, 102, 0.3);
+    transition: all 0.3s ease;
 }
 
 .section-status.completed i {
-    transform: rotate(45deg);
+    transform: none;
+    color: white;
+    font-weight: bold;
 }
 
 .btn-small {
@@ -462,7 +474,7 @@ body {
 }
 
 .reading-content h5 {
-    color: #667eea;
+    color: #00A0DF;
     font-weight: 600;
     margin-bottom: 0.75rem;
     font-size: 1rem;
@@ -520,7 +532,7 @@ body {
 }
 
 .bible-reading h4 {
-    color: #667eea;
+    color: #00A0DF;
     margin-bottom: 0.5rem;
     font-weight: 600;
 }
@@ -606,7 +618,7 @@ body {
     transform: translate(-50%, -50%);
     font-size: 0.8rem;
     font-weight: 600;
-    color: #1a1a1a;
+    color: white;
 }
 
 .streak {
@@ -635,13 +647,13 @@ body {
 }
 
 .progress-fill {
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: #00A0DF;
     height: 100%;
     border-radius: 10px;
 }
 
 .daily-reading h4 {
-    color: #667eea;
+    color: #00A0DF;
     margin-bottom: 1rem;
     font-weight: 600;
 }
@@ -664,6 +676,38 @@ body {
 }
 
 /* Next Steps */
+.tier-section {
+    margin-bottom: 2rem;
+}
+
+.tier-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color: white;
+}
+
+.tier-title.tier-1 {
+    background: linear-gradient(135deg, #00A0DF, #0090C9);
+}
+
+.tier-title.tier-2 {
+    background: linear-gradient(135deg, #00A0DF, #0090C9);
+}
+
+.tier-title.tier-3 {
+    background: linear-gradient(135deg, #00A0DF, #0090C9);
+}
+
+.tier-title i {
+    font-size: 1rem;
+}
+
 .steps-list {
     display: flex;
     flex-direction: column;
@@ -684,7 +728,7 @@ body {
 }
 
 .step-item.active {
-    border-color: #667eea;
+    border-color: #00A0DF;
     background: #f8f9ff;
 }
 
@@ -699,7 +743,7 @@ body {
 }
 
 .step-item.active .step-icon {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: #00A0DF;
 }
 
 .step-status {
@@ -720,7 +764,7 @@ body {
 .profile-avatar {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: #00A0DF;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -759,7 +803,7 @@ body {
 .stat-number {
     font-size: 2rem;
     font-weight: 700;
-    color: #667eea;
+    color: #00A0DF;
     margin-bottom: 0.5rem;
 }
 
@@ -798,7 +842,7 @@ body {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 160, 223, 0.4);
 }
 
 .btn-secondary {
@@ -990,6 +1034,31 @@ body {
     .reading-section:hover {
         background: #404040;
     }
+    
+    /* Fix dark mode text colors */
+    .card h3, .header h1, .step-content h4, .reading-content h5, .event-content h4 {
+        color: #fff;
+    }
+    
+    .step-content p, .event-description, .event-time, .event-location {
+        color: #ccc;
+    }
+    
+    .reading-date, .reading-content .verse-reference {
+        color: #00A0DF;
+    }
+    
+    .xp-bar span, .completion-progress span, .plan-progress span {
+        color: #fff;
+    }
+    
+    .stat-number, .stat-label {
+        color: #fff;
+    }
+    
+    .profile-card h3, .profile-card p {
+        color: #fff;
+    }
 }
 
 /* Reading Detail Screen */
@@ -1083,6 +1152,144 @@ body {
     .reading-detail-content .verse-reference-header {
         background: linear-gradient(135deg, #667eea, #764ba2);
     }
+}
+
+/* Assessment Styles */
+.assessment-container {
+    padding: 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.assessment-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.assessment-header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.assessment-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.assessment-progress {
+    margin-bottom: 2rem;
+}
+
+.assessment-progress .progress-bar {
+    background: #e1e5e9;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.assessment-progress .progress-fill {
+    background: #00A0DF;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.assessment-progress span {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.assessment-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.assessment-question {
+    display: none;
+    animation: fadeInUp 0.3s ease;
+}
+
+.assessment-question.active {
+    display: block;
+}
+
+.assessment-question h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.assessment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.assessment-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.assessment-option:hover {
+    border-color: var(--primary-color);
+    background: var(--tab-active-bg);
+}
+
+.assessment-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.assessment-option input[type="radio"]:checked + .option-text {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.assessment-option input[type="radio"]:checked ~ .assessment-option {
+    border-color: var(--primary-color);
+    background: var(--tab-active-bg);
+}
+
+.option-text {
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.assessment-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.assessment-actions .btn-secondary,
+.assessment-actions .btn-primary {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
 }
 
 /* Welcome Quiz Screen */
@@ -1319,7 +1526,7 @@ body {
 
 .event-badge {
     display: inline-block;
-    background: #667eea;
+    background: #00A0DF;
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
@@ -1345,7 +1552,7 @@ body {
 }
 
 .event-time i, .event-location i {
-    color: #667eea;
+    color: #00A0DF;
     width: 16px;
 }
 
@@ -1378,7 +1585,7 @@ body {
     
     .event-item.featured {
         background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-        border-color: #667eea;
+        border-color: #00A0DF;
     }
     
     .filter-btn {
@@ -1406,7 +1613,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    background: #00A0DF;
     border: none;
     border-radius: 12px;
     color: white;
@@ -1462,7 +1669,7 @@ body {
 /* Dark mode support for new elements */
 @media (prefers-color-scheme: dark) {
     .bible-button {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: #00A0DF;
     }
     
     .quick-action-btn {

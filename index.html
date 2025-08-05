@@ -13,8 +13,7 @@
     <div id="splashScreen" class="screen active">
         <div class="splash-content">
             <div class="logo">
-                <i class="fas fa-cross"></i>
-                <h1>One Hope Next Step</h1>
+                <img src="images/01_OneHopePrimary_Light.png" alt="One Hope" style="max-width: 200px; height: auto;">
             </div>
             <p class="tagline">Grow Your Faith, One Step at a Time</p>
             <div class="loading-dots">
@@ -77,7 +76,7 @@
                     <label for="referralCode">Referral Code (Optional)</label>
                     <input type="text" id="referralCode">
                 </div>
-                <button type="submit" class="btn-primary">Create Account</button>
+                <button type="submit" class="btn-primary">Next: Spiritual Assessment</button>
             </form>
             <div class="auth-links">
                 <p>Already have an account? <a href="#" onclick="showScreen('loginScreen')">Sign in</a></p>
@@ -85,8 +84,259 @@
         </div>
     </div>
 
-    <!-- Welcome Quiz Screen -->
-    <div id="welcomeQuizScreen" class="screen">
+    <!-- Spiritual Steps Assessment Screen -->
+    <div id="spiritualAssessmentScreen" class="screen">
+        <div class="assessment-container">
+            <div class="assessment-header">
+                <button class="back-button" onclick="showScreen('signupScreen')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Spiritual Steps Assessment</h1>
+                <p>Help us understand where you are in your spiritual journey</p>
+            </div>
+            
+            <div class="assessment-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="assessment-progress-fill" style="width: 0%"></div>
+                </div>
+                <span id="assessment-progress-text">Question 1 of 11</span>
+            </div>
+
+            <form class="assessment-form" id="spiritualAssessmentForm">
+                <!-- Question 1: Salvation Status -->
+                <div class="assessment-question" id="question-salvation">
+                    <h3>Have you made Jesus the Lord of your life?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="salvation_status" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="salvation_status" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 2: Baptism Status -->
+                <div class="assessment-question" id="question-baptism" style="display: none;">
+                    <h3>Have you been water baptized?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="baptism_status" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="baptism_status" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 3: Sunday Attendance -->
+                <div class="assessment-question" id="question-attendance" style="display: none;">
+                    <h3>How often do you attend Sunday services?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="sunday_attendance" value="1" required>
+                            <span class="option-text">Rarely</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="sunday_attendance" value="2" required>
+                            <span class="option-text">Sometimes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="sunday_attendance" value="3" required>
+                            <span class="option-text">Often</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="sunday_attendance" value="4" required>
+                            <span class="option-text">Always</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 4: Bible & Prayer -->
+                <div class="assessment-question" id="question-bible-prayer" style="display: none;">
+                    <h3>I spend regular time reading the Bible and praying.</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="bible_prayer" value="1" required>
+                            <span class="option-text">Rarely</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="bible_prayer" value="2" required>
+                            <span class="option-text">Sometimes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="bible_prayer" value="3" required>
+                            <span class="option-text">Often</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="bible_prayer" value="4" required>
+                            <span class="option-text">Always</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 5: Giving -->
+                <div class="assessment-question" id="question-giving" style="display: none;">
+                    <h3>I give financially to One Hope consistently.</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="giving_status" value="1" required>
+                            <span class="option-text">Rarely</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="giving_status" value="2" required>
+                            <span class="option-text">Sometimes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="giving_status" value="3" required>
+                            <span class="option-text">Often</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="giving_status" value="4" required>
+                            <span class="option-text">Always</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 6: Small Group -->
+                <div class="assessment-question" id="question-small-group" style="display: none;">
+                    <h3>Are you currently in a Small Group?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="small_group" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="small_group" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 7: Serve Team -->
+                <div class="assessment-question" id="question-serve-team" style="display: none;">
+                    <h3>Are you serving on a Serve Team?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="serve_team" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="serve_team" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 8: Invite & Pray -->
+                <div class="assessment-question" id="question-invite-pray" style="display: none;">
+                    <h3>I regularly pray for and invite people far from God.</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="invite_pray" value="1" required>
+                            <span class="option-text">Rarely</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="invite_pray" value="2" required>
+                            <span class="option-text">Sometimes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="invite_pray" value="3" required>
+                            <span class="option-text">Often</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="invite_pray" value="4" required>
+                            <span class="option-text">Always</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 9: Share Story -->
+                <div class="assessment-question" id="question-share-story" style="display: none;">
+                    <h3>Have you shared your faith story with someone in the past 6 months?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="share_story" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="share_story" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 10: Leadership -->
+                <div class="assessment-question" id="question-leadership" style="display: none;">
+                    <h3>Have you led a group or Serve Team—or are you currently leading one?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="leadership" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="leadership" value="no" required>
+                            <span class="option-text">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 11: Leadership Ready (Conditional) -->
+                <div class="assessment-question" id="question-leadership-ready" style="display: none;">
+                    <h3>Are you ready to lead a group or Serve Team?</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="leadership_ready" value="yes" required>
+                            <span class="option-text">Yes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="leadership_ready" value="not_yet" required>
+                            <span class="option-text">Not Yet</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Question 12: Mission Living -->
+                <div class="assessment-question" id="question-mission-living" style="display: none;">
+                    <h3>I look for ways to live on mission daily.</h3>
+                    <div class="assessment-options">
+                        <label class="assessment-option">
+                            <input type="radio" name="mission_living" value="1" required>
+                            <span class="option-text">Rarely</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="mission_living" value="2" required>
+                            <span class="option-text">Sometimes</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="mission_living" value="3" required>
+                            <span class="option-text">Often</span>
+                        </label>
+                        <label class="assessment-option">
+                            <input type="radio" name="mission_living" value="4" required>
+                            <span class="option-text">Always</span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+
+            <div class="assessment-actions">
+                <button class="btn-secondary" onclick="skipAssessment()">
+                    <i class="fas fa-clock"></i> Skip for now
+                </button>
+                <button class="btn-primary" onclick="nextAssessmentQuestion()" id="next-assessment-btn" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Quiz Screen (Replaced by Spiritual Assessment) -->
+    <!-- <div id="welcomeQuizScreen" class="screen"> -->
         <div class="quiz-container">
             <div class="quiz-header">
                 <h1>Welcome to One Hope!</h1>
@@ -97,52 +347,211 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="quiz-progress-fill" style="width: 0%"></div>
                 </div>
-                <span id="quiz-progress-text">Question 1 of 2</span>
+                <span id="quiz-progress-text">Question 1 of 12</span>
             </div>
 
             <div class="quiz-content">
                 <!-- Question 1 -->
                 <div class="quiz-question" id="question-1">
-                    <h3>What's your current spiritual journey stage?</h3>
+                    <h3>Have you made Jesus the Lord of your life? *</h3>
                     <div class="quiz-options">
-                        <button class="quiz-option" onclick="selectQuizOption(1, 'exploring')">
-                            <i class="fas fa-search"></i>
-                            <span>Exploring faith</span>
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
                         </button>
-                        <button class="quiz-option" onclick="selectQuizOption(1, 'believer')">
-                            <i class="fas fa-heart"></i>
-                            <span>New believer</span>
-                        </button>
-                        <button class="quiz-option" onclick="selectQuizOption(1, 'growing')">
-                            <i class="fas fa-seedling"></i>
-                            <span>Growing in faith</span>
-                        </button>
-                        <button class="quiz-option" onclick="selectQuizOption(1, 'mature')">
-                            <i class="fas fa-tree"></i>
-                            <span>Mature believer</span>
+                        <button class="quiz-option" onclick="selectQuizOption(1, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Question 2 -->
                 <div class="quiz-question" id="question-2" style="display: none;">
-                    <h3>What area would you like to focus on most?</h3>
+                    <h3>Have you been water baptized? *</h3>
                     <div class="quiz-options">
-                        <button class="quiz-option" onclick="selectQuizOption(2, 'bible')">
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(2, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="quiz-question" id="question-3" style="display: none;">
+                    <h3>How often do you attend Sunday services? *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(3, 'rarely')">
+                            <i class="fas fa-calendar-times"></i>
+                            <span>Rarely</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(3, 'sometimes')">
+                            <i class="fas fa-calendar-minus"></i>
+                            <span>Sometimes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(3, 'often')">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Often</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(3, 'always')">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Always</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="quiz-question" id="question-4" style="display: none;">
+                    <h3>I spend regular time reading the Bible and praying. *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(4, 'rarely')">
+                            <i class="fas fa-book"></i>
+                            <span>Rarely</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(4, 'sometimes')">
                             <i class="fas fa-book-open"></i>
-                            <span>Bible study & reading</span>
+                            <span>Sometimes</span>
                         </button>
-                        <button class="quiz-option" onclick="selectQuizOption(2, 'prayer')">
+                        <button class="quiz-option" onclick="selectQuizOption(4, 'often')">
                             <i class="fas fa-pray"></i>
-                            <span>Prayer life</span>
+                            <span>Often</span>
                         </button>
-                        <button class="quiz-option" onclick="selectQuizOption(2, 'community')">
-                            <i class="fas fa-users"></i>
-                            <span>Community & fellowship</span>
+                        <button class="quiz-option" onclick="selectQuizOption(4, 'always')">
+                            <i class="fas fa-heart"></i>
+                            <span>Always</span>
                         </button>
-                        <button class="quiz-option" onclick="selectQuizOption(2, 'service')">
-                            <i class="fas fa-hands-helping"></i>
-                            <span>Serving others</span>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="quiz-question" id="question-5" style="display: none;">
+                    <h3>I consistently give financially to One Hope. *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(5, 'rarely')">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Rarely</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(5, 'sometimes')">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Sometimes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(5, 'often')">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Often</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(5, 'always')">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Always</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 6 -->
+                <div class="quiz-question" id="question-6" style="display: none;">
+                    <h3>Are you currently in a Small Group? *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(6, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(6, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 7 -->
+                <div class="quiz-question" id="question-7" style="display: none;">
+                    <h3>Are you serving on a Serve Team? *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(7, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(7, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 8 -->
+                <div class="quiz-question" id="question-8" style="display: none;">
+                    <h3>I regularly pray for and invite people far from God. *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(8, 'rarely')">
+                            <i class="fas fa-pray"></i>
+                            <span>Rarely</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(8, 'sometimes')">
+                            <i class="fas fa-pray"></i>
+                            <span>Sometimes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(8, 'often')">
+                            <i class="fas fa-pray"></i>
+                            <span>Often</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(8, 'always')">
+                            <i class="fas fa-pray"></i>
+                            <span>Always</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 9 -->
+                <div class="quiz-question" id="question-9" style="display: none;">
+                    <h3>Have you shared your faith story with someone in the past 6 months?</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(9, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(9, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 10 -->
+                <div class="quiz-question" id="question-10" style="display: none;">
+                    <h3>Have you led a group or serve team? *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(10, 'yes')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Yes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(10, 'no')">
+                            <i class="fas fa-times-circle"></i>
+                            <span>No</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 11 -->
+                <div class="quiz-question" id="question-11" style="display: none;">
+                    <h3>I look for ways to make a difference daily. *</h3>
+                    <div class="quiz-options">
+                        <button class="quiz-option" onclick="selectQuizOption(11, 'rarely')">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Rarely</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(11, 'sometimes')">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Sometimes</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(11, 'often')">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Often</span>
+                        </button>
+                        <button class="quiz-option" onclick="selectQuizOption(11, 'always')">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Always</span>
                         </button>
                     </div>
                 </div>
@@ -157,7 +566,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    <!-- </div> -->
 
     <!-- Main App Container -->
     <div id="mainApp" class="screen">
@@ -228,6 +637,10 @@
                         <button class="btn-secondary quick-action-btn" onclick="openExternalLink('give')">
                             <i class="fas fa-heart"></i>
                             Give
+                        </button>
+                        <button class="btn-secondary quick-action-btn" onclick="openExternalLink('watch-message')">
+                            <i class="fas fa-play-circle"></i>
+                            Watch a Message
                         </button>
                     </div>
                 </div>
@@ -375,57 +788,173 @@
             </div>
 
             <div class="content">
-                <div class="steps-list">
-                    <div class="step-item completed">
-                        <div class="step-icon">
-                            <i class="fas fa-heart"></i>
+                <!-- Tier 1 - Start -->
+                <div class="tier-section">
+                    <h3 class="tier-title tier-1">
+                        <i class="fas fa-seedling"></i>
+                        Start
+                    </h3>
+                    <div class="steps-list">
+                        <div class="step-item completed">
+                            <div class="step-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>1. Make Jesus Lord of Your Life</h4>
+                                <p>Accept Jesus Christ as your Lord and Savior</p>
+                                <div class="step-status">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Completed</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="step-content">
-                            <h4>Faith in Jesus</h4>
-                            <p>Accept Jesus Christ as your Lord and Savior</p>
-                            <div class="step-status">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Completed</span>
+
+                        <div class="step-item active">
+                            <div class="step-icon">
+                                <i class="fas fa-water"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>2. Get Water Baptized</h4>
+                                <p>Publicly declare your faith through baptism</p>
+                                <button class="btn-primary" onclick="completeStep('baptism')">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-church"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>3. Attend Sunday Services Regularly</h4>
+                                <p>Join us weekly for worship and teaching</p>
+                                <button class="btn-secondary" onclick="completeStep('attendance')">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>4. Start Daily Bible Reading & Prayer</h4>
+                                <p>Develop a daily spiritual discipline</p>
+                                <button class="btn-secondary" onclick="completeStep('bible-prayer')">
+                                    Mark as Completed
+                                </button>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="step-item active">
-                        <div class="step-icon">
-                            <i class="fas fa-water"></i>
+                <!-- Tier 2 - Grow -->
+                <div class="tier-section">
+                    <h3 class="tier-title tier-2">
+                        <i class="fas fa-leaf"></i>
+                        Grow
+                    </h3>
+                    <div class="steps-list">
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>5. Give Consistently and Generously</h4>
+                                <p>Support the ministry through regular giving</p>
+                                <button class="btn-secondary" onclick="completeStep('giving')">
+                                    Mark as Completed
+                                </button>
+                            </div>
                         </div>
-                        <div class="step-content">
-                            <h4>Baptism</h4>
-                            <p>Publicly declare your faith through baptism</p>
-                            <button class="btn-primary" onclick="completeStep('baptism')">
-                                Mark as Completed
-                            </button>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>6. Join a Small Group</h4>
+                                <p>Connect with other believers in community</p>
+                                <button class="btn-secondary" onclick="completeStep('small-group')">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>7. Serve on the Serve Team</h4>
+                                <p>Use your gifts to serve others</p>
+                                <button class="btn-secondary" onclick="completeStep('serve-team')">
+                                    Mark as Completed
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="step-item">
-                        <div class="step-icon">
-                            <i class="fas fa-users"></i>
+                <!-- Tier 3 - Lead & Multiply -->
+                <div class="tier-section">
+                    <h3 class="tier-title tier-3">
+                        <i class="fas fa-fire"></i>
+                        Lead & Multiply
+                    </h3>
+                    <div class="steps-list">
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-pray"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>8. Invite & Pray for People Far from God</h4>
+                                <p>Reach out to those who need Jesus</p>
+                                <button class="btn-secondary" onclick="completeStep('invite-pray')">
+                                    Mark as Completed
+                                </button>
+                            </div>
                         </div>
-                        <div class="step-content">
-                            <h4>Join a Group</h4>
-                            <p>Connect with other believers in community</p>
-                            <button class="btn-secondary" disabled>
-                                Coming Soon
-                            </button>
-                        </div>
-                    </div>
 
-                    <div class="step-item">
-                        <div class="step-icon">
-                            <i class="fas fa-hands-helping"></i>
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-comment"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>9. Share Your Story</h4>
+                                <p>Tell others about what God has done in your life</p>
+                                <button class="btn-secondary" onclick="completeStep('share-story')">
+                                    Mark as Completed
+                                </button>
+                            </div>
                         </div>
-                        <div class="step-content">
-                            <h4>Start Serving</h4>
-                            <p>Use your gifts to serve others</p>
-                            <button class="btn-secondary" disabled>
-                                Coming Soon
-                            </button>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>10. Lead a Small Group or Serve Team Area</h4>
+                                <p>Take on leadership responsibilities</p>
+                                <button class="btn-secondary" onclick="completeStep('lead-group')">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-icon">
+                                <i class="fas fa-compass"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>11. Live on Mission Daily</h4>
+                                <p>Make a difference in your daily life</p>
+                                <button class="btn-secondary" onclick="completeStep('live-mission')">
+                                    Mark as Completed
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -615,8 +1144,8 @@
                 <span>Bible</span>
             </button>
             <button class="nav-item" onclick="showAppScreen('nextStepsScreen')">
-                <i class="fas fa-target"></i>
-                <span>Next Step</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>Steps</span>
             </button>
             <button class="nav-item" onclick="showAppScreen('eventsScreen')">
                 <i class="fas fa-calendar-alt"></i>
