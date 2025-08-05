@@ -1653,17 +1653,19 @@ body {
 }
 
 .filter-btn.active {
-    background: #667eea;
-    border-color: #667eea;
+    background: #00A0DF;
+    border-color: #00A0DF;
     color: white;
 }
 
 .filter-btn:hover {
     background: #e9ecef;
+    border-color: #00A0DF;
+    color: #00A0DF;
 }
 
 .filter-btn.active:hover {
-    background: #5a6fd8;
+    background: #0090C9;
 }
 
 .events-list {
@@ -1790,6 +1792,8 @@ body {
     
     .filter-btn:hover {
         background: #404040;
+        border-color: #00A0DF;
+        color: #00A0DF;
     }
 }
 
