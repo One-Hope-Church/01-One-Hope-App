@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup navigation
     setupNavigation();
+    
+    // Initialize homepage next step
+    updateHomepageNextStep();
 });
 
 // Screen Management
@@ -328,6 +331,9 @@ function updateProgressUI() {
     
     // Update profile stats
     updateStepsCompletedCount();
+    
+    // Update homepage next step
+    updateHomepageNextStep();
 }
 
 function updateStepsCompletedCount() {
@@ -336,6 +342,53 @@ function updateStepsCompletedCount() {
         statNumbers[0].textContent = userProgress.streak;
         statNumbers[1].textContent = userProgress.completedSteps.length;
     }
+}
+
+function updateHomepageNextStep() {
+    const nextStepContainer = document.getElementById('homepage-next-step');
+    if (!nextStepContainer) return;
+    
+    // Define the step progression
+    const stepProgression = [
+        { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross' },
+        { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water' },
+        { id: 'attendance', title: 'Attend Regularly', description: 'Make Sunday church a weekly rhythm', icon: 'fas fa-church' },
+        { id: 'bible-prayer', title: 'Daily Bible & Prayer', description: 'Build a habit of Bible reading and prayer', icon: 'fas fa-book-open' },
+        { id: 'giving', title: 'Give Consistently', description: 'Learn to give generously and consistently', icon: 'fas fa-heart' },
+        { id: 'small-group', title: 'Join a Small Group', description: 'Find people to grow with', icon: 'fas fa-users' },
+        { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping' },
+        { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray' },
+        { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment' },
+        { id: 'leadership', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown' },
+        { id: 'mission-living', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass' }
+    ];
+    
+    // Find the next incomplete step
+    let nextStep = null;
+    for (const step of stepProgression) {
+        if (!userProgress.completedSteps.includes(step.id)) {
+            nextStep = step;
+            break;
+        }
+    }
+    
+    // If all steps are completed, show a completion message
+    if (!nextStep) {
+        nextStep = {
+            title: 'All Steps Complete!',
+            description: 'You\'ve completed all the spiritual growth steps',
+            icon: 'fas fa-trophy'
+        };
+    }
+    
+    // Update the homepage next step display
+    const stepIcon = nextStepContainer.querySelector('.step-icon i');
+    const stepTitle = nextStepContainer.querySelector('.step-content h4');
+    const stepDescription = nextStepContainer.querySelector('.step-content p');
+    
+    if (stepIcon) stepIcon.className = nextStep.icon;
+    if (stepTitle) stepTitle.textContent = nextStep.title;
+    if (stepDescription) stepDescription.textContent = nextStep.description;
 }
 
 // Next Steps Functions
