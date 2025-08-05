@@ -596,30 +596,7 @@ body {
     gap: 1rem;
 }
 
-.xp-bar {
-    background: #e1e5e9;
-    border-radius: 10px;
-    height: 20px;
-    position: relative;
-    overflow: hidden;
-}
 
-.xp-fill {
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
-    height: 100%;
-    border-radius: 10px;
-    transition: width var(--transition-duration) var(--transition-type);
-}
-
-.xp-bar span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: white;
-}
 
 .streak {
     display: flex;
@@ -1048,7 +1025,7 @@ body {
         color: #00A0DF;
     }
     
-    .xp-bar span, .completion-progress span, .plan-progress span {
+    .completion-progress span, .plan-progress span {
         color: #fff;
     }
     

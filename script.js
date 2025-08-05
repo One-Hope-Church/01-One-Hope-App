@@ -1,8 +1,6 @@
 // App State Management
 let currentUser = null;
 let userProgress = {
-    level: 3,
-    xp: 650,
     streak: 7,
     completedSteps: ['faith'],
     bibleReadings: [],
@@ -295,13 +293,12 @@ function markAllComplete() {
     // Add to completed readings
     userProgress.bibleReadings.push(today);
     userProgress.streak += 1;
-    userProgress.xp += 100; // More XP for completing all sections
     
     // Update UI
     updateProgressUI();
     
     // Show success message
-    showNotification('Excellent! Daily reading complete! +100 XP', 'success');
+    showNotification('Excellent! Daily reading complete!', 'success');
     
     // Update mark all buttons on both pages
     const markAllBtnHome = document.getElementById('mark-all-btn');
@@ -323,16 +320,6 @@ function markBibleComplete() {
 }
 
 function updateProgressUI() {
-    // Update XP bar
-    const xpFill = document.querySelector('.xp-fill');
-    const xpText = document.querySelector('.xp-bar span');
-    
-    if (xpFill && xpText) {
-        const percentage = (userProgress.xp % 1000) / 10;
-        xpFill.style.width = `${percentage}%`;
-        xpText.textContent = `Level ${userProgress.level} - ${userProgress.xp} XP`;
-    }
-    
     // Update streak
     const streakElements = document.querySelectorAll('.streak span, .streak-badge span');
     streakElements.forEach(element => {
@@ -345,11 +332,9 @@ function updateProgressUI() {
 
 function updateStepsCompletedCount() {
     const statNumbers = document.querySelectorAll('.stat-number');
-    if (statNumbers.length >= 4) {
-        statNumbers[0].textContent = userProgress.level;
-        statNumbers[1].textContent = userProgress.xp;
-        statNumbers[2].textContent = userProgress.streak;
-        statNumbers[3].textContent = userProgress.completedSteps.length;
+    if (statNumbers.length >= 2) {
+        statNumbers[0].textContent = userProgress.streak;
+        statNumbers[1].textContent = userProgress.completedSteps.length;
     }
 }
 
@@ -362,7 +347,6 @@ function completeStep(stepId) {
     
     // Add to completed steps
     userProgress.completedSteps.push(stepId);
-    userProgress.xp += 100;
     
     // Update UI
     updateProgressUI();
@@ -390,7 +374,7 @@ function completeStep(stepId) {
     // Update steps completed count
     updateStepsCompletedCount();
     
-    showNotification('Step completed! +100 XP', 'success');
+    showNotification('Step completed!', 'success');
 }
 
 // Navigation Setup
@@ -447,8 +431,6 @@ function signOut() {
     if (confirm('Are you sure you want to sign out?')) {
         currentUser = null;
         userProgress = {
-            level: 3,
-            xp: 650,
             streak: 7,
             completedSteps: ['faith'],
             bibleReadings: [],
