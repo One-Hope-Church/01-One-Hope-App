@@ -13,7 +13,7 @@ let userProgress = {
 let assessmentState = {
     currentQuestion: 0,
     answers: {},
-    totalQuestions: 13, // Updated to include conditional questions
+    totalQuestions: 12, // Fixed: should be 12 questions total
     isNewUser: false
 };
 
@@ -719,21 +719,8 @@ function showAssessmentQuestion(questionIndex) {
         q.style.display = 'none';
     });
     
-    // Get the actual question to show (skip conditional questions if not applicable)
-    let actualQuestionIndex = questionIndex;
-    let questionId = getQuestionId(actualQuestionIndex);
-    
-    // Skip salvation-date question if salvation status is not 'yes'
-    if (questionId === 'salvation-date' && assessmentState.answers['salvation_status'] !== 'yes') {
-        actualQuestionIndex++;
-        questionId = getQuestionId(actualQuestionIndex);
-    }
-    
-    // Skip leadership-ready question if leadership is not 'no'
-    if (questionId === 'leadership-ready' && assessmentState.answers['leadership'] !== 'no') {
-        actualQuestionIndex++;
-        questionId = getQuestionId(actualQuestionIndex);
-    }
+    // Get the main question to show
+    const questionId = getQuestionId(questionIndex);
     
     // Show current question
     const currentQuestion = document.getElementById(`question-${questionId}`);
@@ -787,9 +774,9 @@ function handleConditionalQuestions() {
 
 function getQuestionId(index) {
     const questionIds = [
-        'salvation', 'salvation-date', 'baptism', 'attendance', 'bible-prayer', 'giving',
+        'salvation', 'baptism', 'attendance', 'bible-prayer', 'giving',
         'small-group', 'serve-team', 'invite-pray', 'share-story', 'leadership',
-        'leadership-ready', 'mission-living'
+        'mission-living'
     ];
     return questionIds[index];
 }
