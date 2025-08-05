@@ -1330,6 +1330,8 @@ body {
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .results-header {
@@ -1360,6 +1362,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .result-card {
@@ -1452,6 +1456,7 @@ body {
 .results-actions {
     text-align: center;
     margin-top: 2rem;
+    margin-bottom: 2rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
 }
