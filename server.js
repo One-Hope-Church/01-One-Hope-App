@@ -171,7 +171,12 @@ app.get('/api/signout', (req, res) => {
 });
 
 app.get('/api/events', async (req, res) => {
+    console.log('🔍 Events API called');
+    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
+    console.log('🔍 Session ID:', req.sessionID);
+    
     if (!req.session.user) {
+        console.log('❌ No user session found');
         return res.status(401).json({ error: 'Not authenticated' });
     }
 

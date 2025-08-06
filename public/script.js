@@ -1767,9 +1767,15 @@ let currentEvents = [];
 async function fetchEvents() {
     try {
         console.log('📅 Fetching events from Planning Center...');
+        console.log('🔗 API URL:', `${API_BASE}/api/events`);
         const response = await fetch(`${API_BASE}/api/events`);
         
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response ok:', response.ok);
+        
         if (!response.ok) {
+            const errorText = await response.text();
+            console.log('❌ Error response:', errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
