@@ -22,6 +22,7 @@ const API_BASE = window.location.origin;
 let userStreak = 0;
 let totalReadings = 0;
 let lastReadingDate = null;
+let userSteps = []; // Store user steps from Supabase
 
 
 
@@ -73,9 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update UI with restored user data
                 updateUserInfo();
                 
-                // Load user streak data
-                fetchUserStreak().then(() => {
-                    // Show main app after streak is loaded
+                // Load user streak and steps data
+                Promise.all([
+                    fetchUserStreak(),
+                    fetchUserSteps()
+                ]).then(() => {
+                    // Show main app after data is loaded
                     showScreen('mainApp');
                 });
             } catch (error) {
@@ -279,6 +283,22 @@ function showAppScreen(screenId) {
     } else if (screenId === 'bibleScreen') {
         const today = new Date().toISOString().split('T')[0];
         loadDailyReadingStatus(today);
+    } else if (screenId === 'nextStepsScreen') {
+        // Check if user needs to take assessment
+        if (needsAssessment()) {
+            console.log('🎯 User needs assessment, showing assessment screen');
+            showScreen('spiritualAssessmentScreen');
+            initializeAssessment();
+        } else {
+            console.log('✅ User has steps data, showing steps screen');
+            // Make sure assessment screen is hidden
+            const assessmentScreen = document.getElementById('spiritualAssessmentScreen');
+            if (assessmentScreen) {
+                assessmentScreen.classList.remove('active');
+            }
+            // Update step items visual state when steps screen is shown
+            updateStepItemsVisualState();
+        }
     }
 }
 
@@ -420,11 +440,14 @@ async function signInUser(userProfile) {
     // Update UI with user info
     updateUserInfo();
     
-    // Load user streak data BEFORE showing the main app
-    console.log('🔄 Loading user streak data...');
-    await fetchUserStreak();
+    // Load user streak and steps data BEFORE showing the main app
+    console.log('🔄 Loading user data...');
+    await Promise.all([
+        fetchUserStreak(),
+        fetchUserSteps()
+    ]);
     
-    // Navigate to main app AFTER streak is loaded
+    // Navigate to main app AFTER data is loaded
     showScreen('mainApp');
     showAppScreen('homeScreen');
     
@@ -433,26 +456,34 @@ async function signInUser(userProfile) {
 
 // Form Handlers
 function setupFormHandlers() {
-    // Remove old form handlers since we're using Planning Center only
-    // The old login/signup forms have been replaced with Planning Center buttons
+    // Assessment radio buttons and date inputs
+    document.addEventListener('change', function(e) {
+        if (e.target.type === 'radio' && e.target.name) {
+            selectAssessmentOption(e.target.name, e.target.value);
+        }
+        
+        // Handle date input changes
+        if (e.target.type === 'date' && e.target.name) {
+            assessmentState.answers[e.target.name] = e.target.value;
+            
+            // Enable next button if date is selected
+            const nextBtn = document.getElementById('next-assessment-btn');
+            if (nextBtn && e.target.value) {
+                nextBtn.disabled = false;
+            }
+        }
+    });
     
-    // Assessment radio buttons and date inputs (DISABLED - Not in use)
-    // document.addEventListener('change', function(e) {
-    //     if (e.target.type === 'radio' && e.target.name) {
-    //         selectAssessmentOption(e.target.name, e.target.value);
-    //     }
-    //     
-    //     // Handle date input changes
-    //     if (e.target.type === 'date' && e.target.name) {
-    //         assessmentState.answers[e.target.name] = e.target.value;
-    //         
-    //         // Enable next button if date is selected
-    //         const nextBtn = document.getElementById('next-assessment-btn');
-    //         if (nextBtn && e.target.value) {
-    //             nextBtn.disabled = false;
-    //         }
-    //     }
-    // });
+    // Handle form submission - prevent default and use our function
+    document.addEventListener('submit', function(e) {
+        if (e.target.id === 'spiritualAssessmentForm') {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🛑 Preventing form submission, calling completeAssessment()');
+            completeAssessment();
+            return false;
+        }
+    });
 }
 
 // Planning Center authentication replaces the old login/signup functions
@@ -1003,13 +1034,93 @@ function updateProgressUI() {
     
     // Update homepage next step
     updateHomepageNextStep();
+    
+    // Update step items visual state
+    updateStepItemsVisualState();
+}
+
+function updateStepItemsVisualState() {
+    // Define the step progression to match the HTML order
+    const stepProgression = [
+        'faith',
+        'baptism', 
+        'attendance',
+        'bible-prayer',
+        'giving',
+        'small-group',
+        'serve-team',
+        'invite-pray',
+        'share-story',
+        'leadership',
+        'mission-living'
+    ];
+    
+    // Get all step items
+    const stepItems = document.querySelectorAll('.step-item');
+    
+    // Update each step item based on completion status
+    stepItems.forEach((stepItem, index) => {
+        if (index < stepProgression.length) {
+            const stepId = stepProgression[index];
+            const isCompleted = userProgress.completedSteps.includes(stepId);
+            
+            // Remove all existing classes
+            stepItem.classList.remove('completed', 'active');
+            
+            if (isCompleted) {
+                // Mark as completed
+                stepItem.classList.add('completed');
+                
+                // Update the button to show completed state
+                const button = stepItem.querySelector('button');
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                    button.classList.remove('btn-primary', 'btn-secondary');
+                    button.classList.add('btn-secondary');
+                    button.disabled = true;
+                }
+                
+                // Add or update status indicator
+                let statusDiv = stepItem.querySelector('.step-status');
+                if (!statusDiv) {
+                    statusDiv = document.createElement('div');
+                    statusDiv.className = 'step-status';
+                    stepItem.querySelector('.step-content').appendChild(statusDiv);
+                }
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
+                
+            } else {
+                // Check if this is the next step to complete
+                const isNextStep = !stepProgression.slice(0, index).some(prevStepId => 
+                    userProgress.completedSteps.includes(prevStepId)
+                );
+                
+                if (isNextStep) {
+                    stepItem.classList.add('active');
+                    
+                    // Update button to primary style
+                    const button = stepItem.querySelector('button');
+                    if (button) {
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-primary');
+                    }
+                }
+                
+                // Remove status indicator if it exists
+                const statusDiv = stepItem.querySelector('.step-status');
+                if (statusDiv) {
+                    statusDiv.remove();
+                }
+            }
+        }
+    });
 }
 
 function updateStepsCompletedCount() {
     const statNumbers = document.querySelectorAll('.stat-number');
     if (statNumbers.length >= 2) {
         statNumbers[0].textContent = userStreak;
-        statNumbers[1].textContent = totalReadings;
+        statNumbers[1].textContent = userProgress.completedSteps.length;
     }
 }
 
@@ -1064,42 +1175,72 @@ function updateHomepageNextStep() {
 }
 
 // Next Steps Functions
-function completeStep(stepId) {
+async function completeStep(stepId) {
     if (userProgress.completedSteps.includes(stepId)) {
         showNotification('Step already completed!', 'info');
         return;
     }
     
-    // Add to completed steps
-    userProgress.completedSteps.push(stepId);
-    
-    // Update UI
-    updateProgressUI();
-    
-    // Update step item
-    const stepItem = document.querySelector(`[onclick="completeStep('${stepId}')"]`).closest('.step-item');
-    if (stepItem) {
-        stepItem.classList.remove('active');
-        stepItem.classList.add('completed');
-        
-        const button = stepItem.querySelector('button');
-        button.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-secondary');
-        button.disabled = true;
-        
-        // Add status indicator
-        const stepContent = stepItem.querySelector('.step-content');
-        const statusDiv = document.createElement('div');
-        statusDiv.className = 'step-status';
-        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
-        stepContent.appendChild(statusDiv);
+    try {
+        // Save to Supabase
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/user/steps/complete`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({
+                stepId: stepId,
+                notes: `Completed on ${new Date().toLocaleDateString()}`
+            })
+        });
+
+        if (response.ok) {
+            // Add to completed steps
+            userProgress.completedSteps.push(stepId);
+            
+            // Update UI
+            updateProgressUI();
+            
+            // Update step item
+            const stepItem = document.querySelector(`[onclick="completeStep('${stepId}')"]`).closest('.step-item');
+            if (stepItem) {
+                stepItem.classList.remove('active');
+                stepItem.classList.add('completed');
+                
+                const button = stepItem.querySelector('button');
+                button.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-secondary');
+                button.disabled = true;
+                
+                // Add status indicator
+                const stepContent = stepItem.querySelector('.step-content');
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'step-status';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
+                stepContent.appendChild(statusDiv);
+            }
+            
+            // Update steps completed count
+            updateStepsCompletedCount();
+            
+            showNotification('Step completed and saved!', 'success');
+        } else {
+            console.error('❌ Failed to save step completion');
+            showNotification('Failed to save step completion. Please try again.', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error completing step:', error);
+        showNotification('Failed to save step completion. Please try again.', 'error');
     }
-    
-    // Update steps completed count
-    updateStepsCompletedCount();
-    
-    showNotification('Step completed!', 'success');
 }
 
 // Open the current step's link
@@ -1596,15 +1737,36 @@ function markCurrentSectionComplete() {
 
 // Assessment Functions (DISABLED - Not in use)
 function initializeAssessment() {
-    // Assessment disabled - not in use
-    console.log('Assessment disabled - not in use');
-    return;
+    console.log('🔄 Initializing spiritual assessment...');
+    assessmentState.currentQuestion = 0;
+    assessmentState.answers = {};
+    assessmentState.isNewUser = true;
+    
+    // Show first question
+    showAssessmentQuestion(0);
+    updateAssessmentProgress();
 }
 
 function showAssessmentQuestion(questionIndex) {
-    // Assessment disabled - not in use
-    console.log('Assessment disabled - not in use');
-    return;
+    console.log('📝 Showing assessment question:', questionIndex);
+    
+    // Hide all questions
+    document.querySelectorAll('.assessment-question').forEach(q => {
+        q.style.display = 'none';
+    });
+    
+    // Show the current question
+    const currentQuestion = document.getElementById(`question-${getQuestionId(questionIndex)}`);
+    if (currentQuestion) {
+        currentQuestion.style.display = 'block';
+    }
+    
+    // Update button text
+    const nextBtn = document.getElementById('next-assessment-btn');
+    if (nextBtn) {
+        nextBtn.textContent = questionIndex === assessmentState.totalQuestions - 1 ? 'Complete Assessment' : 'Next Question';
+        nextBtn.disabled = true;
+    }
 }
 
 
@@ -1639,9 +1801,21 @@ function showConditionalQuestion(questionType) {
 }
 
 function selectAssessmentOption(questionName, value) {
-    // Assessment disabled - not in use
-    console.log('Assessment disabled - not in use');
-    return;
+    console.log('✅ Assessment option selected:', questionName, value);
+    assessmentState.answers[questionName] = value;
+    
+    // Enable next button
+    const nextBtn = document.getElementById('next-assessment-btn');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
+    
+    // Handle conditional questions
+    if (questionName === 'salvation_status' && value === 'yes') {
+        showConditionalQuestion('salvation-date');
+    } else if (questionName === 'leadership' && value === 'no') {
+        showConditionalQuestion('leadership-ready');
+    }
 }
 
 function nextAssessmentQuestion() {
@@ -1685,15 +1859,64 @@ function updateAssessmentProgress() {
     }
 }
 
-function completeAssessment() {
-    // Store assessment results
-    currentUser.assessmentResults = assessmentState.answers;
-    
-    // Mark assessment as completed
-    assessmentState.isNewUser = false;
-    
-    // Show results splash page
-    showAssessmentResults();
+async function completeAssessment() {
+    try {
+        console.log('🎯 Completing assessment...');
+        
+        // Store assessment results
+        currentUser.assessmentResults = assessmentState.answers;
+        
+        // Mark assessment as completed
+        assessmentState.isNewUser = false;
+        
+        // Send assessment to backend to save steps
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/user/steps/assessment`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({
+                assessmentAnswers: assessmentState.answers
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Assessment processed and steps saved:', result.data);
+            
+            // Update local user progress with completed steps
+            userProgress.completedSteps = result.data
+                .filter(step => step.completed)
+                .map(step => step.stepId);
+            
+            // Update user steps data
+            userSteps = result.data;
+            
+            // Update the homepage next step display
+            updateHomepageNextStep();
+            
+            // Navigate directly to steps screen
+            showScreen('mainApp');
+            showAppScreen('nextStepsScreen');
+            
+            // Show success notification
+            showNotification('Assessment completed! Your steps have been updated.', 'success');
+        } else {
+            console.error('❌ Failed to process assessment');
+            showNotification('Failed to save assessment results. Please try again.', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error completing assessment:', error);
+        showNotification('Failed to save assessment results. Please try again.', 'error');
+    }
 }
 
 function showAssessmentResults() {
@@ -1757,14 +1980,15 @@ function determineAssessmentResults() {
 
 function skipResults() {
     showScreen('mainApp');
-    showAppScreen('homeScreen');
-    showNotification('Welcome to One Hope Next Step!', 'success');
+    showAppScreen('nextStepsScreen');
+    showNotification('Your spiritual steps have been updated!', 'success');
 }
 
 function skipAssessment() {
-    // Assessment disabled - not in use
-    console.log('Assessment disabled - not in use');
-    return;
+    console.log('⏭️ Skipping assessment, returning to home screen');
+    showScreen('mainApp');
+    showAppScreen('homeScreen');
+    showNotification('You can take the assessment later from the Steps page', 'info');
 }
 
 // External Link Functions
@@ -2091,6 +2315,55 @@ async function fetchUserStreak() {
         totalReadings = 0;
         lastReadingDate = null;
     }
+}
+
+async function fetchUserSteps() {
+    try {
+        console.log('🎯 Fetching user steps data...');
+        
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/user/steps`, {
+            credentials: 'include',
+            headers: headers
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            userSteps = result.data || [];
+            
+            // Update userProgress with completed steps
+            userProgress.completedSteps = userSteps
+                .filter(step => step.completed)
+                .map(step => step.step_id);
+            
+            console.log('✅ User steps loaded:', userSteps);
+            console.log('✅ Completed steps:', userProgress.completedSteps);
+            updateStepsCompletedCount();
+        } else {
+            console.log('⚠️ No steps data found, starting fresh');
+            userSteps = [];
+            userProgress.completedSteps = [];
+            updateStepsCompletedCount();
+        }
+    } catch (error) {
+        console.error('❌ Error fetching user steps:', error);
+        userSteps = [];
+        userProgress.completedSteps = [];
+        updateStepsCompletedCount();
+    }
+}
+
+function needsAssessment() {
+    // Check if user has any steps data
+    return userSteps.length === 0;
 }
 
 async function completeDailyReading() {

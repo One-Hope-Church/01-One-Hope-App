@@ -277,6 +277,90 @@ const db = {
             console.error('❌ Database error:', error);
             throw error;
         }
+    },
+
+    // User Steps Functions
+    async getUserSteps(userId) {
+        try {
+            const { data, error } = await supabase
+                .from('user_steps')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) {
+                console.error('❌ Error fetching user steps:', error);
+                throw error;
+            }
+
+            console.log('✅ User steps fetched:', data);
+            return data || [];
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            return [];
+        }
+    },
+
+    async upsertUserStep(userId, stepId, completed = false, notes = null) {
+        try {
+            const stepData = {
+                user_id: userId,
+                step_id: stepId,
+                completed: completed,
+                completed_date: completed ? new Date().toISOString() : null,
+                notes: notes
+            };
+
+            const { data, error } = await supabase
+                .from('user_steps')
+                .upsert(stepData, { 
+                    onConflict: 'user_id,step_id',
+                    ignoreDuplicates: false 
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Error upserting user step:', error);
+                throw error;
+            }
+
+            console.log('✅ User step upserted:', { userId, stepId, completed });
+            return data;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    async bulkUpsertUserSteps(userId, stepsData) {
+        try {
+            const stepsToUpsert = stepsData.map(step => ({
+                user_id: userId,
+                step_id: step.stepId,
+                completed: step.completed,
+                completed_date: step.completed ? new Date().toISOString() : null,
+                notes: step.notes || null
+            }));
+
+            const { data, error } = await supabase
+                .from('user_steps')
+                .upsert(stepsToUpsert, { 
+                    onConflict: 'user_id,step_id',
+                    ignoreDuplicates: false 
+                })
+                .select();
+
+            if (error) {
+                console.error('❌ Error bulk upserting user steps:', error);
+                throw error;
+            }
+
+            console.log('✅ User steps bulk upserted:', { userId, stepsCount: stepsToUpsert.length });
+            return data;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
     }
 };
 

@@ -81,11 +81,11 @@
         </div>
     </div>
 
-    <!-- Spiritual Steps Assessment Screen (HIDDEN - Not in use) -->
-    <div id="spiritualAssessmentScreen" class="screen" style="display: none;">
+    <!-- Spiritual Steps Assessment Screen -->
+    <div id="spiritualAssessmentScreen" class="screen">
         <div class="assessment-container">
             <div class="assessment-header">
-                <button class="back-button" onclick="showScreen('signupScreen')">
+                <button class="back-button" onclick="showScreen('mainApp'); showAppScreen('homeScreen')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1>Spiritual Steps Assessment</h1>
@@ -99,7 +99,7 @@
                 <span id="assessment-progress-text">Question 1 of 11</span>
             </div>
 
-            <form class="assessment-form" id="spiritualAssessmentForm">
+            <form class="assessment-form" id="spiritualAssessmentForm" action="javascript:void(0);" onsubmit="return false;">
                 <!-- Question 1: Salvation Status -->
                 <div class="assessment-question" id="question-salvation">
                     <h3>Have you made Jesus the Lord of your life?</h3>

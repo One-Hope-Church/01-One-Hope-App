@@ -922,6 +922,231 @@ function convertVerseToPassageId(verse) {
     return '';
 }
 
+// User Steps API Endpoints
+app.get('/api/user/steps', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Get user steps
+        const userSteps = await db.getUserSteps(supabaseUser.id);
+        
+        res.json({ success: true, data: userSteps });
+    } catch (error) {
+        console.error('❌ Error fetching user steps:', error);
+        res.status(500).json({ error: 'Failed to fetch user steps' });
+    }
+});
+
+app.post('/api/user/steps/assessment', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        const { assessmentAnswers } = req.body;
+
+        if (!assessmentAnswers) {
+            return res.status(400).json({ error: 'Missing assessment answers' });
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Map assessment answers to completed steps
+        const completedSteps = mapAssessmentToSteps(assessmentAnswers);
+        
+        // Bulk upsert user steps
+        const stepsData = completedSteps.map(step => ({
+            stepId: step.stepId,
+            completed: step.completed,
+            notes: step.notes
+        }));
+
+        await db.bulkUpsertUserSteps(supabaseUser.id, stepsData);
+        
+        res.json({ success: true, data: completedSteps });
+    } catch (error) {
+        console.error('❌ Error processing assessment:', error);
+        res.status(500).json({ error: 'Failed to process assessment' });
+    }
+});
+
+app.post('/api/user/steps/complete', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        const { stepId, notes } = req.body;
+
+        if (!stepId) {
+            return res.status(400).json({ error: 'Missing step ID' });
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Mark step as completed
+        const updatedStep = await db.upsertUserStep(supabaseUser.id, stepId, true, notes);
+        
+        res.json({ success: true, data: updatedStep });
+    } catch (error) {
+        console.error('❌ Error completing step:', error);
+        res.status(500).json({ error: 'Failed to complete step' });
+    }
+});
+
+// Helper function to map assessment answers to completed steps
+function mapAssessmentToSteps(answers) {
+    const allSteps = [
+        { stepId: 'faith', title: 'Make Jesus Lord' },
+        { stepId: 'baptism', title: 'Get Baptized' },
+        { stepId: 'attendance', title: 'Attend Regularly' },
+        { stepId: 'bible-prayer', title: 'Daily Bible & Prayer' },
+        { stepId: 'giving', title: 'Give Consistently' },
+        { stepId: 'small-group', title: 'Join a Small Group' },
+        { stepId: 'serve-team', title: 'Serve on Team' },
+        { stepId: 'invite-pray', title: 'Invite & Pray' },
+        { stepId: 'share-story', title: 'Share Your Story' },
+        { stepId: 'leadership', title: 'Lead Others' },
+        { stepId: 'mission-living', title: 'Live on Mission' }
+    ];
+
+    const completedSteps = [];
+
+    // Map assessment answers to step completion
+    allSteps.forEach(step => {
+        let completed = false;
+        let notes = null;
+
+        switch (step.stepId) {
+            case 'faith':
+                completed = answers.salvation_status === 'yes';
+                if (completed && answers.salvation_date) {
+                    notes = `Accepted Jesus on ${answers.salvation_date}`;
+                }
+                break;
+            
+            case 'baptism':
+                completed = answers.baptism_status === 'yes';
+                break;
+            
+            case 'attendance':
+                completed = answers.sunday_attendance >= 3; // 3-4 times per month or more
+                if (completed) {
+                    notes = `Attends ${answers.sunday_attendance} times per month`;
+                }
+                break;
+            
+            case 'bible-prayer':
+                completed = answers.bible_prayer >= 3; // 3-4 times per week or more
+                if (completed) {
+                    notes = `Bible reading and prayer ${answers.bible_prayer} times per week`;
+                }
+                break;
+            
+            case 'giving':
+                completed = answers.giving_status >= 3; // 3-4 times per month or more
+                if (completed) {
+                    notes = `Gives ${answers.giving_status} times per month`;
+                }
+                break;
+            
+            case 'small-group':
+                completed = answers.small_group === 'yes';
+                break;
+            
+            case 'serve-team':
+                completed = answers.serve_team === 'yes';
+                break;
+            
+            case 'invite-pray':
+                completed = answers.invite_pray >= 3; // 3-4 times per month or more
+                if (completed) {
+                    notes = `Invites and prays ${answers.invite_pray} times per month`;
+                }
+                break;
+            
+            case 'share-story':
+                completed = answers.share_story === 'yes';
+                break;
+            
+            case 'leadership':
+                completed = answers.leadership === 'yes' || answers.leadership_ready === 'yes';
+                if (completed) {
+                    notes = answers.leadership === 'yes' ? 'Currently leading' : 'Ready to lead';
+                }
+                break;
+            
+            case 'mission-living':
+                completed = answers.mission_living >= 3; // 3-4 times per month or more
+                if (completed) {
+                    notes = `Lives on mission ${answers.mission_living} times per month`;
+                }
+                break;
+        }
+
+        completedSteps.push({
+            stepId: step.stepId,
+            title: step.title,
+            completed: completed,
+            notes: notes
+        });
+    });
+
+    return completedSteps;
+}
+
 // Start server
 const serverPort = process.env.PORT || PORT;
 app.listen(serverPort, () => {
