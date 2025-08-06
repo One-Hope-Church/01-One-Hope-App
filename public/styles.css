@@ -96,6 +96,10 @@ body {
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Mobile viewport fix */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+    position: relative;
 }
 
 /* Screen Management */
@@ -278,11 +282,16 @@ body {
 /* Main App */
 #mainApp {
     background: #f8f9fa;
+    /* Ensure full height on mobile */
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
 }
 
 .app-screen {
     display: none;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     overflow-y: auto;
     padding-bottom: 80px; /* Space for bottom nav */
 }
@@ -1095,6 +1104,19 @@ body {
     /* Add bottom margin to main app to prevent content from being hidden */
     #mainApp {
         padding-bottom: calc(80px + env(safe-area-inset-bottom));
+        /* Force full height on mobile */
+        min-height: 100vh;
+        min-height: 100dvh;
+        height: 100vh;
+        height: 100dvh;
+    }
+    
+    /* Ensure app screens use full viewport height */
+    .app-screen {
+        height: 100vh !important;
+        height: 100dvh !important;
+        min-height: 100vh !important;
+        min-height: 100dvh !important;
     }
 }
 
