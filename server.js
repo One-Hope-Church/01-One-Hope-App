@@ -39,6 +39,14 @@ const PLANNING_CENTER_CONFIG = {
     scope: 'people groups services check_ins registrations'
 };
 
+// Debug OAuth configuration
+console.log('🔧 OAuth Configuration Debug:');
+console.log('🔧 Client ID:', process.env.PLANNING_CENTER_CLIENT_ID ? 'Present' : 'Missing');
+console.log('🔧 Client Secret:', process.env.PLANNING_CENTER_CLIENT_SECRET ? 'Present' : 'Missing');
+console.log('🔧 Redirect URI:', PLANNING_CENTER_CONFIG.redirectUri);
+console.log('🔧 Environment:', process.env.NODE_ENV);
+console.log('🔧 Vercel URL:', process.env.VERCEL_URL);
+
 // Serve the main app
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
