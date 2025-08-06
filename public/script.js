@@ -276,6 +276,9 @@ function showAppScreen(screenId) {
     // Load data for specific screens
     if (screenId === 'eventsScreen') {
         fetchEvents();
+    } else if (screenId === 'bibleScreen') {
+        const today = new Date().toISOString().split('T')[0];
+        loadDailyReadingStatus(today);
     }
 }
 
