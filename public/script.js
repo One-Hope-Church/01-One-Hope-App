@@ -23,6 +23,8 @@ let userStreak = 0;
 let totalReadings = 0;
 let lastReadingDate = null;
 
+
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Starting app initialization');
@@ -787,7 +789,7 @@ function showLoadingState(screen, isLoading) {
 }
 
 // Initialize bible data
-function initializeBibleData() {
+async function initializeBibleData() {
     console.log('📖 Initializing Bible data...');
     
     // Create loading overlay for bible screen if it doesn't exist
@@ -807,10 +809,14 @@ function initializeBibleData() {
     // Fetch daily reading data immediately
     if (!currentBibleData) {
         console.log('📖 No current Bible data, fetching daily reading...');
-        fetchDailyBibleReading();
+        await fetchDailyBibleReading();
     } else {
         console.log('📖 Bible data already loaded:', currentBibleData);
     }
+    
+    // Load reading status for today
+    const today = new Date().toISOString().split('T')[0];
+    await loadDailyReadingStatus(today);
     
     // Load bible data when user first accesses bible screen
     const bibleButton = document.querySelector('.bible-button');
@@ -824,7 +830,7 @@ function initializeBibleData() {
     }
 }
 
-function markReadingComplete(section) {
+async function markReadingComplete(section) {
     // Map section names to match dailyReadings keys
     const sectionMap = {
         'devotional': 'devotional',
@@ -843,6 +849,10 @@ function markReadingComplete(section) {
     
     // Mark section as complete
     dailyReadings[mappedSection] = true;
+    
+    // Save reading status to database
+    const currentDate = new Date().toISOString().split('T')[0];
+    await saveDailyReadingStatus(currentDate);
     
     // Update buttons on home page
     const homeButton = document.getElementById(`${section}-btn`);
@@ -922,6 +932,10 @@ async function markAllComplete() {
     Object.keys(dailyReadings).forEach(section => {
         dailyReadings[section] = true;
     });
+    
+    // Save reading status to database
+    const completionDate = new Date().toISOString().split('T')[0];
+    await saveDailyReadingStatus(completionDate);
     
     // Complete daily reading in streak tracking
     await completeDailyReading();
@@ -2126,4 +2140,88 @@ function updateStreakUI() {
     totalReadingsElements.forEach(element => {
         element.textContent = `${totalReadings} total readings`;
     });
+}
+
+// Daily reading status functions
+async function loadDailyReadingStatus(date) {
+    try {
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/bible/status/${date}`, {
+            credentials: 'include',
+            headers: headers
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.data && result.data.sections_completed) {
+                dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
+                console.log('✅ Daily reading status loaded:', dailyReadings);
+                updateReadingUI();
+            }
+        } else {
+            console.log('⚠️ No reading status found for date:', date);
+        }
+    } catch (error) {
+        console.error('❌ Error loading daily reading status:', error);
+    }
+}
+
+async function saveDailyReadingStatus(date) {
+    try {
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/bible/status`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({
+                date: date,
+                sections_completed: dailyReadings
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Daily reading status saved:', result.data);
+        } else {
+            console.error('❌ Failed to save daily reading status');
+        }
+    } catch (error) {
+        console.error('❌ Error saving daily reading status:', error);
+    }
+}
+
+function updateReadingUI() {
+    // Update the visual state of reading sections based on completion
+    Object.keys(dailyReadings).forEach(section => {
+        const sectionElement = document.querySelector(`.reading-section[onclick*="${section}"]`);
+        if (sectionElement) {
+            const checkmark = sectionElement.querySelector('.checkmark');
+            if (dailyReadings[section] && checkmark) {
+                checkmark.style.display = 'block';
+                sectionElement.classList.add('completed');
+            } else if (checkmark) {
+                checkmark.style.display = 'none';
+                sectionElement.classList.remove('completed');
+            }
+        }
+    });
+
+    // Update completion count
+    updateDailyCompletion();
 }

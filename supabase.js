@@ -134,6 +134,73 @@ const db = {
         }
     },
 
+    async getDailyReadingStatus(userId, date) {
+        try {
+            const { data, error } = await supabase
+                .from('reading_history')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('reading_date', date)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('❌ Error fetching daily reading status:', error);
+                return null;
+            }
+
+            return data || { completed: false, sections_completed: {} };
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            return { completed: false, sections_completed: {} };
+        }
+    },
+
+    async updateDailyReadingStatus(userId, date, sectionsCompleted) {
+        try {
+            const allCompleted = Object.values(sectionsCompleted).every(completed => completed);
+            
+            const readingData = {
+                user_id: userId,
+                reading_date: date,
+                completed: allCompleted,
+                sections_completed: sectionsCompleted
+            };
+
+            // Check if record exists
+            const existingRecord = await this.getDailyReadingStatus(userId, date);
+            
+            let result;
+            if (existingRecord && existingRecord.id) {
+                // Update existing record
+                result = await supabase
+                    .from('reading_history')
+                    .update(readingData)
+                    .eq('id', existingRecord.id)
+                    .select()
+                    .single();
+            } else {
+                // Create new record
+                result = await supabase
+                    .from('reading_history')
+                    .insert(readingData)
+                    .select()
+                    .single();
+            }
+
+            if (result.error) {
+                console.error('❌ Error updating daily reading status:', result.error);
+                throw result.error;
+            }
+
+            console.log('✅ Daily reading status updated:', { userId, date, sectionsCompleted, allCompleted });
+            return result.data;
+
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
     async updateUserStreak(userId, completedToday = false) {
         try {
             const today = new Date().toISOString().split('T')[0];
