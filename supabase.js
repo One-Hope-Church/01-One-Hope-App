@@ -332,7 +332,7 @@ const db = {
         }
     },
 
-    async bulkUpsertUserSteps(userId, stepsData) {
+        async bulkUpsertUserSteps(userId, stepsData) {
         try {
             const stepsToUpsert = stepsData.map(step => ({
                 user_id: userId,
@@ -344,9 +344,9 @@ const db = {
 
             const { data, error } = await supabase
                 .from('user_steps')
-                .upsert(stepsToUpsert, { 
+                .upsert(stepsToUpsert, {
                     onConflict: 'user_id,step_id',
-                    ignoreDuplicates: false 
+                    ignoreDuplicates: false
                 })
                 .select();
 
@@ -357,6 +357,26 @@ const db = {
 
             console.log('✅ User steps bulk upserted:', { userId, stepsCount: stepsToUpsert.length });
             return data;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    async clearUserSteps(userId) {
+        try {
+            const { error } = await supabase
+                .from('user_steps')
+                .delete()
+                .eq('user_id', userId);
+
+            if (error) {
+                console.error('❌ Error clearing user steps:', error);
+                throw error;
+            }
+
+            console.log('✅ User steps cleared for user:', userId);
+            return true;
         } catch (error) {
             console.error('❌ Database error:', error);
             throw error;

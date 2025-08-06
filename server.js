@@ -989,6 +989,7 @@ app.post('/api/user/steps/assessment', async (req, res) => {
 
         // Map assessment answers to completed steps
         const completedSteps = mapAssessmentToSteps(assessmentAnswers);
+        console.log('🔍 Assessment steps mapped:', completedSteps);
         
         // Bulk upsert user steps
         const stepsData = completedSteps.map(step => ({
@@ -996,6 +997,7 @@ app.post('/api/user/steps/assessment', async (req, res) => {
             completed: step.completed,
             notes: step.notes
         }));
+        console.log('🔍 Steps data for bulk upsert:', stepsData);
 
         await db.bulkUpsertUserSteps(supabaseUser.id, stepsData);
         
@@ -1046,9 +1048,47 @@ app.post('/api/user/steps/complete', async (req, res) => {
     }
 });
 
+// Clear user steps for testing
+app.delete('/api/user/steps/clear', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Clear all user steps
+        await db.clearUserSteps(supabaseUser.id);
+        
+        res.json({ success: true, message: 'User steps cleared' });
+    } catch (error) {
+        console.error('❌ Error clearing user steps:', error);
+        res.status(500).json({ error: 'Failed to clear user steps' });
+    }
+});
+
 // Helper function to map assessment answers to completed steps
 function mapAssessmentToSteps(answers) {
+    console.log('🔍 mapAssessmentToSteps called with answers:', answers);
+    
     const allSteps = [
+        { stepId: 'assessment', title: 'Take Next Steps Assessment' },
         { stepId: 'faith', title: 'Make Jesus Lord' },
         { stepId: 'baptism', title: 'Get Baptized' },
         { stepId: 'attendance', title: 'Attend Regularly' },
@@ -1064,78 +1104,18 @@ function mapAssessmentToSteps(answers) {
 
     const completedSteps = [];
 
-    // Map assessment answers to step completion
+    // Create all steps as not completed by default
     allSteps.forEach(step => {
         let completed = false;
         let notes = null;
-
-        switch (step.stepId) {
-            case 'faith':
-                completed = answers.salvation_status === 'yes';
-                if (completed && answers.salvation_date) {
-                    notes = `Accepted Jesus on ${answers.salvation_date}`;
-                }
-                break;
-            
-            case 'baptism':
-                completed = answers.baptism_status === 'yes';
-                break;
-            
-            case 'attendance':
-                completed = answers.sunday_attendance >= 3; // 3-4 times per month or more
-                if (completed) {
-                    notes = `Attends ${answers.sunday_attendance} times per month`;
-                }
-                break;
-            
-            case 'bible-prayer':
-                completed = answers.bible_prayer >= 3; // 3-4 times per week or more
-                if (completed) {
-                    notes = `Bible reading and prayer ${answers.bible_prayer} times per week`;
-                }
-                break;
-            
-            case 'giving':
-                completed = answers.giving_status >= 3; // 3-4 times per month or more
-                if (completed) {
-                    notes = `Gives ${answers.giving_status} times per month`;
-                }
-                break;
-            
-            case 'small-group':
-                completed = answers.small_group === 'yes';
-                break;
-            
-            case 'serve-team':
-                completed = answers.serve_team === 'yes';
-                break;
-            
-            case 'invite-pray':
-                completed = answers.invite_pray >= 3; // 3-4 times per month or more
-                if (completed) {
-                    notes = `Invites and prays ${answers.invite_pray} times per month`;
-                }
-                break;
-            
-            case 'share-story':
-                completed = answers.share_story === 'yes';
-                break;
-            
-            case 'leadership':
-                completed = answers.leadership === 'yes' || answers.leadership_ready === 'yes';
-                if (completed) {
-                    notes = answers.leadership === 'yes' ? 'Currently leading' : 'Ready to lead';
-                }
-                break;
-            
-            case 'mission-living':
-                completed = answers.mission_living >= 3; // 3-4 times per month or more
-                if (completed) {
-                    notes = `Lives on mission ${answers.mission_living} times per month`;
-                }
-                break;
+        
+        // Mark assessment step as completed when assessment is submitted
+        if (step.stepId === 'assessment') {
+            completed = true;
+            notes = 'Assessment completed on ' + new Date().toLocaleDateString();
+            console.log('✅ Marking assessment step as completed');
         }
-
+        
         completedSteps.push({
             stepId: step.stepId,
             title: step.title,
@@ -1144,6 +1124,7 @@ function mapAssessmentToSteps(answers) {
         });
     });
 
+    console.log('🔍 Returning completed steps:', completedSteps);
     return completedSteps;
 }
 
