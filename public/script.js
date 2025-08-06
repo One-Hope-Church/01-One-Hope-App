@@ -125,6 +125,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('App initialization complete');
 });
 
+// Function to refresh reading status from database (called on page load)
+async function refreshReadingStatus() {
+    const currentDate = new Date().toISOString().split('T')[0];
+    await loadDailyReadingStatus(currentDate);
+}
+
 // Process authentication token
 async function processAuthToken(token) {
     try {
@@ -281,8 +287,11 @@ function showAppScreen(screenId) {
     if (screenId === 'eventsScreen') {
         fetchEvents();
     } else if (screenId === 'bibleScreen') {
-        const today = new Date().toISOString().split('T')[0];
-        loadDailyReadingStatus(today);
+        // Only load reading status if it hasn't been loaded yet
+        if (Object.keys(dailyReadings).length === 0) {
+            const today = new Date().toISOString().split('T')[0];
+            loadDailyReadingStatus(today);
+        }
     } else if (screenId === 'nextStepsScreen') {
         // Check if user needs to take assessment
         if (needsAssessment()) {
@@ -855,9 +864,11 @@ async function initializeBibleData() {
         console.log('📖 Bible data already loaded:', currentBibleData);
     }
     
-    // Load reading status for today
-    const today = new Date().toISOString().split('T')[0];
-    await loadDailyReadingStatus(today);
+    // Load reading status for today (only if not already loaded)
+    if (Object.keys(dailyReadings).length === 0) {
+        const today = new Date().toISOString().split('T')[0];
+        await loadDailyReadingStatus(today);
+    }
     
     // Load bible data when user first accesses bible screen
     const bibleButton = document.querySelector('.bible-button');
@@ -888,44 +899,58 @@ async function markReadingComplete(section) {
         return;
     }
     
-    // Mark section as complete
-    dailyReadings[mappedSection] = true;
-    
-    // Save reading status to database
-    const currentDate = new Date().toISOString().split('T')[0];
-    await saveDailyReadingStatus(currentDate);
-    
-    // Update buttons on home page
-    const homeButton = document.getElementById(`${section}-btn`);
-    if (homeButton) {
-        homeButton.innerHTML = '<i class="fas fa-check"></i> Completed';
-        homeButton.classList.add('completed');
-        homeButton.disabled = true;
-    }
-    
-    // Update status indicators on Bible page
-    const statusElement = document.getElementById(`${section}-status`);
-    if (statusElement) {
-        statusElement.innerHTML = '<i class="fas fa-check"></i>';
-        statusElement.classList.add('completed');
-    }
-    
-    // Update section styling on both pages
-    const homeSection = homeButton ? homeButton.closest('.reading-section') : null;
-    const bibleSection = statusElement ? statusElement.closest('.reading-section') : null;
-    
-    [homeSection, bibleSection].forEach(section => {
-        if (section) {
-            section.classList.add('completed');
+    try {
+        // Mark section as complete in local state
+        dailyReadings[mappedSection] = true;
+        
+        // Save reading status to database FIRST
+        const currentDate = new Date().toISOString().split('T')[0];
+        const saveSuccess = await saveDailyReadingStatus(currentDate);
+        
+        // Only update UI if database save was successful
+        if (saveSuccess) {
+            // Update buttons on home page
+            const homeButton = document.getElementById(`${section}-btn`);
+            if (homeButton) {
+                homeButton.innerHTML = '<i class="fas fa-check"></i> Completed';
+                homeButton.classList.add('completed');
+                homeButton.disabled = true;
+            }
+            
+            // Update status indicators on Bible page
+            const statusElement = document.getElementById(`${section}-status`);
+            if (statusElement) {
+                statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                statusElement.classList.add('completed');
+            }
+            
+            // Update section styling on both pages
+            const homeSection = homeButton ? homeButton.closest('.reading-section') : null;
+            const bibleSection = statusElement ? statusElement.closest('.reading-section') : null;
+            
+            [homeSection, bibleSection].forEach(section => {
+                if (section) {
+                    section.classList.add('completed');
+                }
+            });
+            
+            // Update completion progress on both pages
+            updateDailyCompletion();
+            
+            // Check if all sections are complete
+            if (Object.values(dailyReadings).every(completed => completed)) {
+                markAllComplete();
+            }
+        } else {
+            // Revert the local state if save failed
+            dailyReadings[mappedSection] = false;
+            showNotification('Failed to save completion status. Please try again.', 'error');
         }
-    });
-    
-    // Update completion progress on both pages
-    updateDailyCompletion();
-    
-    // Check if all sections are complete
-    if (Object.values(dailyReadings).every(completed => completed)) {
-        markAllComplete();
+    } catch (error) {
+        // Revert the local state if there was an error
+        dailyReadings[mappedSection] = false;
+        console.error('❌ Error marking reading complete:', error);
+        showNotification('Error saving completion status. Please try again.', 'error');
     }
 }
 
@@ -2596,9 +2621,14 @@ async function loadDailyReadingStatus(date) {
         if (response.ok) {
             const result = await response.json();
             if (result.data && result.data.sections_completed) {
-                dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
-                console.log('✅ Daily reading status loaded:', dailyReadings);
-                updateReadingUI();
+                // Only load from database if local state is empty or we're initializing
+                if (Object.keys(dailyReadings).length === 0) {
+                    dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
+                    console.log('✅ Daily reading status loaded from database:', dailyReadings);
+                    updateReadingUI();
+                } else {
+                    console.log('📊 Skipping database load - local state already populated:', dailyReadings);
+                }
             }
         } else {
             console.log('⚠️ No reading status found for date:', date);
@@ -2632,11 +2662,14 @@ async function saveDailyReadingStatus(date) {
         if (response.ok) {
             const result = await response.json();
             console.log('✅ Daily reading status saved:', result.data);
+            return true; // Return success
         } else {
             console.error('❌ Failed to save daily reading status');
+            return false; // Return failure
         }
     } catch (error) {
         console.error('❌ Error saving daily reading status:', error);
+        return false; // Return failure
     }
 }
 
