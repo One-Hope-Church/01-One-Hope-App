@@ -127,6 +127,8 @@ function processAuthToken(token) {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
         
+        console.log('✅ User signed in:', currentUser.name);
+        
     } catch (error) {
         console.error('❌ Error processing auth token:', error);
         showNotification('Authentication failed. Please try again.', 'error');
@@ -1854,12 +1856,22 @@ async function fetchEvents() {
         
         console.log('🔗 API URL:', `${API_BASE}/api/events`);
         
+        // Get stored token for authentication
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add Authorization header if token exists
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+            console.log('🔑 Adding Authorization header with token');
+        }
+        
         // Add credentials to ensure cookies are sent
         const response = await fetch(`${API_BASE}/api/events`, {
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: headers
         });
         
         console.log('📡 Response status:', response.status);

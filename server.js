@@ -77,14 +77,44 @@ app.get('/api/session-check', (req, res) => {
     console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
     console.log('🔍 Session data:', req.session);
     
+    // Check if user exists in session
+    if (req.session.user) {
+        console.log('✅ User found in session, returning user data');
+        res.json({
+            sessionId: req.sessionID,
+            hasUser: true,
+            user: {
+                id: req.session.user.id,
+                name: req.session.user.name,
+                email: req.session.user.email
+            }
+        });
+        return;
+    }
+    
+    // Check if user exists in app.locals backup
+    const userSessions = req.app.locals.userSessions || {};
+    const backupUser = userSessions[req.sessionID];
+    
+    if (backupUser) {
+        console.log('✅ User found in app.locals backup, returning user data');
+        res.json({
+            sessionId: req.sessionID,
+            hasUser: true,
+            user: {
+                id: backupUser.id,
+                name: backupUser.name,
+                email: backupUser.email
+            }
+        });
+        return;
+    }
+    
+    console.log('❌ No user found in session or backup');
     res.json({
         sessionId: req.sessionID,
-        hasUser: !!req.session.user,
-        user: req.session.user ? {
-            id: req.session.user.id,
-            name: req.session.user.name,
-            email: req.session.user.email
-        } : null
+        hasUser: false,
+        user: null
     });
 });
 
@@ -262,8 +292,22 @@ app.get('/api/events', async (req, res) => {
             console.log('✅ User found in app.locals backup');
             req.session.user = backupUser;
         } else {
-            console.log('❌ No user session found');
-            return res.status(401).json({ error: 'Not authenticated' });
+            // Try to get user from Authorization header (token-based)
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    const userData = JSON.parse(Buffer.from(token, 'base64').toString());
+                    console.log('✅ User found in Authorization header');
+                    req.session.user = userData;
+                } catch (error) {
+                    console.log('❌ Invalid token in Authorization header');
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                console.log('❌ No user session found and no valid token');
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
         }
     }
 
