@@ -28,9 +28,7 @@ const PLANNING_CENTER_CONFIG = {
     clientId: process.env.PLANNING_CENTER_CLIENT_ID,
     clientSecret: process.env.PLANNING_CENTER_CLIENT_SECRET,
     redirectUri: process.env.NODE_ENV === 'production' 
-        ? process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}/auth/callback`
-            : 'https://your-app-name.vercel.app/auth/callback'
+        ? 'https://01-one-hope-app.vercel.app/auth/callback'
         : 'http://localhost:3000/auth/callback',
     scope: 'people groups services check_ins registrations'
 };
