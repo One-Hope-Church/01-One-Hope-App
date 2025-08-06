@@ -1071,6 +1071,101 @@ body {
 
 /* Responsive Design */
 @media (max-width: 480px) {
+    /* Mobile Typography - Smaller font sizes for better readability */
+    body {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* Headers */
+    .header h1, .auth-header h1, .card h3, .step-content h4, .reading-content h5, .event-content h4 {
+        font-size: 18px !important;
+        line-height: 1.4;
+    }
+    
+    /* Subheadings */
+    .auth-header p, .step-content p, .event-description, .event-time, .event-location {
+        font-size: 13px !important;
+        line-height: 1.4;
+    }
+    
+    /* Body text */
+    .reading-content p, .event-description, .step-content p {
+        font-size: 14px !important;
+        line-height: 1.5;
+    }
+    
+    /* Small text */
+    .reading-date, .reading-content .verse-reference, .completion-progress span, .plan-progress span {
+        font-size: 12px !important;
+        line-height: 1.4;
+    }
+    
+    /* Stats and labels */
+    .stat-number, .stat-label, .profile-card h3, .profile-card p {
+        font-size: 13px !important;
+        line-height: 1.4;
+    }
+    
+    /* Navigation text */
+    .nav-item span {
+        font-size: 11px !important;
+        line-height: 1.3;
+    }
+    
+    /* Button text */
+    .btn-primary, .btn-secondary, .btn-danger, .btn-planning-center {
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+    }
+    
+    /* Small buttons */
+    .btn-small {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+    
+    /* Event dates */
+    .date-day {
+        font-size: 16px !important;
+    }
+    
+    .date-month {
+        font-size: 12px !important;
+    }
+    
+    /* Steps page specific adjustments */
+    .tier-title {
+        font-size: 16px !important;
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .tier-title i {
+        font-size: 14px !important;
+    }
+    
+    .step-item {
+        padding: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .step-item .step-icon {
+        width: 40px !important;
+        height: 40px !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .step-status {
+        font-size: 12px !important;
+        margin-top: 0.25rem !important;
+    }
+    
+    .steps-list {
+        gap: 0.75rem !important;
+    }
+    
+    /* Auth container */
     .auth-container {
         padding: 1.5rem;
     }
