@@ -23,6 +23,7 @@ let userStreak = 0;
 let totalReadings = 0;
 let lastReadingDate = null;
 let userSteps = []; // Store user steps from Supabase
+let isSavingReading = false; // Flag to prevent multiple simultaneous saves
 
 
 
@@ -268,7 +269,7 @@ function showScreen(screenId) {
     }
 }
 
-function showAppScreen(screenId) {
+async function showAppScreen(screenId) {
     // Hide all app screens
     document.querySelectorAll('.app-screen').forEach(screen => {
         screen.classList.remove('active');
@@ -287,11 +288,9 @@ function showAppScreen(screenId) {
     if (screenId === 'eventsScreen') {
         fetchEvents();
     } else if (screenId === 'bibleScreen') {
-        // Only load reading status if it hasn't been loaded yet
-        if (Object.keys(dailyReadings).length === 0) {
-            const today = new Date().toISOString().split('T')[0];
-            loadDailyReadingStatus(today);
-        }
+        // Always load reading status when Bible screen is shown
+        const today = new Date().toISOString().split('T')[0];
+        await loadDailyReadingStatus(today);
     } else if (screenId === 'nextStepsScreen') {
         // Check if user needs to take assessment
         if (needsAssessment()) {
@@ -957,11 +956,9 @@ async function initializeBibleData() {
         console.log('📖 Bible data already loaded:', currentBibleData);
     }
     
-    // Load reading status for today (only if not already loaded)
-    if (Object.keys(dailyReadings).length === 0) {
-        const today = new Date().toISOString().split('T')[0];
-        await loadDailyReadingStatus(today);
-    }
+    // Always load reading status for today to ensure we have the latest state
+    const today = new Date().toISOString().split('T')[0];
+    await loadDailyReadingStatus(today);
     
     // Load bible data when user first accesses bible screen
     const bibleButton = document.querySelector('.bible-button');
@@ -992,29 +989,63 @@ async function markReadingComplete(section) {
         return;
     }
     
+    // Prevent multiple simultaneous saves
+    if (isSavingReading) {
+        console.log('⚠️ Save already in progress, ignoring request');
+        return;
+    }
+    
+    // Set saving flag
+    isSavingReading = true;
+    
+    // Show loading state immediately
+    const homeButton = document.getElementById(`${section}-btn`);
+    const statusElement = document.getElementById(`${section}-status`);
+    
+    // Update home button to show loading
+    if (homeButton) {
+        homeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        homeButton.disabled = true;
+        homeButton.classList.add('saving');
+    }
+    
+    // Update status indicator to show loading
+    if (statusElement) {
+        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        statusElement.classList.add('saving');
+    }
+    
     try {
-        // Mark section as complete in local state
-        dailyReadings[mappedSection] = true;
-        
         // Save reading status to database FIRST
         const currentDate = new Date().toISOString().split('T')[0];
         const saveSuccess = await saveDailyReadingStatus(currentDate);
         
         // Only update UI if database save was successful
         if (saveSuccess) {
+            // Mark section as complete in local state
+            dailyReadings[mappedSection] = true;
+            
             // Update buttons on home page
-            const homeButton = document.getElementById(`${section}-btn`);
             if (homeButton) {
                 homeButton.innerHTML = '<i class="fas fa-check"></i> Completed';
+                homeButton.classList.remove('saving');
                 homeButton.classList.add('completed');
                 homeButton.disabled = true;
             }
             
             // Update status indicators on Bible page
-            const statusElement = document.getElementById(`${section}-status`);
             if (statusElement) {
                 statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                statusElement.classList.remove('saving');
                 statusElement.classList.add('completed');
+                
+                // Add a brief success animation
+                setTimeout(() => {
+                    statusElement.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        statusElement.style.transform = 'scale(1)';
+                    }, 200);
+                }, 100);
             }
             
             // Update section styling on both pages
@@ -1034,16 +1065,39 @@ async function markReadingComplete(section) {
             if (Object.values(dailyReadings).every(completed => completed)) {
                 markAllComplete();
             }
+            
+            // Show brief success notification
+            showNotification('Reading completed successfully!', 'success');
+            
         } else {
-            // Revert the local state if save failed
-            dailyReadings[mappedSection] = false;
+            // Revert loading state if save failed
+            if (homeButton) {
+                homeButton.innerHTML = 'Mark Complete';
+                homeButton.disabled = false;
+                homeButton.classList.remove('saving');
+            }
+            if (statusElement) {
+                statusElement.innerHTML = '';
+                statusElement.classList.remove('saving');
+            }
             showNotification('Failed to save completion status. Please try again.', 'error');
         }
     } catch (error) {
-        // Revert the local state if there was an error
-        dailyReadings[mappedSection] = false;
+        // Revert loading state if there was an error
+        if (homeButton) {
+            homeButton.innerHTML = 'Mark Complete';
+            homeButton.disabled = false;
+            homeButton.classList.remove('saving');
+        }
+        if (statusElement) {
+            statusElement.innerHTML = '';
+            statusElement.classList.remove('saving');
+        }
         console.error('❌ Error marking reading complete:', error);
         showNotification('Error saving completion status. Please try again.', 'error');
+    } finally {
+        // Always reset the saving flag
+        isSavingReading = false;
     }
 }
 
@@ -2714,13 +2768,13 @@ async function loadDailyReadingStatus(date) {
         if (response.ok) {
             const result = await response.json();
             if (result.data && result.data.sections_completed) {
-                // Only load from database if local state is empty or we're initializing
-                if (Object.keys(dailyReadings).length === 0) {
+                // Don't overwrite local state if we're currently saving
+                if (!isSavingReading) {
                     dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
                     console.log('✅ Daily reading status loaded from database:', dailyReadings);
                     updateReadingUI();
                 } else {
-                    console.log('📊 Skipping database load - local state already populated:', dailyReadings);
+                    console.log('⚠️ Skipping database load - save in progress');
                 }
             }
         } else {
@@ -2768,20 +2822,61 @@ async function saveDailyReadingStatus(date) {
 
 function updateReadingUI() {
     // Update the visual state of reading sections based on completion
-    Object.keys(dailyReadings).forEach(section => {
-        const sectionElement = document.querySelector(`.reading-section[onclick*="${section}"]`);
+    const sections = ['devotional', 'old-testament', 'new-testament', 'psalms', 'proverbs'];
+    
+    sections.forEach(section => {
+        // Map section names to match dailyReadings keys
+        const sectionMap = {
+            'devotional': 'devotional',
+            'old-testament': 'oldTestament',
+            'new-testament': 'newTestament',
+            'psalms': 'psalms',
+            'proverbs': 'proverbs'
+        };
+        
+        const mappedSection = sectionMap[section] || section;
+        
+        // Update status indicators on Bible page
+        const statusElement = document.getElementById(`${section}-status`);
+        if (statusElement) {
+            if (dailyReadings[mappedSection]) {
+                statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                statusElement.classList.add('completed');
+            } else {
+                statusElement.innerHTML = '';
+                statusElement.classList.remove('completed');
+            }
+        }
+        
+        // Update section styling
+        const sectionElement = statusElement ? statusElement.closest('.reading-section') : null;
         if (sectionElement) {
-            const checkmark = sectionElement.querySelector('.checkmark');
-            if (dailyReadings[section] && checkmark) {
-                checkmark.style.display = 'block';
+            if (dailyReadings[mappedSection]) {
                 sectionElement.classList.add('completed');
-            } else if (checkmark) {
-                checkmark.style.display = 'none';
+            } else {
                 sectionElement.classList.remove('completed');
             }
         }
     });
 
-    // Update completion count
+    // Update completion count and button state
     updateDailyCompletion();
+    
+    // Update "Mark All Complete" button text if all sections are completed
+    const completedCount = Object.values(dailyReadings).filter(completed => completed).length;
+    const totalSections = Object.keys(dailyReadings).length;
+    
+    if (completedCount === totalSections && totalSections > 0) {
+        const markAllBtnHome = document.getElementById('mark-all-btn');
+        const markAllBtnBible = document.getElementById('mark-all-btn-bible');
+        
+        [markAllBtnHome, markAllBtnBible].forEach(btn => {
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
+                btn.disabled = true;
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            }
+        });
+    }
 }

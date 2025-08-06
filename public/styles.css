@@ -429,6 +429,29 @@ body {
     border-color: var(--success-color);
 }
 
+.reading-section.saving {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.reading-section.saving button {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.reading-section.saving .section-status {
+    color: #ffc107 !important;
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
