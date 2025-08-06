@@ -165,8 +165,18 @@ app.get('/auth/callback', async (req, res) => {
         
         console.log('✅ OAuth successful! User:', req.session.user);
         console.log('📧 Email from Planning Center:', userEmail);
+        console.log('🔍 Session ID:', req.sessionID);
         
-        res.redirect('/?auth=success');
+        // Save session before redirect
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Error saving session:', err);
+                res.redirect('/?auth=error&error=session_save_failed');
+            } else {
+                console.log('✅ Session saved successfully');
+                res.redirect('/?auth=success');
+            }
+        });
     } catch (error) {
         console.error('❌ OAuth error:', error.response?.data || error.message);
         res.redirect('/?auth=error&error=' + encodeURIComponent(error.message));
@@ -175,9 +185,16 @@ app.get('/auth/callback', async (req, res) => {
 
 // API routes
 app.get('/api/user', (req, res) => {
+    console.log('🔍 /api/user called');
+    console.log('🔍 Session ID:', req.sessionID);
+    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
+    console.log('🔍 Full session:', req.session);
+    
     if (req.session.user) {
+        console.log('✅ User found in session, returning user data');
         res.json({ user: req.session.user });
     } else {
+        console.log('❌ No user in session, returning 401');
         res.status(401).json({ error: 'Not authenticated' });
     }
 });
