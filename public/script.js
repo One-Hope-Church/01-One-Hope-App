@@ -62,6 +62,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const userData = JSON.parse(storedUser);
                 currentUser = userData;
                 console.log('✅ Restored user from localStorage:', userData.name);
+                
+                // Update UI with restored user data
+                updateUserInfo();
+                
+                // Show main app
                 showScreen('mainApp');
             } catch (error) {
                 console.error('❌ Error processing stored token:', error);
@@ -364,13 +369,15 @@ async function fetchPlanningCenterProfile(accessToken) {
 
 async function createOrUpdateUser(profile) {
     // Create or update user in app's user management system
-    const existingUser = localStorage.getItem('planningCenterUser');
+    // Note: This function is now mainly for backward compatibility
+    // User data is primarily managed through Supabase
+    const existingUser = localStorage.getItem('onehope_user');
     
     if (existingUser) {
         // Update existing user
         const user = JSON.parse(existingUser);
         Object.assign(user, profile);
-        localStorage.setItem('planningCenterUser', JSON.stringify(user));
+        localStorage.setItem('onehope_user', JSON.stringify(user));
         return user;
     } else {
         // Create new user
@@ -384,7 +391,7 @@ async function createOrUpdateUser(profile) {
                 bibleReadings: []
             }
         };
-        localStorage.setItem('planningCenterUser', JSON.stringify(newUser));
+        localStorage.setItem('onehope_user', JSON.stringify(newUser));
         return newUser;
     }
 }
@@ -392,7 +399,7 @@ async function createOrUpdateUser(profile) {
 function signInUser(userProfile) {
     // Set current user and navigate to main app
     currentUser = userProfile;
-    localStorage.setItem('currentUser', JSON.stringify(userProfile));
+    localStorage.setItem('onehope_user', JSON.stringify(userProfile));
     
     // Clear URL parameters
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -1140,7 +1147,8 @@ function signOut() {
         console.log('✅ Sign out response:', data);
         
         // Clear local storage
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem('onehope_token');
+        localStorage.removeItem('onehope_user');
         localStorage.removeItem('userProgress');
         localStorage.removeItem('bibleCache');
         localStorage.removeItem('dailyReadings');
@@ -1161,7 +1169,8 @@ function signOut() {
         console.error('❌ Error signing out:', error);
         
         // Even if API call fails, clear local data and show login
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem('onehope_token');
+        localStorage.removeItem('onehope_user');
         localStorage.removeItem('userProgress');
         localStorage.removeItem('bibleCache');
         localStorage.removeItem('dailyReadings');
