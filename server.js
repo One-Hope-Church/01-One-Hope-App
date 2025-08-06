@@ -52,6 +52,12 @@ app.get('/script.js', (req, res) => {
     res.sendFile(__dirname + '/public/script.js');
 });
 
+// Debug route for images
+app.get('/images/:filename', (req, res) => {
+    console.log('🖼️ Image requested:', req.params.filename);
+    res.sendFile(__dirname + '/public/images/' + req.params.filename);
+});
+
 // Planning Center OAuth routes
 app.get('/auth/planningcenter', (req, res) => {
     const authUrl = `${PLANNING_CENTER_CONFIG.baseUrl}/oauth/authorize?` +
