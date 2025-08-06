@@ -5,6 +5,9 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
 
+// Import Supabase database operations
+const { db } = require('./supabase');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -206,28 +209,76 @@ app.get('/auth/callback', async (req, res) => {
         console.log('✅ OAuth successful! User token created');
         console.log('📧 Email from Planning Center:', userEmail);
         
-        // Store user in session as backup
-        req.session.user = {
-            id: userId,
-            name: user.attributes?.name || 'User',
-            email: userEmail,
-            accessToken: accessToken
-        };
-        
-        // Also store in app.locals for serverless environment
-        req.app.locals.userSessions = req.app.locals.userSessions || {};
-        req.app.locals.userSessions[req.sessionID] = {
-            id: userId,
-            name: user.attributes?.name || 'User',
-            email: userEmail,
-            accessToken: accessToken,
-            timestamp: Date.now()
-        };
-        
-        console.log('✅ User session stored in app.locals');
-        
-        // Redirect with token
-        res.redirect(`/?auth=success&token=${encodeURIComponent(userToken)}`);
+        // Create/update user in Supabase database
+        try {
+            console.log('🗄️ Upserting user in Supabase...');
+            const supabaseUser = await db.upsertUser({
+                id: userId,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                avatar_url: user.attributes?.avatar || null
+            });
+            
+            console.log('✅ User upserted in Supabase:', supabaseUser.id);
+            
+            // Create enhanced token with Supabase user ID
+            const enhancedToken = Buffer.from(JSON.stringify({
+                planning_center_id: userId,
+                supabase_id: supabaseUser.id,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                accessToken: accessToken,
+                timestamp: Date.now()
+            })).toString('base64');
+            
+            // Store user in session as backup
+            req.session.user = {
+                planning_center_id: userId,
+                supabase_id: supabaseUser.id,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                accessToken: accessToken
+            };
+            
+            // Also store in app.locals for serverless environment
+            req.app.locals.userSessions = req.app.locals.userSessions || {};
+            req.app.locals.userSessions[req.sessionID] = {
+                planning_center_id: userId,
+                supabase_id: supabaseUser.id,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                accessToken: accessToken,
+                timestamp: Date.now()
+            };
+            
+            console.log('✅ User session stored in app.locals');
+            
+            // Redirect with enhanced token
+            res.redirect(`/?auth=success&token=${encodeURIComponent(enhancedToken)}`);
+            
+        } catch (dbError) {
+            console.error('❌ Database error:', dbError);
+            console.log('⚠️ Falling back to original token method');
+            
+            // Fallback to original method if database fails
+            req.session.user = {
+                id: userId,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                accessToken: accessToken
+            };
+            
+            req.app.locals.userSessions = req.app.locals.userSessions || {};
+            req.app.locals.userSessions[req.sessionID] = {
+                id: userId,
+                name: user.attributes?.name || 'User',
+                email: userEmail,
+                accessToken: accessToken,
+                timestamp: Date.now()
+            };
+            
+            res.redirect(`/?auth=success&token=${encodeURIComponent(userToken)}`);
+        }
     } catch (error) {
         console.error('❌ OAuth error:', error.response?.data || error.message);
         res.redirect('/?auth=error&error=' + encodeURIComponent(error.message));
