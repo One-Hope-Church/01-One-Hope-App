@@ -33,7 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for auth success/error
     if (auth === 'success') {
         console.log('Auth successful, checking user session');
-        checkUserSession();
+        // Add a small delay to ensure session is saved
+        setTimeout(() => {
+            checkUserSession();
+        }, 1000);
     } else if (error) {
         console.log('Auth error:', error);
         showNotification('Authentication failed. Please try again.', 'error');
@@ -79,9 +82,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Check user session from server
-async function checkUserSession() {
+async function checkUserSession(retryCount = 0) {
     try {
-        console.log('🔍 Checking user session...');
+        console.log(`🔍 Checking user session... (attempt ${retryCount + 1})`);
         const response = await fetch(`${API_BASE}/api/user`);
         console.log('🔍 Session response status:', response.status);
         
@@ -92,12 +95,32 @@ async function checkUserSession() {
             signInUser(data.user);
             showNotification('Successfully signed in!', 'success');
         } else {
-            console.log('🔍 No valid session, showing login screen');
-            showScreen('loginScreen');
+            console.log('🔍 No valid session');
+            
+            // Retry up to 3 times with increasing delays
+            if (retryCount < 3) {
+                console.log(`🔄 Retrying session check in ${(retryCount + 1) * 1000}ms...`);
+                setTimeout(() => {
+                    checkUserSession(retryCount + 1);
+                }, (retryCount + 1) * 1000);
+            } else {
+                console.log('❌ Max retries reached, showing login screen');
+                showScreen('loginScreen');
+            }
         }
     } catch (error) {
         console.error('Error checking user session:', error);
-        showScreen('loginScreen');
+        
+        // Retry on network errors too
+        if (retryCount < 3) {
+            console.log(`🔄 Retrying session check due to error in ${(retryCount + 1) * 1000}ms...`);
+            setTimeout(() => {
+                checkUserSession(retryCount + 1);
+            }, (retryCount + 1) * 1000);
+        } else {
+            console.log('❌ Max retries reached, showing login screen');
+            showScreen('loginScreen');
+        }
     }
 }
 
