@@ -18,6 +18,11 @@ let assessmentState = {
 // API Configuration
 const API_BASE = window.location.origin;
 
+// Streak tracking variables
+let userStreak = 0;
+let totalReadings = 0;
+let lastReadingDate = null;
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Starting app initialization');
@@ -66,8 +71,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update UI with restored user data
                 updateUserInfo();
                 
-                // Show main app
-                showScreen('mainApp');
+                // Load user streak data
+                fetchUserStreak().then(() => {
+                    // Show main app after streak is loaded
+                    showScreen('mainApp');
+                });
             } catch (error) {
                 console.error('❌ Error processing stored token:', error);
                 localStorage.removeItem('onehope_token');
@@ -900,7 +908,7 @@ function updateDailyCompletion() {
     updateStepsCompletedCount();
 }
 
-function markAllComplete() {
+async function markAllComplete() {
     console.log('markAllComplete function called');
     const today = new Date().toDateString();
     
@@ -914,6 +922,9 @@ function markAllComplete() {
     Object.keys(dailyReadings).forEach(section => {
         dailyReadings[section] = true;
     });
+    
+    // Complete daily reading in streak tracking
+    await completeDailyReading();
     
     // Add to completed readings
     userProgress.bibleReadings.push(today);
@@ -963,11 +974,8 @@ function markBibleComplete() {
 }
 
 function updateProgressUI() {
-    // Update streak
-    const streakElements = document.querySelectorAll('.streak span, .streak-badge span');
-    streakElements.forEach(element => {
-        element.textContent = `${userProgress.streak} day Bible streak`;
-    });
+    // Update streak display using new streak tracking
+    updateStreakUI();
     
     // Update profile stats
     updateStepsCompletedCount();
@@ -979,8 +987,8 @@ function updateProgressUI() {
 function updateStepsCompletedCount() {
     const statNumbers = document.querySelectorAll('.stat-number');
     if (statNumbers.length >= 2) {
-        statNumbers[0].textContent = userProgress.streak;
-        statNumbers[1].textContent = userProgress.completedSteps.length;
+        statNumbers[0].textContent = userStreak;
+        statNumbers[1].textContent = totalReadings;
     }
 }
 
@@ -2025,3 +2033,97 @@ function viewEventDetails(eventId) {
 
 // Initialize progress UI
 updateProgressUI(); 
+
+// Streak tracking functions
+async function fetchUserStreak() {
+    try {
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/user/streak`, {
+            credentials: 'include',
+            headers: headers
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            userStreak = result.data.current_streak || 0;
+            totalReadings = result.data.total_readings || 0;
+            lastReadingDate = result.data.last_reading_date;
+            console.log('✅ User streak loaded:', { userStreak, totalReadings, lastReadingDate });
+            updateStreakUI();
+        } else {
+            console.log('⚠️ No user streak found (new user)');
+            userStreak = 0;
+            totalReadings = 0;
+            lastReadingDate = null;
+        }
+    } catch (error) {
+        console.error('❌ Error fetching user streak:', error);
+        userStreak = 0;
+        totalReadings = 0;
+        lastReadingDate = null;
+    }
+}
+
+async function completeDailyReading() {
+    try {
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const response = await fetch(`${API_BASE}/api/user/streak/complete`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            userStreak = result.data.current_streak || 0;
+            totalReadings = result.data.total_readings || 0;
+            lastReadingDate = result.data.last_reading_date;
+            console.log('✅ Daily reading completed! Streak updated:', { userStreak, totalReadings });
+            updateStreakUI();
+            showNotification(`🎉 Daily reading completed! Your streak is now ${userStreak} days!`, 'success');
+        } else {
+            console.error('❌ Failed to complete daily reading');
+            showNotification('Failed to save reading completion. Please try again.', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error completing daily reading:', error);
+        showNotification('Failed to save reading completion. Please try again.', 'error');
+    }
+}
+
+function updateStreakUI() {
+    // Update streak display
+    const streakElements = document.querySelectorAll('.streak span, .streak-badge span');
+    streakElements.forEach(element => {
+        element.textContent = `${userStreak} day Bible streak`;
+    });
+
+    // Update profile stats
+    const statNumbers = document.querySelectorAll('.stat-number');
+    if (statNumbers.length >= 2) {
+        statNumbers[0].textContent = userStreak;
+        statNumbers[1].textContent = totalReadings;
+    }
+
+    // Update total readings display
+    const totalReadingsElements = document.querySelectorAll('.total-readings span');
+    totalReadingsElements.forEach(element => {
+        element.textContent = `${totalReadings} total readings`;
+    });
+}

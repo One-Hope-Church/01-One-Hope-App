@@ -651,6 +651,75 @@ app.get('/api/bible/verse/:passageId', async (req, res) => {
     }
 });
 
+// Simple streak tracking endpoints
+app.get('/api/user/streak', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Get user's streak data
+        const streakData = await db.getUserStreak(supabaseUser.id);
+        
+        res.json({ success: true, data: streakData });
+    } catch (error) {
+        console.error('❌ Error fetching user streak:', error);
+        res.status(500).json({ error: 'Failed to fetch user streak' });
+    }
+});
+
+app.post('/api/user/streak/complete', async (req, res) => {
+    try {
+        // Get user from session or token
+        let user = req.session.user;
+        if (!user) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    user = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        // Get user's Supabase ID
+        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update user's streak (mark today as completed)
+        const updatedStreak = await db.updateUserStreak(supabaseUser.id, true);
+        
+        res.json({ success: true, data: updatedStreak });
+    } catch (error) {
+        console.error('❌ Error updating user streak:', error);
+        res.status(500).json({ error: 'Failed to update user streak' });
+    }
+});
+
 // Helper functions
 function parseHighlandsXML(xmlString) {
     try {
