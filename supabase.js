@@ -36,6 +36,7 @@ const db = {
                 avatar_url: planningCenterData.avatar_url,
                 last_login: new Date().toISOString()
             };
+            console.log('🔍 Upserting user data with avatar_url:', planningCenterData.avatar_url);
 
             let result;
             if (existingUser) {
@@ -85,6 +86,7 @@ const db = {
                 return null;
             }
 
+            console.log('🔍 Retrieved user from database with avatar_url:', data.avatar_url);
             return data;
         } catch (error) {
             console.error('❌ Database error:', error);

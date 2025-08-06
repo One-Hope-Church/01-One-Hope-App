@@ -216,7 +216,7 @@ app.get('/auth/callback', async (req, res) => {
                 id: userId,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
-                avatar_url: user.attributes?.avatar || null
+                avatar_url: user.attributes?.demographic_avatar_url || null
             });
             
             console.log('✅ User upserted in Supabase:', supabaseUser.id);
@@ -227,6 +227,7 @@ app.get('/auth/callback', async (req, res) => {
                 supabase_id: supabaseUser.id,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
+                avatar_url: user.attributes?.demographic_avatar_url || null,
                 accessToken: accessToken,
                 timestamp: Date.now()
             })).toString('base64');
@@ -237,8 +238,10 @@ app.get('/auth/callback', async (req, res) => {
                 supabase_id: supabaseUser.id,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
+                avatar_url: user.attributes?.demographic_avatar_url || null,
                 accessToken: accessToken
             };
+            console.log('🔍 Stored avatar_url in session:', req.session.user.avatar_url);
             
             // Also store in app.locals for serverless environment
             req.app.locals.userSessions = req.app.locals.userSessions || {};
@@ -247,9 +250,11 @@ app.get('/auth/callback', async (req, res) => {
                 supabase_id: supabaseUser.id,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
+                avatar_url: user.attributes?.demographic_avatar_url || null,
                 accessToken: accessToken,
                 timestamp: Date.now()
             };
+            console.log('🔍 Stored avatar_url in app.locals:', req.app.locals.userSessions[req.sessionID].avatar_url);
             
             console.log('✅ User session stored in app.locals');
             
@@ -265,6 +270,7 @@ app.get('/auth/callback', async (req, res) => {
                 id: userId,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
+                avatar_url: user.attributes?.demographic_avatar_url || null,
                 accessToken: accessToken
             };
             
@@ -273,6 +279,7 @@ app.get('/auth/callback', async (req, res) => {
                 id: userId,
                 name: user.attributes?.name || 'User',
                 email: userEmail,
+                avatar_url: user.attributes?.demographic_avatar_url || null,
                 accessToken: accessToken,
                 timestamp: Date.now()
             };
@@ -291,6 +298,9 @@ app.get('/api/user', (req, res) => {
     console.log('🔍 Session ID:', req.sessionID);
     console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
     console.log('🔍 Full session:', req.session);
+    if (req.session.user) {
+        console.log('🔍 User avatar_url:', req.session.user.avatar_url);
+    }
     
     // Check if user exists in session
     if (req.session.user) {

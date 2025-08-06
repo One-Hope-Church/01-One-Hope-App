@@ -577,9 +577,11 @@ function updateUserInfo() {
     // Update profile info
     const profileName = document.querySelector('#profileScreen .profile-card h3');
     const profileEmail = document.querySelector('#profileScreen .profile-card p');
+    const profileAvatar = document.querySelector('#profileScreen .profile-avatar');
     
-    console.log('🔍 Profile elements found:', { profileName: !!profileName, profileEmail: !!profileEmail });
+    console.log('🔍 Profile elements found:', { profileName: !!profileName, profileEmail: !!profileEmail, profileAvatar: !!profileAvatar });
     console.log('📧 Email value:', currentUser.email);
+    console.log('🖼️ Avatar URL:', currentUser.avatar_url);
     
     if (profileName) {
         profileName.textContent = currentUser.name || 'Planning Center User';
@@ -591,6 +593,37 @@ function updateUserInfo() {
         console.log('✅ Updated profile email:', currentUser.email);
     } else {
         console.log('❌ Profile email element not found');
+    }
+    
+    // Update profile avatar
+    if (profileAvatar) {
+        if (currentUser.avatar_url) {
+            // Show user's Planning Center avatar
+            profileAvatar.innerHTML = `<img src="${currentUser.avatar_url}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            console.log('✅ Updated profile avatar with Planning Center image');
+        } else {
+            // Show default user icon
+            profileAvatar.innerHTML = '<i class="fas fa-user"></i>';
+            console.log('✅ Using default user icon (no avatar URL)');
+        }
+    } else {
+        console.log('❌ Profile avatar element not found');
+    }
+    
+    // Update home screen avatar
+    const homeAvatar = document.querySelector('#homeScreen .user-avatar');
+    if (homeAvatar) {
+        if (currentUser.avatar_url) {
+            // Show user's Planning Center avatar
+            homeAvatar.innerHTML = `<img src="${currentUser.avatar_url}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            console.log('✅ Updated home screen avatar with Planning Center image');
+        } else {
+            // Show default user icon
+            homeAvatar.innerHTML = '<i class="fas fa-user"></i>';
+            console.log('✅ Using default user icon for home screen (no avatar URL)');
+        }
+    } else {
+        console.log('❌ Home screen avatar element not found');
     }
 }
 
