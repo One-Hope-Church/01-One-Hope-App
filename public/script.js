@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Process authentication token
-function processAuthToken(token) {
+async function processAuthToken(token) {
     try {
         console.log('🔍 Processing auth token...');
         const userData = JSON.parse(atob(token));
@@ -136,7 +136,7 @@ function processAuthToken(token) {
         localStorage.setItem('onehope_user', JSON.stringify(userData));
         
         // Sign in user
-        signInUser(userData);
+        await signInUser(userData);
         showNotification('Successfully signed in!', 'success');
         
         // Clean up URL
@@ -162,7 +162,7 @@ async function checkUserSession(retryCount = 0) {
             const data = await response.json();
             console.log('🔍 User data received:', data);
             currentUser = data.user;
-            signInUser(data.user);
+            await signInUser(data.user);
             showNotification('Successfully signed in!', 'success');
         } else {
             console.log('🔍 No valid session');
@@ -336,7 +336,7 @@ async function handlePlanningCenterCallback(code) {
             await createOrUpdateUser(userProfile);
             
             // Sign in user
-            signInUser(userProfile);
+            await signInUser(userProfile);
             
             showNotification('Successfully signed in with Planning Center!', 'success');
         } else {
@@ -409,7 +409,7 @@ async function createOrUpdateUser(profile) {
     }
 }
 
-function signInUser(userProfile) {
+async function signInUser(userProfile) {
     // Set current user and navigate to main app
     currentUser = userProfile;
     localStorage.setItem('onehope_user', JSON.stringify(userProfile));
@@ -420,7 +420,11 @@ function signInUser(userProfile) {
     // Update UI with user info
     updateUserInfo();
     
-    // Navigate to main app
+    // Load user streak data BEFORE showing the main app
+    console.log('🔄 Loading user streak data...');
+    await fetchUserStreak();
+    
+    // Navigate to main app AFTER streak is loaded
     showScreen('mainApp');
     showAppScreen('homeScreen');
     
@@ -2143,6 +2147,38 @@ function updateStreakUI() {
     totalReadingsElements.forEach(element => {
         element.textContent = `${totalReadings} total readings`;
     });
+
+    // Show motivational button when streak is 0
+    const streakContainer = document.querySelector('.streak');
+    if (streakContainer && userStreak === 0) {
+        // Hide the fire icon when streak is 0
+        const fireIcon = streakContainer.querySelector('i.fas.fa-fire');
+        if (fireIcon) {
+            fireIcon.style.display = 'none';
+        }
+        
+        // Replace streak text with motivational button
+        const streakSpan = streakContainer.querySelector('span');
+        if (streakSpan) {
+            streakSpan.innerHTML = `
+                <button class="btn-primary start-streak-btn" onclick="showAppScreen('bibleScreen')" style="display: block; margin: 0 auto; padding: 8px 16px; font-size: 14px; border-radius: 20px; text-align: center;">
+                    Click Here to Start Your Streak of Reading The Bible
+                </button>
+            `;
+        }
+    } else if (streakContainer && userStreak > 0) {
+        // Show the fire icon when streak > 0
+        const fireIcon = streakContainer.querySelector('i.fas.fa-fire');
+        if (fireIcon) {
+            fireIcon.style.display = 'inline';
+        }
+        
+        // Restore normal streak display
+        const streakSpan = streakContainer.querySelector('span');
+        if (streakSpan) {
+            streakSpan.textContent = `${userStreak} day Bible streak`;
+        }
+    }
 }
 
 // Daily reading status functions
