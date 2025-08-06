@@ -27,7 +27,11 @@ const PLANNING_CENTER_CONFIG = {
     baseUrl: 'https://api.planningcenteronline.com',
     clientId: process.env.PLANNING_CENTER_CLIENT_ID,
     clientSecret: process.env.PLANNING_CENTER_CLIENT_SECRET,
-    redirectUri: 'http://localhost:3000/auth/callback',
+    redirectUri: process.env.NODE_ENV === 'production' 
+        ? process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}/auth/callback`
+            : 'https://your-app-name.vercel.app/auth/callback'
+        : 'http://localhost:3000/auth/callback',
     scope: 'people groups services check_ins registrations'
 };
 
@@ -570,6 +574,7 @@ function convertVerseToPassageId(verse) {
 }
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`🚀 One Hope App server running on http://localhost:${PORT}`);
+const serverPort = process.env.PORT || PORT;
+app.listen(serverPort, () => {
+    console.log(`🚀 One Hope App server running on port ${serverPort}`);
 }); 
