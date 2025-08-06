@@ -110,9 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Setting up navigation');
     setupNavigation();
     
-    // Initialize homepage next step
+    // Initialize homepage next step (will be called after user data loads)
     console.log('Initializing homepage next step');
-    updateHomepageNextStep();
+    // updateHomepageNextStep(); // REMOVED - will be called after user data loads
     
     // Initialize bible data
     console.log('Initializing bible data');
@@ -446,6 +446,9 @@ async function signInUser(userProfile) {
         fetchUserStreak(),
         fetchUserSteps()
     ]);
+    
+    // Update progress UI with loaded data
+    updateProgressUI();
     
     // Navigate to main app AFTER data is loaded
     showScreen('mainApp');
@@ -1125,8 +1128,33 @@ function updateStepsCompletedCount() {
 }
 
 function updateHomepageNextStep() {
+    console.log('🔄 Updating homepage next step...');
+    console.log('📊 Current userProgress.completedSteps:', userProgress.completedSteps);
+    
+    // Check if user data is loaded - if not, skip updating
+    if (!currentUser) {
+        console.log('⏳ User not logged in yet, skipping homepage next step update');
+        return;
+    }
+    
+    // Check if user steps data is loaded from Supabase
+    if (userSteps.length === 0) {
+        console.log('⏳ User steps data not loaded from Supabase yet, skipping homepage next step update');
+        return;
+    }
+    
+    // Check if completed steps array is properly populated
+    if (userProgress.completedSteps.length === 0 && userSteps.some(step => step.completed)) {
+        console.log('⏳ Completed steps array not populated yet, skipping homepage next step update');
+        return;
+    }
+    
     const nextStepContainer = document.getElementById('homepage-next-step');
-    if (!nextStepContainer) return;
+    if (!nextStepContainer) {
+        console.log('❌ Homepage next step container not found');
+        return;
+    }
+    console.log('✅ Found homepage next step container');
     
     // Define the step progression
     const stepProgression = [
@@ -1148,6 +1176,7 @@ function updateHomepageNextStep() {
     for (const step of stepProgression) {
         if (!userProgress.completedSteps.includes(step.id)) {
             nextStep = step;
+            console.log('🎯 Found next step:', step.title);
             break;
         }
     }
@@ -1159,6 +1188,7 @@ function updateHomepageNextStep() {
             description: 'You\'ve completed all the spiritual growth steps',
             icon: 'fas fa-trophy'
         };
+        console.log('🏆 All steps completed!');
     }
     
     // Update the homepage next step display
@@ -1166,12 +1196,24 @@ function updateHomepageNextStep() {
     const stepTitle = nextStepContainer.querySelector('.step-content h4');
     const stepDescription = nextStepContainer.querySelector('.step-content p');
     
-    if (stepIcon) stepIcon.className = nextStep.icon;
-    if (stepTitle) stepTitle.textContent = nextStep.title;
-    if (stepDescription) stepDescription.textContent = nextStep.description;
+    console.log('🔍 DOM elements found:', { stepIcon: !!stepIcon, stepTitle: !!stepTitle, stepDescription: !!stepDescription });
+    
+    if (stepIcon) {
+        stepIcon.className = nextStep.icon;
+        console.log('✅ Updated icon to:', nextStep.icon);
+    }
+    if (stepTitle) {
+        stepTitle.textContent = nextStep.title;
+        console.log('✅ Updated title to:', nextStep.title);
+    }
+    if (stepDescription) {
+        stepDescription.textContent = nextStep.description;
+        console.log('✅ Updated description to:', nextStep.description);
+    }
     
     // Store the current step's link for the button
     nextStepContainer.dataset.currentStepLink = nextStep.link || '#';
+    console.log('✅ Updated step link to:', nextStep.link || '#');
 }
 
 // Next Steps Functions
@@ -2347,6 +2389,9 @@ async function fetchUserSteps() {
             console.log('✅ User steps loaded:', userSteps);
             console.log('✅ Completed steps:', userProgress.completedSteps);
             updateStepsCompletedCount();
+            
+            // Update homepage next step after steps are loaded
+            updateHomepageNextStep();
         } else {
             console.log('⚠️ No steps data found, starting fresh');
             userSteps = [];
