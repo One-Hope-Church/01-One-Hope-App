@@ -156,7 +156,19 @@ app.get('/auth/callback', async (req, res) => {
             console.log('⚠️ Could not fetch emails, using login_identifier:', userEmail);
         }
         
-        // Store user in session
+        // Create a simple token for authentication
+        const userToken = Buffer.from(JSON.stringify({
+            id: userId,
+            name: user.attributes?.name || 'User',
+            email: userEmail,
+            accessToken: accessToken,
+            timestamp: Date.now()
+        })).toString('base64');
+        
+        console.log('✅ OAuth successful! User token created');
+        console.log('📧 Email from Planning Center:', userEmail);
+        
+        // Store user in session as backup
         req.session.user = {
             id: userId,
             name: user.attributes?.name || 'User',
@@ -164,20 +176,8 @@ app.get('/auth/callback', async (req, res) => {
             accessToken: accessToken
         };
         
-        console.log('✅ OAuth successful! User:', req.session.user);
-        console.log('📧 Email from Planning Center:', userEmail);
-        console.log('🔍 Session ID:', req.sessionID);
-        
-        // Save session before redirect
-        req.session.save((err) => {
-            if (err) {
-                console.error('❌ Error saving session:', err);
-                res.redirect('/?auth=error&error=session_save_failed');
-            } else {
-                console.log('✅ Session saved successfully');
-                res.redirect('/?auth=success');
-            }
-        });
+        // Redirect with token
+        res.redirect(`/?auth=success&token=${encodeURIComponent(userToken)}`);
     } catch (error) {
         console.error('❌ OAuth error:', error.response?.data || error.message);
         res.redirect('/?auth=error&error=' + encodeURIComponent(error.message));
@@ -191,13 +191,27 @@ app.get('/api/user', (req, res) => {
     console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
     console.log('🔍 Full session:', req.session);
     
+    // Check if user exists in session
     if (req.session.user) {
         console.log('✅ User found in session, returning user data');
         res.json({ user: req.session.user });
-    } else {
-        console.log('❌ No user in session, returning 401');
-        res.status(401).json({ error: 'Not authenticated' });
+        return;
     }
+    
+    // Check if user exists in app.locals backup
+    const userSessions = req.app.locals.userSessions || {};
+    const backupUser = userSessions[req.sessionID];
+    
+    if (backupUser) {
+        console.log('✅ User found in app.locals backup, returning user data');
+        // Restore session from backup
+        req.session.user = backupUser;
+        res.json({ user: backupUser });
+        return;
+    }
+    
+    console.log('❌ No user found in session or backup, returning 401');
+    res.status(401).json({ error: 'Not authenticated' });
 });
 
 app.get('/api/signout', (req, res) => {

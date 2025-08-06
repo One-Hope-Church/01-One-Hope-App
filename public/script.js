@@ -27,11 +27,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const code = urlParams.get('code');
     const auth = urlParams.get('auth');
     const error = urlParams.get('error');
+    const token = urlParams.get('token');
     
-    console.log('URL params:', { code, auth, error, currentUser });
+    console.log('URL params:', { code, auth, error, token, currentUser });
     
     // Check for auth success/error
-    if (auth === 'success') {
+    if (auth === 'success' && token) {
+        console.log('Auth successful with token, processing authentication');
+        processAuthToken(token);
+    } else if (auth === 'success') {
         console.log('Auth successful, checking user session');
         // Add a small delay to ensure session is saved
         setTimeout(() => {
@@ -46,16 +50,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle Planning Center OAuth callback
         handlePlanningCenterCallback(code);
     } else {
-        console.log('No auth parameters, setting up normal flow');
-        // Auto-navigate from splash screen after 3 seconds
-        setTimeout(() => {
-            console.log('Timeout reached, navigating to:', currentUser ? 'mainApp' : 'loginScreen');
-            if (currentUser) {
+        console.log('No auth parameters, checking for stored token');
+        
+        // Check for stored token in localStorage
+        const storedToken = localStorage.getItem('onehope_token');
+        const storedUser = localStorage.getItem('onehope_user');
+        
+        if (storedToken && storedUser) {
+            try {
+                console.log('🔍 Found stored token, processing...');
+                const userData = JSON.parse(storedUser);
+                currentUser = userData;
+                console.log('✅ Restored user from localStorage:', userData.name);
                 showScreen('mainApp');
-            } else {
+            } catch (error) {
+                console.error('❌ Error processing stored token:', error);
+                localStorage.removeItem('onehope_token');
+                localStorage.removeItem('onehope_user');
                 showScreen('loginScreen');
             }
-        }, 3000);
+        } else {
+            console.log('No stored token, setting up normal flow');
+            // Auto-navigate from splash screen after 3 seconds
+            setTimeout(() => {
+                console.log('Timeout reached, navigating to:', currentUser ? 'mainApp' : 'loginScreen');
+                if (currentUser) {
+                    showScreen('mainApp');
+                } else {
+                    showScreen('loginScreen');
+                }
+            }, 3000);
+        }
     }
 
     // Setup form handlers
@@ -80,6 +105,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('App initialization complete');
 });
+
+// Process authentication token
+function processAuthToken(token) {
+    try {
+        console.log('🔍 Processing auth token...');
+        const userData = JSON.parse(atob(token));
+        console.log('🔍 User data from token:', userData);
+        
+        // Store user data
+        currentUser = userData;
+        
+        // Store token in localStorage for persistence
+        localStorage.setItem('onehope_token', token);
+        localStorage.setItem('onehope_user', JSON.stringify(userData));
+        
+        // Sign in user
+        signInUser(userData);
+        showNotification('Successfully signed in!', 'success');
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+    } catch (error) {
+        console.error('❌ Error processing auth token:', error);
+        showNotification('Authentication failed. Please try again.', 'error');
+        showScreen('loginScreen');
+    }
+}
 
 // Check user session from server
 async function checkUserSession(retryCount = 0) {
