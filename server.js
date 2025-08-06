@@ -233,6 +233,10 @@ app.get('/api/events', async (req, res) => {
                                     ? signup.attributes.description.replace(/<[^>]*>/g, '').trim()
                                     : '';
                                 
+                                // Create details URL by appending event ID to base URL
+                                const registrationUrl = signup.attributes?.new_registration_url || null;
+                                const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${signup.id}`;
+                                
                                 return {
                                     id: signup.id,
                                     title: signup.attributes?.name || 'Event',
@@ -241,25 +245,33 @@ app.get('/api/events', async (req, res) => {
                                     ends_at: signupTime?.attributes?.ends_at || signup.attributes?.ends_at,
                                     location: signupTime?.attributes?.location || signup.attributes?.location || '',
                                     featured: signup.attributes?.featured || false,
-                                    registration_url: signup.attributes?.new_registration_url || null,
+                                    registration_url: registrationUrl,
+                                    details_url: detailsUrl,
                                     capacity: signupTime?.attributes?.capacity || signup.attributes?.capacity,
                                     registered_count: signupTime?.attributes?.registered_count || signup.attributes?.registered_count || 0
                                 };
                             });
                     } else {
                         // Handle events endpoint (fallback)
-                        events = response.data.data.map(event => ({
-                            id: event.id,
-                            title: event.attributes?.name || event.attributes?.title || 'Event',
-                            description: event.attributes?.description || '',
-                            starts_at: event.attributes?.starts_at || event.attributes?.start_time,
-                            ends_at: event.attributes?.ends_at || event.attributes?.end_time,
-                            location: event.attributes?.location || '',
-                            featured: event.attributes?.featured || false,
-                            registration_url: event.attributes?.registration_url || null,
-                            capacity: event.attributes?.capacity,
-                            registered_count: event.attributes?.registered_count || 0
-                        }));
+                        events = response.data.data.map(event => {
+                            // Create details URL by appending event ID to base URL
+                            const registrationUrl = event.attributes?.registration_url || null;
+                            const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${event.id}`;
+                            
+                            return {
+                                id: event.id,
+                                title: event.attributes?.name || event.attributes?.title || 'Event',
+                                description: event.attributes?.description || '',
+                                starts_at: event.attributes?.starts_at || event.attributes?.start_time,
+                                ends_at: event.attributes?.ends_at || event.attributes?.end_time,
+                                location: event.attributes?.location || '',
+                                featured: event.attributes?.featured || false,
+                                registration_url: registrationUrl,
+                                details_url: detailsUrl,
+                                capacity: event.attributes?.capacity,
+                                registered_count: event.attributes?.registered_count || 0
+                            };
+                        });
                     }
                     
                     endpointFound = true;
@@ -378,6 +390,8 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
         res.status(500).json({ error: 'Failed to RSVP for event' });
     }
 });
+
+
 
 app.get('/api/bible/daily', async (req, res) => {
         try {
