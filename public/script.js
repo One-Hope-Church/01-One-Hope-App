@@ -339,14 +339,74 @@ function signInWithPlanningCenter() {
 }
 
 function createPlanningCenterAccount() {
-    showScreen('planningCenterSignupScreen');
+    // Show confirmation modal
+    showPlanningCenterModal();
+}
+
+function showPlanningCenterModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Planning Center Account</h3>
+                <button class="modal-close" onclick="closePlanningCenterModal()">×</button>
+            </div>
+                                        <div class="modal-body">
+                                <p>To use the One Hope App, you'll need a Planning Center account. Here's what will happen:</p>
+                                <ul>
+                                    <li>A new tab will open to the Planning Center login page</li>
+                                    <li>You can create a new account or sign in with an existing one</li>
+                                    <li>After creating your account, return here and click "Sign in with Planning Center"</li>
+                                    <li>This will connect your account to the One Hope App</li>
+                                </ul>
+                                <p><strong>Ready to continue?</strong></p>
+                            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closePlanningCenterModal()">Cancel</button>
+                <button class="btn-primary" onclick="proceedToPlanningCenter()">Continue to Planning Center</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closePlanningCenterModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+function proceedToPlanningCenter() {
+    closePlanningCenterModal();
+    
+    // Redirect to Planning Center login page
+    const loginUrl = 'https://onehopenola.churchcenter.com/login';
+    console.log('🔗 Opening Planning Center login URL:', loginUrl);
+    showNotification('Opening Planning Center...', 'info');
+    window.open(loginUrl, '_blank');
+    
+    // Show a message to the user about what to do next
+    setTimeout(() => {
+        showNotification('After creating your account, return here and sign in with Planning Center', 'info');
+    }, 1000);
 }
 
 function redirectToPlanningCenterSignup() {
-    // Redirect to Planning Center account creation
-    const signupUrl = 'https://onehopenola.churchcenter.com/people/sign_up';
-    showNotification('Opening Planning Center signup...', 'info');
-    window.open(signupUrl, '_blank');
+    // Redirect to Planning Center login page
+    const loginUrl = 'https://onehopenola.churchcenter.com/login';
+    console.log('🔗 Opening Planning Center login URL:', loginUrl);
+    showNotification('Redirecting to Planning Center...', 'info');
+    window.open(loginUrl, '_blank');
+    
+    // Show a message to the user about what to do next
+    setTimeout(() => {
+        showNotification('After creating your account, return here and sign in with Planning Center', 'info');
+    }, 1000);
 }
 
 async function handlePlanningCenterCallback(code) {
