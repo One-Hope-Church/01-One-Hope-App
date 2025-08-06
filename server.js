@@ -40,6 +40,18 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+// Debug route for CSS
+app.get('/styles.css', (req, res) => {
+    console.log('🎨 CSS file requested!');
+    res.sendFile(__dirname + '/public/styles.css');
+});
+
+// Debug route for JS
+app.get('/script.js', (req, res) => {
+    console.log('📜 JS file requested!');
+    res.sendFile(__dirname + '/public/script.js');
+});
+
 // Planning Center OAuth routes
 app.get('/auth/planningcenter', (req, res) => {
     const authUrl = `${PLANNING_CENTER_CONFIG.baseUrl}/oauth/authorize?` +
