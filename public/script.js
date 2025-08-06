@@ -1997,6 +1997,9 @@ async function completeAssessment() {
             // Update user steps data
             userSteps = result.data;
             
+            // Refresh user steps from server to ensure consistency
+            await fetchUserSteps();
+            
             // Update the homepage next step display
             updateHomepageNextStep();
             

@@ -1104,7 +1104,7 @@ function mapAssessmentToSteps(answers) {
 
     const completedSteps = [];
 
-    // Create all steps as not completed by default
+    // Create all steps and mark them based on assessment answers
     allSteps.forEach(step => {
         let completed = false;
         let notes = null;
@@ -1114,6 +1114,83 @@ function mapAssessmentToSteps(answers) {
             completed = true;
             notes = 'Assessment completed on ' + new Date().toLocaleDateString();
             console.log('✅ Marking assessment step as completed');
+        }
+        
+        // Mark faith step if user has made Jesus Lord
+        if (step.stepId === 'faith' && answers.salvation_status === 'yes') {
+            completed = true;
+            notes = `Salvation date: ${answers.salvation_date || 'Date not specified'}`;
+            console.log('✅ Marking faith step as completed - Jesus is Lord');
+        }
+        
+        // Mark baptism step if user has been baptized
+        if (step.stepId === 'baptism' && answers.baptism_status === 'yes') {
+            completed = true;
+            notes = 'User has been baptized';
+            console.log('✅ Marking baptism step as completed');
+        }
+        
+        // Mark attendance step if user attends regularly (4+ times per month)
+        if (step.stepId === 'attendance' && parseInt(answers.sunday_attendance) >= 4) {
+            completed = true;
+            notes = `Attends ${answers.sunday_attendance} times per month`;
+            console.log('✅ Marking attendance step as completed');
+        }
+        
+        // Mark bible-prayer step if user practices daily Bible reading and prayer (4+ times per week)
+        if (step.stepId === 'bible-prayer' && parseInt(answers.bible_prayer) >= 4) {
+            completed = true;
+            notes = `Practices Bible reading and prayer ${answers.bible_prayer} times per week`;
+            console.log('✅ Marking bible-prayer step as completed');
+        }
+        
+        // Mark giving step if user gives consistently (4+ times per month)
+        if (step.stepId === 'giving' && parseInt(answers.giving_status) >= 4) {
+            completed = true;
+            notes = `Gives ${answers.giving_status} times per month`;
+            console.log('✅ Marking giving step as completed');
+        }
+        
+        // Mark small-group step if user is in a small group
+        if (step.stepId === 'small-group' && answers.small_group === 'yes') {
+            completed = true;
+            notes = 'User is in a small group';
+            console.log('✅ Marking small-group step as completed');
+        }
+        
+        // Mark serve-team step if user serves on a team
+        if (step.stepId === 'serve-team' && answers.serve_team === 'yes') {
+            completed = true;
+            notes = 'User serves on a team';
+            console.log('✅ Marking serve-team step as completed');
+        }
+        
+        // Mark invite-pray step if user invites and prays regularly (4+ times per month)
+        if (step.stepId === 'invite-pray' && parseInt(answers.invite_pray) >= 4) {
+            completed = true;
+            notes = `Invites and prays ${answers.invite_pray} times per month`;
+            console.log('✅ Marking invite-pray step as completed');
+        }
+        
+        // Mark share-story step if user shares their story
+        if (step.stepId === 'share-story' && answers.share_story === 'yes') {
+            completed = true;
+            notes = 'User shares their faith story';
+            console.log('✅ Marking share-story step as completed');
+        }
+        
+        // Mark leadership step if user leads others
+        if (step.stepId === 'leadership' && answers.leadership === 'yes') {
+            completed = true;
+            notes = 'User leads others';
+            console.log('✅ Marking leadership step as completed');
+        }
+        
+        // Mark mission-living step if user lives on mission (4+ times per week)
+        if (step.stepId === 'mission-living' && parseInt(answers.mission_living) >= 4) {
+            completed = true;
+            notes = `Lives on mission ${answers.mission_living} times per week`;
+            console.log('✅ Marking mission-living step as completed');
         }
         
         completedSteps.push({
