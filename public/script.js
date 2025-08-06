@@ -1767,6 +1767,13 @@ let currentEvents = [];
 async function fetchEvents() {
     try {
         console.log('📅 Fetching events from Planning Center...');
+        
+        // First check session
+        console.log('🔍 Checking session...');
+        const sessionResponse = await fetch(`${API_BASE}/api/session-check`);
+        const sessionData = await sessionResponse.json();
+        console.log('🔍 Session data:', sessionData);
+        
         console.log('🔗 API URL:', `${API_BASE}/api/events`);
         const response = await fetch(`${API_BASE}/api/events`);
         

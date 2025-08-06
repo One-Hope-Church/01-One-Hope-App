@@ -19,7 +19,12 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', 
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // Planning Center OAuth configuration
@@ -54,6 +59,24 @@ app.get('/script.js', (req, res) => {
 app.get('/images/:filename', (req, res) => {
     console.log('🖼️ Image requested:', req.params.filename);
     res.sendFile(__dirname + '/public/images/' + req.params.filename);
+});
+
+// Debug route for session check
+app.get('/api/session-check', (req, res) => {
+    console.log('🔍 Session check requested');
+    console.log('🔍 Session ID:', req.sessionID);
+    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
+    console.log('🔍 Session data:', req.session);
+    
+    res.json({
+        sessionId: req.sessionID,
+        hasUser: !!req.session.user,
+        user: req.session.user ? {
+            id: req.session.user.id,
+            name: req.session.user.name,
+            email: req.session.user.email
+        } : null
+    });
 });
 
 // Planning Center OAuth routes
