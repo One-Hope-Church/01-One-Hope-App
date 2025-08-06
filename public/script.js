@@ -1556,49 +1556,17 @@ function markCurrentSectionComplete() {
     }
 }
 
-// Assessment Functions
+// Assessment Functions (DISABLED - Not in use)
 function initializeAssessment() {
-    assessmentState.currentQuestion = 0;
-    assessmentState.answers = {};
-    showAssessmentQuestion(0);
-    updateAssessmentProgress();
+    // Assessment disabled - not in use
+    console.log('Assessment disabled - not in use');
+    return;
 }
 
 function showAssessmentQuestion(questionIndex) {
-    // Hide all questions
-    document.querySelectorAll('.assessment-question').forEach(q => {
-        q.style.display = 'none';
-    });
-    
-    // Get the main question to show
-    const questionId = getQuestionId(questionIndex);
-    
-    // Debug logging
-    console.log('Showing question:', questionIndex, 'with ID:', questionId);
-    
-    // Show current question
-    const currentQuestion = document.getElementById(`question-${questionId}`);
-    if (currentQuestion) {
-        currentQuestion.style.display = 'block';
-        console.log('Question found and displayed');
-    } else {
-        console.log('Question not found:', `question-${questionId}`);
-    }
-    
-
-    
-    // Reset radio button selections for current question only
-    if (currentQuestion) {
-        currentQuestion.querySelectorAll('input[type="radio"]').forEach(radio => {
-            radio.checked = false;
-        });
-    }
-    
-    // Disable next button
-    const nextBtn = document.getElementById('next-assessment-btn');
-    if (nextBtn) {
-        nextBtn.disabled = true;
-    }
+    // Assessment disabled - not in use
+    console.log('Assessment disabled - not in use');
+    return;
 }
 
 
@@ -1633,41 +1601,9 @@ function showConditionalQuestion(questionType) {
 }
 
 function selectAssessmentOption(questionName, value) {
-    assessmentState.answers[questionName] = value;
-    
-    // Handle conditional logic for salvation date
-    if (questionName === 'salvation_status') {
-        if (value === 'yes') {
-            // Show salvation date question as separate screen
-            showConditionalQuestion('salvation-date');
-            return; // Don't enable next button yet
-        } else {
-            // Clear salvation date value
-            assessmentState.answers['salvation_date'] = '';
-            const dateInput = document.getElementById('salvation_date');
-            if (dateInput) {
-                dateInput.value = '';
-            }
-        }
-    }
-    
-    // Handle conditional logic for leadership ready question
-    if (questionName === 'leadership') {
-        if (value === 'no') {
-            // Show leadership ready question as separate screen
-            showConditionalQuestion('leadership-ready');
-            return; // Don't enable next button yet
-        } else {
-            // Clear leadership ready value
-            assessmentState.answers['leadership_ready'] = '';
-        }
-    }
-    
-    // Enable next button for regular questions
-    const nextBtn = document.getElementById('next-assessment-btn');
-    if (nextBtn) {
-        nextBtn.disabled = false;
-    }
+    // Assessment disabled - not in use
+    console.log('Assessment disabled - not in use');
+    return;
 }
 
 function nextAssessmentQuestion() {
@@ -1788,10 +1724,9 @@ function skipResults() {
 }
 
 function skipAssessment() {
-    assessmentState.isNewUser = false;
-    showScreen('mainApp');
-    showAppScreen('homeScreen');
-    showNotification('Welcome to One Hope Next Step!', 'success');
+    // Assessment disabled - not in use
+    console.log('Assessment disabled - not in use');
+    return;
 }
 
 // External Link Functions

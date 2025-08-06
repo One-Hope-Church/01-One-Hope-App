@@ -88,6 +88,17 @@
     box-sizing: border-box;
 }
 
+/* Hide assessment screens completely */
+#spiritualAssessmentScreen,
+#assessmentResultsScreen {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+}
+
 body {
     font-family: var(--font-family);
     background: var(--background);
