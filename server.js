@@ -184,6 +184,18 @@ app.get('/auth/callback', async (req, res) => {
             accessToken: accessToken
         };
         
+        // Also store in app.locals for serverless environment
+        req.app.locals.userSessions = req.app.locals.userSessions || {};
+        req.app.locals.userSessions[req.sessionID] = {
+            id: userId,
+            name: user.attributes?.name || 'User',
+            email: userEmail,
+            accessToken: accessToken,
+            timestamp: Date.now()
+        };
+        
+        console.log('✅ User session stored in app.locals');
+        
         // Redirect with token
         res.redirect(`/?auth=success&token=${encodeURIComponent(userToken)}`);
     } catch (error) {
@@ -238,9 +250,21 @@ app.get('/api/events', async (req, res) => {
     console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
     console.log('🔍 Session ID:', req.sessionID);
     
-    if (!req.session.user) {
-        console.log('❌ No user session found');
-        return res.status(401).json({ error: 'Not authenticated' });
+    // Check if user exists in session
+    if (req.session.user) {
+        console.log('✅ User found in session');
+    } else {
+        // Check if user exists in app.locals backup
+        const userSessions = req.app.locals.userSessions || {};
+        const backupUser = userSessions[req.sessionID];
+        
+        if (backupUser) {
+            console.log('✅ User found in app.locals backup');
+            req.session.user = backupUser;
+        } else {
+            console.log('❌ No user session found');
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
     }
 
     try {

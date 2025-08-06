@@ -1846,12 +1846,21 @@ async function fetchEvents() {
         
         // First check session
         console.log('🔍 Checking session...');
-        const sessionResponse = await fetch(`${API_BASE}/api/session-check`);
+        const sessionResponse = await fetch(`${API_BASE}/api/session-check`, {
+            credentials: 'include'
+        });
         const sessionData = await sessionResponse.json();
         console.log('🔍 Session data:', sessionData);
         
         console.log('🔗 API URL:', `${API_BASE}/api/events`);
-        const response = await fetch(`${API_BASE}/api/events`);
+        
+        // Add credentials to ensure cookies are sent
+        const response = await fetch(`${API_BASE}/api/events`, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
         
         console.log('📡 Response status:', response.status);
         console.log('📡 Response ok:', response.ok);
