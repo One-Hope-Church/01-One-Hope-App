@@ -7,11 +7,11 @@ let userProgress = {
     currentStep: 'baptism'
 };
 
-// Assessment State
+// Assessment State (DISABLED - Not in use)
 let assessmentState = {
     currentQuestion: 0,
     answers: {},
-    totalQuestions: 11, // Fixed: should be 11 questions total
+    totalQuestions: 11,
     isNewUser: false
 };
 
@@ -412,23 +412,23 @@ function setupFormHandlers() {
     // Remove old form handlers since we're using Planning Center only
     // The old login/signup forms have been replaced with Planning Center buttons
     
-    // Assessment radio buttons and date inputs
-    document.addEventListener('change', function(e) {
-        if (e.target.type === 'radio' && e.target.name) {
-            selectAssessmentOption(e.target.name, e.target.value);
-        }
-        
-        // Handle date input changes
-        if (e.target.type === 'date' && e.target.name) {
-            assessmentState.answers[e.target.name] = e.target.value;
-            
-            // Enable next button if date is selected
-            const nextBtn = document.getElementById('next-assessment-btn');
-            if (nextBtn && e.target.value) {
-                nextBtn.disabled = false;
-            }
-        }
-    });
+    // Assessment radio buttons and date inputs (DISABLED - Not in use)
+    // document.addEventListener('change', function(e) {
+    //     if (e.target.type === 'radio' && e.target.name) {
+    //         selectAssessmentOption(e.target.name, e.target.value);
+    //     }
+    //     
+    //     // Handle date input changes
+    //     if (e.target.type === 'date' && e.target.name) {
+    //         assessmentState.answers[e.target.name] = e.target.value;
+    //         
+    //         // Enable next button if date is selected
+    //         const nextBtn = document.getElementById('next-assessment-btn');
+    //         if (nextBtn && e.target.value) {
+    //             nextBtn.disabled = false;
+    //         }
+    //     }
+    // });
 }
 
 // Planning Center authentication replaces the old login/signup functions
