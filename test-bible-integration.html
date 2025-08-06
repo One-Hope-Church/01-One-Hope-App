@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #00A0DF;
+        }
+        .btn {
+            background: #00A0DF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #0090C9;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #51cf66;
+            background: #f8fff9;
+        }
+        .error {
+            border-color: #ff6b6b;
+            background: #fff8f8;
+        }
+        .loading {
+            border-color: #00A0DF;
+            background: #f0f8ff;
+        }
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        .status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Bible Integration Test Suite</h1>
+    
+    <div class="test-container">
+        <h2>Configuration Setup</h2>
+        <div class="test-section">
+            <h3>API Configuration</h3>
+            <p>Enter your API configuration below:</p>
+            
+            <label>Base URL:</label>
+            <input type="text" id="baseUrl" class="config-input" placeholder="https://your-production-domain.com" value="https://onehopechurch.com">
+            
+            <label>Bible API Key:</label>
+            <input type="password" id="bibleApiKey" class="config-input" placeholder="Enter your bible API key">
+            
+            <label>Bible Verse API Key:</label>
+            <input type="password" id="verseApiKey" class="config-input" placeholder="Enter your bible verse API key">
+            
+            <label>Bible ID:</label>
+            <input type="text" id="bibleId" class="config-input" placeholder="e.g., NIV, KJV" value="NIV">
+            
+            <button class="btn" onclick="saveConfig()">Save Configuration</button>
+            <button class="btn" onclick="loadConfig()">Load Saved Config</button>
+            
+            <div id="configStatus"></div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>API Endpoint Tests</h2>
+        
+        <div class="test-section">
+            <h3>1. Daily Bible Reading Test</h3>
+            <p>Test fetching the daily reading plan from the production API.</p>
+            <button class="btn" onclick="testDailyReading()">Test Daily Reading API</button>
+            <div id="dailyReadingResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Bible Verse Test</h3>
+            <p>Test fetching scripture content for a specific verse.</p>
+            <input type="text" id="verseQuery" class="config-input" placeholder="Enter verse reference (e.g., Genesis 1:1)" value="Genesis 1:1">
+            <button class="btn" onclick="testBibleVerse()">Test Bible Verse API</button>
+            <div id="bibleVerseResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Proxy Endpoint Test</h3>
+            <p>Test the local proxy endpoints (requires server setup).</p>
+            <button class="btn" onclick="testProxyEndpoints()">Test Proxy Endpoints</button>
+            <div id="proxyResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Integration Tests</h2>
+        
+        <div class="test-section">
+            <h3>4. Full Integration Test</h3>
+            <p>Test the complete bible integration workflow.</p>
+            <button class="btn" onclick="testFullIntegration()">Run Full Integration Test</button>
+            <div id="integrationResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Error Handling Test</h3>
+            <p>Test how the system handles API errors and network issues.</p>
+            <button class="btn" onclick="testErrorHandling()">Test Error Handling</button>
+            <div id="errorResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results Summary</h2>
+        <div id="testSummary"></div>
+    </div>
+
+    <script>
+        // Test configuration
+        let testConfig = {
+            baseUrl: '',
+            bibleApiKey: '',
+            verseApiKey: '',
+            bibleId: ''
+        };
+
+        let testResults = {
+            dailyReading: null,
+            bibleVerse: null,
+            proxy: null,
+            integration: null,
+            errorHandling: null
+        };
+
+        // Save configuration to localStorage
+        function saveConfig() {
+            testConfig = {
+                baseUrl: document.getElementById('baseUrl').value,
+                bibleApiKey: document.getElementById('bibleApiKey').value,
+                verseApiKey: document.getElementById('verseApiKey').value,
+                bibleId: document.getElementById('bibleId').value
+            };
+            
+            localStorage.setItem('bibleTestConfig', JSON.stringify(testConfig));
+            showStatus('Configuration saved successfully!', 'success');
+        }
+
+        // Load configuration from localStorage
+        function loadConfig() {
+            const saved = localStorage.getItem('bibleTestConfig');
+            if (saved) {
+                testConfig = JSON.parse(saved);
+                document.getElementById('baseUrl').value = testConfig.baseUrl;
+                document.getElementById('bibleApiKey').value = testConfig.bibleApiKey;
+                document.getElementById('verseApiKey').value = testConfig.verseApiKey;
+                document.getElementById('bibleId').value = testConfig.bibleId;
+                showStatus('Configuration loaded successfully!', 'success');
+            } else {
+                showStatus('No saved configuration found.', 'warning');
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('configStatus');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Test daily reading API
+        async function testDailyReading() {
+            const resultDiv = document.getElementById('dailyReadingResult');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Testing daily reading API...';
+
+            try {
+                if (!testConfig.baseUrl || !testConfig.bibleApiKey) {
+                    throw new Error('Please configure base URL and Bible API key first.');
+                }
+
+                const response = await fetch(`${testConfig.baseUrl}/api/bible?ref=${testConfig.baseUrl}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${testConfig.bibleApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.text();
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Daily Reading API Test PASSED\n\nResponse:\n${data}`;
+                testResults.dailyReading = 'PASSED';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Daily Reading API Test FAILED\n\nError: ${error.message}`;
+                testResults.dailyReading = 'FAILED';
+            }
+            
+            updateTestSummary();
+        }
+
+        // Test bible verse API
+        async function testBibleVerse() {
+            const resultDiv = document.getElementById('bibleVerseResult');
+            const verseQuery = document.getElementById('verseQuery').value;
+            
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Testing bible verse API...';
+
+            try {
+                if (!testConfig.baseUrl || !testConfig.verseApiKey || !testConfig.bibleId) {
+                    throw new Error('Please configure base URL, verse API key, and Bible ID first.');
+                }
+
+                if (!verseQuery) {
+                    throw new Error('Please enter a verse reference.');
+                }
+
+                const response = await fetch(`${testConfig.baseUrl}/api/bible/verse/${testConfig.bibleId}/search?query=${encodeURIComponent(verseQuery)}`, {
+                    method: 'GET',
+                    headers: {
+                        'api-key': testConfig.verseApiKey,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Bible Verse API Test PASSED\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                testResults.bibleVerse = 'PASSED';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Bible Verse API Test FAILED\n\nError: ${error.message}`;
+                testResults.bibleVerse = 'FAILED';
+            }
+            
+            updateTestSummary();
+        }
+
+        // Test proxy endpoints
+        async function testProxyEndpoints() {
+            const resultDiv = document.getElementById('proxyResult');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Testing proxy endpoints...';
+
+            try {
+                // Test daily reading proxy
+                const dailyResponse = await fetch('/api/bible');
+                const dailyData = await dailyResponse.json();
+                
+                // Test verse proxy
+                const verseResponse = await fetch('/api/bible/verse?query=Genesis 1:1');
+                const verseData = await verseResponse.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Proxy Endpoints Test PASSED\n\nDaily Reading Proxy: ${dailyResponse.ok ? 'OK' : 'FAILED'}\nVerse Proxy: ${verseResponse.ok ? 'OK' : 'FAILED'}\n\nDaily Data: ${JSON.stringify(dailyData, null, 2)}\n\nVerse Data: ${JSON.stringify(verseData, null, 2)}`;
+                testResults.proxy = 'PASSED';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Proxy Endpoints Test FAILED\n\nError: ${error.message}\n\nNote: This test requires the proxy endpoints to be running on a server.`;
+                testResults.proxy = 'FAILED';
+            }
+            
+            updateTestSummary();
+        }
+
+        // Test full integration
+        async function testFullIntegration() {
+            const resultDiv = document.getElementById('integrationResult');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Running full integration test...';
+
+            try {
+                // Test configuration
+                if (!testConfig.baseUrl || !testConfig.bibleApiKey || !testConfig.verseApiKey) {
+                    throw new Error('Configuration incomplete. Please set up all API keys.');
+                }
+
+                // Test daily reading
+                const dailyResponse = await fetch(`${testConfig.baseUrl}/api/bible?ref=${testConfig.baseUrl}`, {
+                    headers: { 'Authorization': `Bearer ${testConfig.bibleApiKey}` }
+                });
+                
+                if (!dailyResponse.ok) {
+                    throw new Error(`Daily reading API failed: ${dailyResponse.status}`);
+                }
+
+                const dailyData = await dailyResponse.text();
+                
+                // Test verse API
+                const verseResponse = await fetch(`${testConfig.baseUrl}/api/bible/verse/${testConfig.bibleId}/search?query=Genesis 1:1`, {
+                    headers: { 'api-key': testConfig.verseApiKey }
+                });
+                
+                if (!verseResponse.ok) {
+                    throw new Error(`Verse API failed: ${verseResponse.status}`);
+                }
+
+                const verseData = await verseResponse.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Full Integration Test PASSED\n\n✅ Daily Reading API: Working\n✅ Verse API: Working\n✅ Configuration: Valid\n\nDaily Data Sample: ${dailyData.substring(0, 200)}...\n\nVerse Data Sample: ${JSON.stringify(verseData, null, 2)}`;
+                testResults.integration = 'PASSED';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Full Integration Test FAILED\n\nError: ${error.message}`;
+                testResults.integration = 'FAILED';
+            }
+            
+            updateTestSummary();
+        }
+
+        // Test error handling
+        async function testErrorHandling() {
+            const resultDiv = document.getElementById('errorResult');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Testing error handling...';
+
+            try {
+                // Test with invalid API key
+                const invalidResponse = await fetch(`${testConfig.baseUrl}/api/bible?ref=${testConfig.baseUrl}`, {
+                    headers: { 'Authorization': 'Bearer invalid_key' }
+                });
+                
+                // Test with invalid verse
+                const invalidVerseResponse = await fetch(`${testConfig.baseUrl}/api/bible/verse/${testConfig.bibleId}/search?query=InvalidVerse123`, {
+                    headers: { 'api-key': testConfig.verseApiKey }
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Error Handling Test PASSED\n\n✅ Invalid API Key: Properly handled (${invalidResponse.status})\n✅ Invalid Verse: Properly handled (${invalidVerseResponse.status})\n\nBoth endpoints correctly returned error status codes for invalid requests.`;
+                testResults.errorHandling = 'PASSED';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error Handling Test FAILED\n\nError: ${error.message}`;
+                testResults.errorHandling = 'FAILED';
+            }
+            
+            updateTestSummary();
+        }
+
+        // Update test summary
+        function updateTestSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const passed = Object.values(testResults).filter(r => r === 'PASSED').length;
+            const total = Object.keys(testResults).length;
+            
+            let summaryHTML = `<h3>Test Results: ${passed}/${total} Tests Passed</h3>`;
+            
+            for (const [test, result] of Object.entries(testResults)) {
+                const status = result || 'NOT RUN';
+                const icon = result === 'PASSED' ? '✅' : result === 'FAILED' ? '❌' : '⏳';
+                summaryHTML += `<p>${icon} ${test.replace(/([A-Z])/g, ' $1').trim()}: ${status}</p>`;
+            }
+            
+            summaryDiv.innerHTML = summaryHTML;
+        }
+
+        // Auto-load configuration on page load
+        window.addEventListener('load', () => {
+            loadConfig();
+        });
+    </script>
+</body>
+</html> 

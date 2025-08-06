@@ -304,6 +304,23 @@ body {
     z-index: 100;
 }
 
+/* Fix header spacing for reading detail screen */
+#readingDetailScreen .header {
+    padding-bottom: 1.5rem;
+}
+
+#readingDetailScreen .header h1 {
+    margin-left: 2.5rem; /* Add space for back button */
+    flex: 1;
+    text-align: center;
+}
+
+#readingDetailScreen .back-button {
+    position: absolute;
+    left: 1.5rem;
+    z-index: 101;
+}
+
 .header h1 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -1051,7 +1068,7 @@ body {
 }
 
 .reading-detail-content .verse-reference-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #00A0DF, #0090C9);
     color: white;
     padding: 1rem 1.5rem;
     border-radius: 12px;
@@ -1062,7 +1079,7 @@ body {
 }
 
 .reading-detail-content h2 {
-    color: #667eea;
+    color: #00A0DF;
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 1.5rem;
@@ -1111,7 +1128,7 @@ body {
     }
     
     .reading-detail-content h2 {
-        color: #667eea;
+        color: #00A0DF;
     }
     
     .reading-detail-content h3 {
@@ -1127,7 +1144,7 @@ body {
     }
     
     .reading-detail-content .verse-reference-header {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #00A0DF, #0090C9);
     }
 }
 
@@ -1857,5 +1874,103 @@ body {
         border-color: #667eea;
         background: #4a5568;
         color: #667eea;
+    }
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    text-align: center;
+    color: var(--primary-color, #00A0DF);
+}
+
+.loading-content i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.loading-content p {
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    color: var(--primary-color, #00A0DF);
+}
+
+.loading-spinner i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+/* Error Message */
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--error-color, #dc3545);
+}
+
+.error-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-message p {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.error-message button {
+    margin-top: 1rem;
+}
+
+/* Bible Version Badge */
+.bible-version {
+    display: inline-block;
+    background: var(--secondary-color, #6c757d);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* Devotional Content */
+.devotional-content {
+    line-height: 1.6;
+    margin-top: 1rem;
+}
+
+.devotional-content p {
+    margin-bottom: 1rem;
+}
+
+/* Dark mode support for new elements */
+@media (prefers-color-scheme: dark) {
+    .loading-overlay {
+        background: rgba(0, 0, 0, 0.95);
+    }
+    
+    .error-message {
+        color: #ff6b6b;
+    }
+    
+    .bible-version {
+        background: #495057;
     }
 } 

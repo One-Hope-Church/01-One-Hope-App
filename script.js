@@ -34,7 +34,63 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize homepage next step
     updateHomepageNextStep();
+    
+    // Initialize bible data
+    initializeBibleData();
+    
+    // Update dates
+    updateDates();
 });
+
+// Update date displays
+function updateDates() {
+    const today = new Date();
+    const month = today.toLocaleDateString('en-US', { month: 'long' });
+    const day = today.getDate();
+    const year = today.getFullYear();
+    
+    // Add ordinal suffix to day (1st, 2nd, 3rd, etc.)
+    const getOrdinalSuffix = (day) => {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    };
+    
+    const formattedDate = `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+    
+    // Update home page date
+    const homeDate = document.getElementById('home-bible-date');
+    if (homeDate) {
+        homeDate.textContent = formattedDate;
+    }
+    
+    // Update bible page date
+    const bibleDate = document.getElementById('bible-page-date');
+    if (bibleDate) {
+        bibleDate.textContent = formattedDate;
+    }
+    
+    // Calculate and update day of year
+    const startOfYear = new Date(year, 0, 1); // January 1st of current year
+    const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+    const progressPercentage = (dayOfYear / 365) * 100;
+    
+    // Update day of year text
+    const dayOfYearElement = document.getElementById('day-of-year');
+    if (dayOfYearElement) {
+        dayOfYearElement.textContent = `Day ${dayOfYear} of 365`;
+    }
+    
+    // Update year progress bar
+    const yearProgressFill = document.getElementById('year-progress-fill');
+    if (yearProgressFill) {
+        yearProgressFill.style.width = `${progressPercentage}%`;
+    }
+}
 
 // Screen Management
 function showScreen(screenId) {
@@ -214,14 +270,345 @@ let dailyReadings = {
     proverbs: false
 };
 
+// Bible API Integration
+let currentBibleData = null;
+let bibleCache = {};
+
+// Fetch daily bible reading from API
+async function fetchDailyBibleReading() {
+    try {
+        showLoadingState('bible', true);
+        
+        // Use Highlands API for daily readings
+        const response = await fetch('https://central-api.highlands.io/api/v1/bible/reading-plans', {
+            headers: {
+                'Authorization': 'Bearer xaTCG5b2NYmKfvQ15bQ76o1y',
+                'Content-Type': 'application/xml'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const xmlData = await response.text();
+        
+        // Parse XML and transform to expected format
+        const transformedData = parseHighlandsXML(xmlData);
+        currentBibleData = transformedData;
+        
+        // Cache the data for today
+        const today = new Date().toDateString();
+        bibleCache[today] = transformedData;
+        
+        // Update UI with real data
+        updateBibleUI();
+        
+        return transformedData;
+    } catch (error) {
+        console.error('Error fetching bible reading:', error);
+        showNotification('Unable to load today\'s reading. Using cached content.', 'warning');
+        
+        // Try to use cached data
+        const today = new Date().toDateString();
+        if (bibleCache[today]) {
+            currentBibleData = bibleCache[today];
+            updateBibleUI();
+        }
+        
+        return null;
+    } finally {
+        showLoadingState('bible', false);
+    }
+}
+
+// Parse Highlands XML data to expected format
+function parseHighlandsXML(xmlString) {
+    try {
+        // Create a simple XML parser
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        
+        // Extract the Reading element
+        const readingElement = xmlDoc.querySelector('Reading');
+        if (!readingElement) {
+            throw new Error('No Reading element found in XML');
+        }
+        
+        // Extract date
+        const date = readingElement.getAttribute('Date') || new Date().toISOString().split('T')[0];
+        
+        // Extract devotional
+        const devotionalElement = readingElement.querySelector('Devotional');
+        const devotionalAuthor = devotionalElement?.getAttribute('Author') || 'Pastor Larry Stockstill';
+        const devotionalContent = devotionalElement?.textContent?.trim() || 'Daily devotional content';
+        
+        // Extract readings
+        const oldTestament = readingElement.querySelector('OldTestament')?.getAttribute('Verses') || 'Genesis 1:1-31';
+        const newTestament = readingElement.querySelector('NewTestament')?.getAttribute('Verses') || 'Matthew 1:1-17';
+        const psalm = readingElement.querySelector('Psalm')?.getAttribute('Verses') || 'Psalm 1:1-6';
+        const proverbs = readingElement.querySelector('Proverbs')?.getAttribute('Verses') || 'Proverbs 1:1-7';
+        
+        return {
+            Date: [date],
+            Devotional: [{
+                Author: [devotionalAuthor],
+                _: devotionalContent
+            }],
+            OldTestament: [{
+                Verses: [oldTestament]
+            }],
+            NewTestament: [{
+                Verses: [newTestament]
+            }],
+            Psalm: [{
+                Verses: [psalm]
+            }],
+            Proverbs: [{
+                Verses: [proverbs]
+            }]
+        };
+    } catch (error) {
+        console.error('Error parsing XML:', error);
+        // Return fallback data
+        return {
+            Date: [new Date().toISOString().split('T')[0]],
+            Devotional: [{
+                Author: ['Pastor Larry Stockstill'],
+                _: 'Daily devotional content from the One Hope Bible reading plan.'
+            }],
+            OldTestament: [{
+                Verses: ['Genesis 1:1-31']
+            }],
+            NewTestament: [{
+                Verses: ['Matthew 1:1-17']
+            }],
+            Psalm: [{
+                Verses: ['Psalm 1:1-6']
+            }],
+            Proverbs: [{
+                Verses: ['Proverbs 1:1-7']
+            }]
+        };
+    }
+}
+
+// Fetch bible verse content
+async function fetchBibleVerse(verse) {
+    console.log(`fetchBibleVerse called with verse: ${verse}`);
+    
+    try {
+        // Convert verse reference to passage format
+        const passageId = convertVerseToPassageId(verse);
+        console.log(`Converted to passage ID: ${passageId}`);
+        
+        const url = `https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/${passageId}`;
+        console.log(`Fetching from URL: ${url}`);
+        
+        const response = await fetch(url, {
+            headers: {
+                'api-key': 'f286579424dc0547f71ce7d7a69ca8d1',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log(`Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`Scripture API response:`, data);
+        
+        // Convert to the format expected by loadScriptureContent
+        return {
+            data: {
+                passages: [data.data]
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching bible verse:', error);
+        return null;
+    }
+}
+
+// Convert verse reference to passage ID format
+function convertVerseToPassageId(verse) {
+    // Map of book names to their IDs
+    const bookMap = {
+        'Genesis': 'GEN', 'Exodus': 'EXO', 'Leviticus': 'LEV', 'Numbers': 'NUM', 'Deuteronomy': 'DEU',
+        'Joshua': 'JOS', 'Judges': 'JDG', 'Ruth': 'RUT', '1 Samuel': '1SA', '2 Samuel': '2SA',
+        '1 Kings': '1KI', '2 Kings': '2KI', '1 Chronicles': '1CH', '2 Chronicles': '2CH',
+        'Ezra': 'EZR', 'Nehemiah': 'NEH', 'Esther': 'EST', 'Job': 'JOB', 'Psalm': 'PSA', 'Psalms': 'PSA',
+        'Proverbs': 'PRO', 'Ecclesiastes': 'ECC', 'Song of Solomon': 'SNG', 'Isaiah': 'ISA',
+        'Jeremiah': 'JER', 'Lamentations': 'LAM', 'Ezekiel': 'EZK', 'Daniel': 'DAN',
+        'Hosea': 'HOS', 'Joel': 'JOL', 'Amos': 'AMO', 'Obadiah': 'OBA', 'Jonah': 'JON',
+        'Micah': 'MIC', 'Nahum': 'NAM', 'Habakkuk': 'HAB', 'Zephaniah': 'ZEP',
+        'Haggai': 'HAG', 'Zechariah': 'ZEC', 'Malachi': 'MAL',
+        'Matthew': 'MAT', 'Mark': 'MRK', 'Luke': 'LUK', 'John': 'JHN', 'Acts': 'ACT',
+        'Romans': 'ROM', '1 Corinthians': '1CO', '2 Corinthians': '2CO', 'Galatians': 'GAL',
+        'Ephesians': 'EPH', 'Philippians': 'PHP', 'Colossians': 'COL', '1 Thessalonians': '1TH',
+        '2 Thessalonians': '2TH', '1 Timothy': '1TI', '2 Timothy': '2TI', 'Titus': 'TIT',
+        'Philemon': 'PHM', 'Hebrews': 'HEB', 'James': 'JAS', '1 Peter': '1PE', '2 Peter': '2PE',
+        '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV'
+    };
+    
+    // Parse the verse reference (e.g., "1 Corinthians 2:6-3:4")
+    const match = verse.match(/^(\d*\s*[A-Za-z]+)\s+(\d+):(\d+)(?:-(\d+):?(\d+)?)?$/);
+    if (!match) {
+        console.log(`Could not parse verse reference: ${verse}`);
+        return null;
+    }
+    
+    const bookName = match[1].trim();
+    const chapter = match[2];
+    const verseStart = match[3];
+    const chapterEnd = match[4];
+    const verseEnd = match[5];
+    
+    const bookId = bookMap[bookName];
+    if (!bookId) {
+        console.log(`Unknown book: ${bookName}`);
+        return null;
+    }
+    
+    // Handle verse ranges
+    if (chapterEnd && verseEnd) {
+        // Cross-chapter range (e.g., "2:6-3:4")
+        return `${bookId}.${chapter}.${verseStart}-${bookId}.${chapterEnd}.${verseEnd}`;
+    } else if (chapterEnd && !verseEnd) {
+        // Same chapter range (e.g., "2:6-4")
+        return `${bookId}.${chapter}.${verseStart}-${bookId}.${chapter}.${chapterEnd}`;
+    } else if (!chapterEnd && !verseEnd) {
+        // Single verse (e.g., "2:6")
+        return `${bookId}.${chapter}.${verseStart}`;
+    } else {
+        // Fallback to single verse
+        return `${bookId}.${chapter}.${verseStart}`;
+    }
+}
+
+// Update bible UI with real data
+function updateBibleUI() {
+    if (!currentBibleData) return;
+    
+    // Update date
+    const dateElement = document.querySelector('.reading-date span');
+    if (dateElement && currentBibleData.Date && currentBibleData.Date[0]) {
+        // Handle date format from API (YYYY-MM-DD)
+        let date;
+        if (currentBibleData.Date[0].includes('-')) {
+            // API date format: YYYY-MM-DD
+            date = new Date(currentBibleData.Date[0]);
+        } else {
+            // Fallback to current date
+            date = new Date();
+        }
+        
+        dateElement.textContent = date.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
+    
+    // Update verse references
+    console.log('Updating verse references with data:', currentBibleData);
+    console.log('New Testament data:', currentBibleData.NewTestament?.[0]?.Verses?.[0]);
+    
+    updateVerseReference('old-testament', currentBibleData.OldTestament?.[0]?.Verses?.[0]);
+    updateVerseReference('new-testament', currentBibleData.NewTestament?.[0]?.Verses?.[0]);
+    updateVerseReference('psalms', currentBibleData.Psalm?.[0]?.Verses?.[0]);
+    updateVerseReference('proverbs', currentBibleData.Proverbs?.[0]?.Verses?.[0]);
+    
+    // Update devotional
+    if (currentBibleData.Devotional?.[0]) {
+        const devotionalTitle = document.querySelector('.reading-section[onclick*="devotional"] .reading-content h5');
+        if (devotionalTitle) {
+            devotionalTitle.textContent = currentBibleData.Devotional[0].Author?.[0] || 'Daily Devotional';
+        }
+    }
+    
+    console.log('Bible UI updated with real data:', currentBibleData);
+}
+
+// Update verse reference in UI
+function updateVerseReference(section, verse) {
+    console.log(`updateVerseReference called for ${section} with verse: ${verse}`);
+    
+    if (!verse) {
+        console.log(`No verse provided for section: ${section}`);
+        return;
+    }
+    
+    const titleElement = document.querySelector(`.reading-section[onclick*="${section}"] .reading-content h5`);
+    console.log(`Looking for element with selector: .reading-section[onclick*="${section}"] .reading-content h5`);
+    console.log(`Found element:`, titleElement);
+    
+    if (titleElement) {
+        titleElement.textContent = verse;
+        console.log(`✅ Updated ${section} to: ${verse}`);
+    } else {
+        console.log(`❌ Could not find element for section: ${section}`);
+    }
+}
+
+// Show/hide loading state
+function showLoadingState(screen, isLoading) {
+    const loadingElement = document.querySelector(`#${screen}Screen .loading-overlay`);
+    if (loadingElement) {
+        loadingElement.style.display = isLoading ? 'flex' : 'none';
+    }
+}
+
+// Initialize bible data
+function initializeBibleData() {
+    // Create loading overlay for bible screen if it doesn't exist
+    const bibleScreen = document.getElementById('bibleScreen');
+    if (bibleScreen && !bibleScreen.querySelector('.loading-overlay')) {
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="loading-content">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading today's reading...</p>
+            </div>
+        `;
+        bibleScreen.appendChild(loadingOverlay);
+    }
+    
+    // Load bible data when user first accesses bible screen
+    const bibleButton = document.querySelector('.bible-button');
+    if (bibleButton) {
+        bibleButton.addEventListener('click', async function() {
+            if (!currentBibleData) {
+                await fetchDailyBibleReading();
+            }
+        });
+    }
+}
+
 function markReadingComplete(section) {
-    if (dailyReadings[section]) {
+    // Map section names to match dailyReadings keys
+    const sectionMap = {
+        'devotional': 'devotional',
+        'old-testament': 'oldTestament',
+        'new-testament': 'newTestament',
+        'psalms': 'psalms',
+        'proverbs': 'proverbs'
+    };
+    
+    const mappedSection = sectionMap[section] || section;
+    
+    if (dailyReadings[mappedSection]) {
         showNotification('Already completed!', 'info');
         return;
     }
     
     // Mark section as complete
-    dailyReadings[section] = true;
+    dailyReadings[mappedSection] = true;
     
     // Update buttons on home page
     const homeButton = document.getElementById(`${section}-btn`);
@@ -278,13 +665,17 @@ function updateDailyCompletion() {
     // Update Bible page
     if (progressFillBible) progressFillBible.style.width = `${percentage}%`;
     if (completionTextBible) completionTextBible.textContent = `${completedCount} of ${totalSections} sections completed`;
-    if (markAllBtnBible) markAllBtnBible.disabled = completedCount < totalSections;
+    if (markAllBtnBible) {
+        markAllBtnBible.disabled = completedCount < totalSections;
+        console.log(`Mark All Button - Completed: ${completedCount}, Total: ${totalSections}, Disabled: ${completedCount < totalSections}`);
+    }
     
     // Update steps completed count in profile
     updateStepsCompletedCount();
 }
 
 function markAllComplete() {
+    console.log('markAllComplete function called');
     const today = new Date().toDateString();
     
     // Check if already completed today
@@ -293,12 +684,18 @@ function markAllComplete() {
         return;
     }
     
+    // Mark all daily readings as complete
+    Object.keys(dailyReadings).forEach(section => {
+        dailyReadings[section] = true;
+    });
+    
     // Add to completed readings
     userProgress.bibleReadings.push(today);
     userProgress.streak += 1;
     
     // Update UI
     updateProgressUI();
+    updateDailyCompletion();
     
     // Show success message
     showNotification('Excellent! Daily reading complete!', 'success');
@@ -313,6 +710,23 @@ function markAllComplete() {
             btn.disabled = true;
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-secondary');
+        }
+    });
+    
+    // Update all individual section status indicators
+    const sections = ['devotional', 'old-testament', 'new-testament', 'psalms', 'proverbs'];
+    sections.forEach(section => {
+        // Update status indicators on Bible page
+        const statusElement = document.getElementById(`${section}-status`);
+        if (statusElement) {
+            statusElement.innerHTML = '<i class="fas fa-check"></i>';
+            statusElement.classList.add('completed');
+        }
+        
+        // Update section styling
+        const sectionElement = statusElement ? statusElement.closest('.reading-section') : null;
+        if (sectionElement) {
+            sectionElement.classList.add('completed');
         }
     });
 }
@@ -350,17 +764,17 @@ function updateHomepageNextStep() {
     
     // Define the step progression
     const stepProgression = [
-        { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross' },
-        { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water' },
-        { id: 'attendance', title: 'Attend Regularly', description: 'Make Sunday church a weekly rhythm', icon: 'fas fa-church' },
-        { id: 'bible-prayer', title: 'Daily Bible & Prayer', description: 'Build a habit of Bible reading and prayer', icon: 'fas fa-book-open' },
-        { id: 'giving', title: 'Give Consistently', description: 'Learn to give generously and consistently', icon: 'fas fa-heart' },
-        { id: 'small-group', title: 'Join a Small Group', description: 'Find people to grow with', icon: 'fas fa-users' },
-        { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping' },
-        { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray' },
-        { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment' },
-        { id: 'leadership', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown' },
-        { id: 'mission-living', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass' }
+        { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross', link: 'https://onehopechurch.com/about' },
+        { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water', link: 'https://onehopechurch.com/connect/baptism' },
+        { id: 'attendance', title: 'Attend Regularly', description: 'Make Sunday church a weekly rhythm', icon: 'fas fa-church', link: 'https://onehopechurch.com/visit' },
+        { id: 'bible-prayer', title: 'Daily Bible & Prayer', description: 'Build a habit of Bible reading and prayer', icon: 'fas fa-book-open', link: 'https://onehopechurch.com/prayer' },
+        { id: 'giving', title: 'Give Consistently', description: 'Learn to give generously and consistently', icon: 'fas fa-heart', link: 'https://onehopechurch.com/giving' },
+        { id: 'small-group', title: 'Join a Small Group', description: 'Find people to grow with', icon: 'fas fa-users', link: 'https://onehopechurch.com/connect' },
+        { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping', link: 'https://onehopechurch.com/connect' },
+        { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray', link: 'https://onehopechurch.com/visit' },
+        { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment', link: 'https://onehopechurch.com/connect' },
+        { id: 'leadership', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown', link: 'https://onehopechurch.com/connect' },
+        { id: 'mission-living', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass', link: 'https://onehopechurch.com/connect' }
     ];
     
     // Find the next incomplete step
@@ -389,6 +803,9 @@ function updateHomepageNextStep() {
     if (stepIcon) stepIcon.className = nextStep.icon;
     if (stepTitle) stepTitle.textContent = nextStep.title;
     if (stepDescription) stepDescription.textContent = nextStep.description;
+    
+    // Store the current step's link for the button
+    nextStepContainer.dataset.currentStepLink = nextStep.link || '#';
 }
 
 // Next Steps Functions
@@ -428,6 +845,19 @@ function completeStep(stepId) {
     updateStepsCompletedCount();
     
     showNotification('Step completed!', 'success');
+}
+
+// Open the current step's link
+function openCurrentStepLink() {
+    const nextStepContainer = document.getElementById('homepage-next-step');
+    if (nextStepContainer && nextStepContainer.dataset.currentStepLink) {
+        const link = nextStepContainer.dataset.currentStepLink;
+        if (link && link !== '#') {
+            window.open(link, '_blank');
+        } else {
+            showNotification('Link not available for this step', 'info');
+        }
+    }
 }
 
 // Navigation Setup
@@ -584,17 +1014,14 @@ document.addEventListener('touchend', function(event) {
     lastTouchEnd = now;
 }, false);
 
-// Reading Section Data
-const readingSections = {
+// Reading Section Data - Dynamic content loaded from API
+let readingSections = {
     'devotional': {
-        title: 'Devotional: God\'s Love for Us',
+        title: 'Daily Devotional',
         content: `
-            <div class="verse-reference-header">John 3:16</div>
-            <h2>God's Love for Us</h2>
-            <p>"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." - John 3:16</p>
-            <p>Today's devotional focuses on the depth of God's love and how it transforms our lives when we truly understand it. As we read through today's passages, let's reflect on how God's love is demonstrated throughout Scripture and how it calls us to respond in faith and obedience.</p>
-            <p>Consider how the Lord's covenant with Abram, Jesus' teachings about tradition, the psalmist's praise of creation, and the wisdom of Proverbs all point to God's loving character and His desire for our spiritual growth.</p>
-            <p>Take a moment to reflect on how God's love has been evident in your life today, and how you can share that love with others.</p>
+            <div class="verse-reference-header">Loading...</div>
+            <h2>Daily Devotional</h2>
+            <p>Loading today's devotional content...</p>
         `
     },
     'old-testament': {
@@ -706,20 +1133,148 @@ const readingSections = {
 let currentReadingSection = null;
 
 // Reading Section Functions
-function openReadingSection(section) {
+async function openReadingSection(section) {
     currentReadingSection = section;
     
-    // Update detail screen content
+    // Show loading state
     const detailTitle = document.getElementById('detail-title');
     const detailContent = document.getElementById('reading-detail-content');
     
-    if (detailTitle && detailContent && readingSections[section]) {
-        detailTitle.textContent = readingSections[section].title;
-        detailContent.innerHTML = readingSections[section].content;
+    if (detailTitle && detailContent) {
+        detailTitle.textContent = 'Loading...';
+        detailContent.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading content...</div>';
     }
     
     // Show detail screen
     showAppScreen('readingDetailScreen');
+    
+    // Load dynamic content
+    await loadReadingSectionContent(section);
+}
+
+// Load dynamic content for reading sections
+async function loadReadingSectionContent(section) {
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('reading-detail-content');
+    
+    try {
+        let content = null;
+        
+        if (section === 'devotional') {
+            content = await loadDevotionalContent();
+        } else {
+            content = await loadScriptureContent(section);
+        }
+        
+        if (detailTitle && detailContent) {
+            detailTitle.textContent = content.title;
+            detailContent.innerHTML = content.content;
+        }
+    } catch (error) {
+        console.error('Error loading reading section content:', error);
+        
+        if (detailTitle && detailContent) {
+            detailTitle.textContent = 'Content Unavailable';
+            detailContent.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Unable to load content at this time. Please try again later.</p>
+                    <button class="btn-primary" onclick="loadReadingSectionContent('${section}')">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+// Load devotional content
+async function loadDevotionalContent() {
+    if (!currentBibleData?.Devotional?.[0]) {
+        throw new Error('No devotional data available');
+    }
+    
+    const devotional = currentBibleData.Devotional[0];
+    const author = devotional.Author?.[0] || 'Pastor Larry Stockstill';
+    const content = devotional._ || 'Daily devotional content';
+    
+    return {
+        title: 'Devotional',
+        content: `
+            <div class="verse-reference-header">Devotional</div>
+            <h2>${author}</h2>
+            <div class="devotional-content">
+                ${content}
+            </div>
+        `
+    };
+}
+
+// Load scripture content
+async function loadScriptureContent(section) {
+    console.log(`loadScriptureContent called for section: ${section}`);
+    
+    let verseReference = '';
+    let sectionTitle = '';
+    
+    // Get verse reference from current bible data
+    switch (section) {
+        case 'old-testament':
+            verseReference = currentBibleData?.OldTestament?.[0]?.Verses?.[0] || 'Genesis 1:1';
+            sectionTitle = 'Old Testament';
+            break;
+        case 'new-testament':
+            verseReference = currentBibleData?.NewTestament?.[0]?.Verses?.[0] || 'Matthew 1:1';
+            sectionTitle = 'New Testament';
+            break;
+        case 'psalms':
+            verseReference = currentBibleData?.Psalm?.[0]?.Verses?.[0] || 'Psalm 1:1';
+            sectionTitle = 'Psalms';
+            break;
+        case 'proverbs':
+            verseReference = currentBibleData?.Proverbs?.[0]?.Verses?.[0] || 'Proverbs 1:1';
+            sectionTitle = 'Proverbs';
+            break;
+        default:
+            throw new Error('Unknown section');
+    }
+    
+    console.log(`Verse reference for ${section}: ${verseReference}`);
+    console.log(`Current bible data:`, currentBibleData);
+    
+    // Try to fetch actual scripture content
+    const verseData = await fetchBibleVerse(verseReference);
+    console.log(`Verse data received:`, verseData);
+    
+    if (verseData?.data?.passages?.[0]) {
+        const passage = verseData.data.passages[0];
+        console.log(`✅ Found passage:`, passage);
+        return {
+            title: sectionTitle,
+            content: `
+                <div class="verse-reference-header">${sectionTitle}</div>
+                <h2>${passage.reference}</h2>
+                <div class="scripture-text">
+                    ${passage.content}
+                </div>
+                <div class="bible-version">NIV</div>
+            `
+        };
+    } else {
+        console.log(`❌ No passage found, using fallback content`);
+        // Fallback to reference only
+        return {
+            title: sectionTitle,
+            content: `
+                <div class="verse-reference-header">${sectionTitle}</div>
+                <h2>${verseReference}</h2>
+                <div class="scripture-text">
+                    <p>Scripture content for ${verseReference} will be available shortly.</p>
+                    <p>Please check back later or refer to your Bible for the complete passage.</p>
+                </div>
+            `
+        };
+    }
 }
 
 function closeReadingSection() {
@@ -985,15 +1540,15 @@ function openExternalLink(type) {
     
     switch(type) {
         case 'small-group':
-            url = 'https://onehopechurch.com/small-groups';
+            url = 'https://onehopenola.churchcenter.com/groups';
             message = 'Opening Small Groups page...';
             break;
         case 'give':
-            url = 'https://onehopechurch.com/give';
+            url = 'https://donate.overflow.co/onehopechurch';
             message = 'Opening Give page...';
             break;
         case 'watch-message':
-            url = 'https://onehopechurch.com/messages';
+            url = 'https://onehopechurch.com/media';
             message = 'Opening Messages page...';
             break;
         case 'next-step':

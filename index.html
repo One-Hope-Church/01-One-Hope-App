@@ -723,7 +723,7 @@
                         <div class="step-content">
                             <h4>Get Baptized</h4>
                             <p>Take the next step in your faith journey</p>
-                            <button class="btn-primary" onclick="showScreen('nextStepsScreen')">
+                            <button class="btn-primary" onclick="openCurrentStepLink()">
                                 View Next Step
                             </button>
                         </div>
@@ -736,12 +736,12 @@
                     <div class="bible-reading">
                         <div class="reading-date">
                             <i class="fas fa-calendar-day"></i>
-                            <span>December 15, 2024</span>
+                            <span id="home-bible-date">December 15, 2024</span>
                         </div>
                         <div class="bible-button-container">
                             <button class="btn-primary bible-button" onclick="showAppScreen('bibleScreen')">
                                 <i class="fas fa-book-open"></i>
-                                Read Today's Bible Passages
+                                Read One Year Bible
                             </button>
                         </div>
                     </div>
@@ -783,16 +783,16 @@
                     <h3>One Year Bible Plan</h3>
                     <div class="plan-progress">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: 15%"></div>
+                            <div class="progress-fill" id="year-progress-fill" style="width: 15%"></div>
                         </div>
-                        <span>Day 55 of 365</span>
+                        <span id="day-of-year">Day 55 of 365</span>
                     </div>
                 </div>
 
                 <div class="daily-reading">
                     <div class="reading-date">
                         <i class="fas fa-calendar-day"></i>
-                        <span>December 15, 2024</span>
+                        <span id="bible-page-date">December 15, 2024</span>
                     </div>
 
                     <!-- Devotional -->
@@ -873,9 +873,9 @@
                             </div>
                             <span id="completion-text-bible">0 of 5 sections completed</span>
                         </div>
-                        <button class="btn-primary" onclick="markAllComplete()" id="mark-all-btn-bible" disabled>
-                            <i class="fas fa-check-double"></i> Mark All Complete
-                        </button>
+                                            <button class="btn-primary" onclick="markAllComplete()" id="mark-all-btn-bible">
+                        <i class="fas fa-check-double"></i> Mark All Complete
+                    </button>
                     </div>
                 </div>
             </div>
