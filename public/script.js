@@ -2532,7 +2532,11 @@ async function rsvpEvent(eventId) {
         
         console.log('🔍 Authentication check:');
         console.log('  - Token exists:', !!storedToken);
+        console.log('  - Token value:', storedToken ? storedToken.substring(0, 20) + '...' : 'null');
         console.log('  - User profile exists:', !!userProfile);
+        console.log('  - User profile:', userProfile ? JSON.parse(userProfile).name || 'parsed' : 'null');
+        console.log('  - API_BASE:', API_BASE);
+        console.log('  - Current URL:', window.location.href);
         
         if (!storedToken && !userProfile) {
             // Show sign-in modal instead of just an error
@@ -2573,11 +2577,21 @@ async function rsvpEvent(eventId) {
             console.log('🔑 Adding Authorization header with token');
         }
         
+        console.log('📡 Making RSVP request:');
+        console.log('  - URL:', `${API_BASE}/api/events/${eventId}/rsvp`);
+        console.log('  - Headers:', headers);
+        console.log('  - Credentials:', 'include');
+        
         const response = await fetch(`${API_BASE}/api/events/${eventId}/rsvp`, {
             method: 'POST',
             credentials: 'include',
             headers: headers
         });
+        
+        console.log('📡 Response received:');
+        console.log('  - Status:', response.status);
+        console.log('  - OK:', response.ok);
+        console.log('  - Headers:', Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
