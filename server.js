@@ -521,7 +521,9 @@ app.get('/api/events', async (req, res) => {
                     location: 'Main Sanctuary',
                     featured: true,
                     capacity: 50,
-                    registered_count: 8
+                    registered_count: 8,
+                    registration_url: 'https://onehopenola.churchcenter.com/registrations/events/water-baptism-1',
+                    details_url: 'https://onehopenola.churchcenter.com/registrations/events/water-baptism-1'
                 },
                 {
                     id: 'sample-1',
@@ -532,7 +534,9 @@ app.get('/api/events', async (req, res) => {
                     location: 'Main Sanctuary',
                     featured: false,
                     capacity: 200,
-                    registered_count: 45
+                    registered_count: 45,
+                    registration_url: 'https://onehopenola.churchcenter.com/registrations/events/sample-1',
+                    details_url: 'https://onehopenola.churchcenter.com/registrations/events/sample-1'
                 }
             ];
         }
@@ -560,7 +564,9 @@ app.get('/api/events', async (req, res) => {
                 location: 'Main Sanctuary',
                 featured: true,
                 capacity: 200,
-                registered_count: 45
+                registered_count: 45,
+                registration_url: 'https://onehopenola.churchcenter.com/registrations/events/fallback-1',
+                details_url: 'https://onehopenola.churchcenter.com/registrations/events/fallback-1'
             }
         ];
         
