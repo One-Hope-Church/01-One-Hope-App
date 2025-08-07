@@ -1607,7 +1607,7 @@ body {
 @media (max-width: 480px) {
     .assessment-container {
         padding: 1rem;
-        min-height: 100vh;
+        height: 100vh;
         overflow-y: auto;
     }
     
@@ -1631,11 +1631,13 @@ body {
     }
     
     .assessment-actions {
-        margin-top: 2rem;
-        padding: 1rem 0;
-        border-top: 1px solid var(--border-color);
-        margin-bottom: env(safe-area-inset-bottom, 1rem);
+        position: sticky;
+        bottom: 0;
         background: var(--bg-color);
+        padding: 1rem;
+        margin: 0 -1rem;
+        border-top: 1px solid var(--border-color);
+        margin-bottom: env(safe-area-inset-bottom, 0);
     }
 }
 
