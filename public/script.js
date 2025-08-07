@@ -387,7 +387,7 @@ function proceedToPlanningCenter() {
     const loginUrl = 'https://onehopenola.churchcenter.com/login';
     console.log('🔗 Opening Planning Center login URL:', loginUrl);
     showNotification('Opening Planning Center...', 'info');
-    window.open(loginUrl, '_blank');
+    window.location.href = loginUrl;
     
     // Show a message to the user about what to do next
     setTimeout(() => {
@@ -400,7 +400,7 @@ function redirectToPlanningCenterSignup() {
     const loginUrl = 'https://onehopenola.churchcenter.com/login';
     console.log('🔗 Opening Planning Center login URL:', loginUrl);
     showNotification('Redirecting to Planning Center...', 'info');
-    window.open(loginUrl, '_blank');
+    window.location.href = loginUrl;
     
     // Show a message to the user about what to do next
     setTimeout(() => {
@@ -1520,7 +1520,7 @@ function openCurrentStepLink() {
         }
         
         if (link && link !== '#') {
-            window.open(link, '_blank');
+            window.location.href = link;
         } else {
             showNotification('Link not available for this step', 'info');
         }
@@ -2306,7 +2306,7 @@ function openExternalLink(type) {
     
     showNotification(message, 'info');
     setTimeout(() => {
-        window.open(url, '_blank');
+        window.location.href = url;
     }, 1000);
 }
 
@@ -2495,17 +2495,10 @@ async function rsvpEvent(eventId) {
                 console.log(`🔗 Redirecting to registration: ${result.url}`);
                 showNotification('Opening registration page...', 'info');
                 
-                // Open registration page in new tab
-                window.open(result.url, '_blank');
+                // iOS-friendly approach: redirect in current tab
+                window.location.href = result.url;
                 
-                // Update button state to show RSVP'd
-                const button = document.querySelector(`button[onclick="rsvpEvent('${eventId}')"]`);
-                if (button) {
-                    button.innerHTML = '<i class="fas fa-check"></i> RSVP\'d';
-                    button.classList.remove('btn-primary');
-                    button.classList.add('btn-secondary');
-                    button.disabled = true;
-                }
+                // Note: Button state won't update since we're leaving the page
             } else {
                 // No redirect needed, just show success message
                 showNotification(result.message || 'RSVP sent successfully!', 'success');
@@ -2540,13 +2533,13 @@ function viewEventDetails(eventId) {
     if (event.details_url) {
         console.log(`🔗 Opening event details: ${event.details_url}`);
         showNotification('Opening event details...', 'info');
-        window.open(event.details_url, '_blank');
+        window.location.href = event.details_url;
     } else {
         // Fallback to Church Center events page
         const churchCenterUrl = 'https://onehopenola.churchcenter.com/registrations/events';
         console.log(`🔗 Opening Church Center events page: ${churchCenterUrl}`);
         showNotification('Opening Church Center events page...', 'info');
-        window.open(churchCenterUrl, '_blank');
+        window.location.href = churchCenterUrl;
     }
 }
 
