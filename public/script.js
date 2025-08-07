@@ -1399,9 +1399,10 @@ function updateHomepageNextStep() {
     // If all steps are completed, show a completion message
     if (!nextStep) {
         nextStep = {
-            title: 'All Steps Complete!',
-            description: 'You\'ve completed all the spiritual growth steps',
-            icon: 'fas fa-trophy'
+            title: 'All Steps Complete! 🎉',
+            description: 'Congratulations! You\'ve completed all the spiritual growth steps. Keep growing in your faith!',
+            icon: 'fas fa-trophy',
+            allComplete: true
         };
         console.log('🏆 All steps completed!');
     }
@@ -1426,14 +1427,36 @@ function updateHomepageNextStep() {
         stepDescription.textContent = nextStep.description;
         console.log('✅ Updated description to:', nextStep.description);
     }
+    
+    // Handle button differently for completed vs incomplete steps
     if (stepButton) {
-        stepButton.textContent = 'View Next Step';
-        console.log('✅ Updated button text to: View Next Step');
+        if (nextStep.allComplete) {
+            // All steps completed - show celebration message, no link
+            stepButton.textContent = '🎉 All Complete!';
+            stepButton.classList.remove('btn-primary');
+            stepButton.classList.add('btn-secondary', 'disabled');
+            stepButton.disabled = true;
+            stepButton.onclick = null; // Remove click handler
+            console.log('✅ Updated button for completed state');
+        } else {
+            // Normal step - show action button
+            stepButton.textContent = 'View Next Step';
+            stepButton.classList.remove('btn-secondary', 'disabled');
+            stepButton.classList.add('btn-primary');
+            stepButton.disabled = false;
+            console.log('✅ Updated button text to: View Next Step');
+        }
     }
     
-    // Store the current step's link for the button
-    nextStepContainer.dataset.currentStepLink = nextStep.link || '#';
-    console.log('✅ Updated step link to:', nextStep.link || '#');
+    // Store the current step's link for the button (only if not all complete)
+    if (!nextStep.allComplete) {
+        nextStepContainer.dataset.currentStepLink = nextStep.link || '#';
+        console.log('✅ Updated step link to:', nextStep.link || '#');
+    } else {
+        // Remove the link data attribute for completed state
+        delete nextStepContainer.dataset.currentStepLink;
+        console.log('✅ Removed step link for completed state');
+    }
 }
 
 // Next Steps Functions
@@ -1508,11 +1531,19 @@ async function completeStep(stepId) {
 // Open the current step's link
 function openCurrentStepLink() {
     const nextStepContainer = document.getElementById('homepage-next-step');
-    if (nextStepContainer && nextStepContainer.dataset.currentStepLink) {
+    if (!nextStepContainer) return;
+    
+    // Check if all steps are completed
+    const stepTitle = nextStepContainer.querySelector('.step-content h4');
+    if (stepTitle && stepTitle.textContent.includes('All Steps Complete')) {
+        showNotification('🎉 Congratulations! All steps completed!', 'success');
+        return;
+    }
+    
+    if (nextStepContainer.dataset.currentStepLink) {
         const link = nextStepContainer.dataset.currentStepLink;
         
         // Check if this is the assessment step
-        const stepTitle = nextStepContainer.querySelector('.step-content h4');
         if (stepTitle && (stepTitle.textContent === 'Take Your Spiritual Assessment' || stepTitle.textContent === 'Take Next Steps Assessment')) {
             // Navigate to the steps tab
             showAppScreen('nextStepsScreen');
