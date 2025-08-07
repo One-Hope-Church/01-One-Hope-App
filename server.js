@@ -575,8 +575,39 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.post('/api/events/:eventId/rsvp', async (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
+    console.log('🔍 RSVP API called');
+    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
+    console.log('🔍 Session ID:', req.sessionID);
+    
+    // Check if user exists in session
+    if (req.session.user) {
+        console.log('✅ User found in session');
+    } else {
+        // Check if user exists in app.locals backup
+        const userSessions = req.app.locals.userSessions || {};
+        const backupUser = userSessions[req.sessionID];
+        
+        if (backupUser) {
+            console.log('✅ User found in app.locals backup');
+            req.session.user = backupUser;
+        } else {
+            // Try to get user from Authorization header (token-based)
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    const userData = JSON.parse(Buffer.from(token, 'base64').toString());
+                    console.log('✅ User found in Authorization header');
+                    req.session.user = userData;
+                } catch (error) {
+                    console.log('❌ Invalid token in Authorization header');
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                console.log('❌ No user session found and no valid token');
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
     }
 
     try {
