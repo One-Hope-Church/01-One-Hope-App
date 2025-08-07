@@ -1470,6 +1470,33 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    position: relative;
+}
+
+.assessment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    width: 100%;
+    position: relative;
+}
+
+.assessment-header .back-button {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.assessment-header .header-content {
+    flex: 1;
+    text-align: center;
+    padding-left: 2rem; /* Add space for the back button */
+    padding-right: 2rem; /* Balance the padding */
+    width: 95%;
+    margin: 5%;
 }
 
 .assessment-header {
@@ -1613,6 +1640,9 @@ body {
     
     .assessment-header {
         margin-bottom: 1rem;
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .assessment-header h1 {
