@@ -75,14 +75,9 @@ app.get('/images/:filename', (req, res) => {
 
 // Debug route for session check
 app.get('/api/session-check', (req, res) => {
-    console.log('🔍 Session check requested');
-    console.log('🔍 Session ID:', req.sessionID);
-    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
-    console.log('🔍 Session data:', req.session);
     
     // Check if user exists in session
     if (req.session.user) {
-        console.log('✅ User found in session, returning user data');
         res.json({
             sessionId: req.sessionID,
             hasUser: true,
@@ -100,7 +95,6 @@ app.get('/api/session-check', (req, res) => {
     const backupUser = userSessions[req.sessionID];
     
     if (backupUser) {
-        console.log('✅ User found in app.locals backup, returning user data');
         res.json({
             sessionId: req.sessionID,
             hasUser: true,
@@ -112,8 +106,6 @@ app.get('/api/session-check', (req, res) => {
         });
         return;
     }
-    
-    console.log('❌ No user found in session or backup');
     res.json({
         sessionId: req.sessionID,
         hasUser: false,
@@ -129,9 +121,7 @@ app.get('/auth/planningcenter', (req, res) => {
         `response_type=code&` +
         `scope=${encodeURIComponent(PLANNING_CENTER_CONFIG.scope)}`;
     
-    console.log('🔗 Planning Center OAuth redirect URI:', PLANNING_CENTER_CONFIG.redirectUri);
-    console.log('🔗 Planning Center OAuth client ID:', PLANNING_CENTER_CONFIG.clientId);
-    console.log('🔗 Full OAuth URL:', authUrl);
+
     
     res.redirect(authUrl);
 });
@@ -150,7 +140,6 @@ app.get('/auth/callback', async (req, res) => {
     }
     
     try {
-        console.log('🔄 Exchanging code for token...');
         const tokenResponse = await axios.post(`${PLANNING_CENTER_CONFIG.baseUrl}/oauth/token`, {
             grant_type: 'authorization_code',
             code: code,
@@ -160,7 +149,6 @@ app.get('/auth/callback', async (req, res) => {
         });
         
         const accessToken = tokenResponse.data.access_token;
-        console.log('✅ Token received, fetching user profile...');
         
         // Get user profile
         const profileResponse = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/me`, {
@@ -169,8 +157,6 @@ app.get('/auth/callback', async (req, res) => {
                 'Accept': 'application/json'
             }
         });
-        
-        console.log('🔍 Full Planning Center profile response:', JSON.stringify(profileResponse.data, null, 2));
         
         const user = profileResponse.data.data;
         const userId = user.id;
