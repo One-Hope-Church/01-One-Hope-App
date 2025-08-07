@@ -337,20 +337,16 @@ app.get('/api/signout', (req, res) => {
 });
 
 app.get('/api/events', async (req, res) => {
-    console.log('🔍 Events API called');
-    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
-    console.log('🔍 Session ID:', req.sessionID);
     
     // Check if user exists in session
     if (req.session.user) {
-        console.log('✅ User found in session');
+        // User found in session
     } else {
         // Check if user exists in app.locals backup
         const userSessions = req.app.locals.userSessions || {};
         const backupUser = userSessions[req.sessionID];
         
         if (backupUser) {
-            console.log('✅ User found in app.locals backup');
             req.session.user = backupUser;
         } else {
             // Try to get user from Authorization header (token-based)
@@ -359,23 +355,17 @@ app.get('/api/events', async (req, res) => {
                 try {
                     const token = authHeader.substring(7);
                     const userData = JSON.parse(Buffer.from(token, 'base64').toString());
-                    console.log('✅ User found in Authorization header');
                     req.session.user = userData;
                 } catch (error) {
-                    console.log('❌ Invalid token in Authorization header');
                     return res.status(401).json({ error: 'Not authenticated' });
                 }
             } else {
-                console.log('❌ No user session found and no valid token');
                 return res.status(401).json({ error: 'Not authenticated' });
             }
         }
     }
 
     try {
-        console.log('📅 Fetching events from Planning Center...');
-        console.log('🔑 Using access token:', req.session.user.accessToken ? 'Present' : 'Missing');
-        console.log('👤 User ID:', req.session.user.id);
         
         // Try different possible Planning Center endpoints
         const possibleEndpoints = [
@@ -575,20 +565,15 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.post('/api/events/:eventId/rsvp', async (req, res) => {
-    console.log('🔍 RSVP API called');
-    console.log('🔍 Session user:', req.session.user ? 'Present' : 'Missing');
-    console.log('🔍 Session ID:', req.sessionID);
-    
     // Check if user exists in session
     if (req.session.user) {
-        console.log('✅ User found in session');
+        // User found in session
     } else {
         // Check if user exists in app.locals backup
         const userSessions = req.app.locals.userSessions || {};
         const backupUser = userSessions[req.sessionID];
         
         if (backupUser) {
-            console.log('✅ User found in app.locals backup');
             req.session.user = backupUser;
         } else {
             // Try to get user from Authorization header (token-based)
@@ -597,14 +582,11 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
                 try {
                     const token = authHeader.substring(7);
                     const userData = JSON.parse(Buffer.from(token, 'base64').toString());
-                    console.log('✅ User found in Authorization header');
                     req.session.user = userData;
                 } catch (error) {
-                    console.log('❌ Invalid token in Authorization header');
                     return res.status(401).json({ error: 'Not authenticated' });
                 }
             } else {
-                console.log('❌ No user session found and no valid token');
                 return res.status(401).json({ error: 'Not authenticated' });
             }
         }
@@ -612,7 +594,6 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
 
     try {
         const { eventId } = req.params;
-        console.log(`📝 RSVP for event ${eventId} from user ${req.session.user.id}`);
         
         // Find the event in our current events data to get the registration URL
         const event = req.app.locals.currentEvents?.find(e => e.id === eventId);
@@ -623,7 +604,6 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
         
         if (event.registration_url) {
             // Redirect to Church Center registration page
-            console.log(`🔗 Redirecting to Church Center: ${event.registration_url}`);
             res.json({ 
                 success: true, 
                 redirect: true,
@@ -632,7 +612,6 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
             });
         } else {
             // Fallback: simulate success for events without registration URLs
-            console.log(`📝 Simulating RSVP for event ${eventId} (no registration URL)`);
             res.json({ 
                 success: true, 
                 message: 'RSVP sent successfully!',

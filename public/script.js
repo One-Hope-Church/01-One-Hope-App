@@ -2319,18 +2319,12 @@ async function fetchEvents() {
     
     while (retryCount < maxRetries) {
         try {
-            console.log(`📅 Fetching events from Planning Center... (attempt ${retryCount + 1}/${maxRetries})`);
-            
             // First check session
-            console.log('🔍 Checking session...');
             const sessionResponse = await fetch(`${API_BASE}/api/session-check`, {
                 credentials: 'include',
                 signal: AbortSignal.timeout(10000) // 10 second timeout
             });
             const sessionData = await sessionResponse.json();
-            console.log('🔍 Session data:', sessionData);
-            
-            console.log('🔗 API URL:', `${API_BASE}/api/events`);
             
             // Get stored token for authentication
             const storedToken = localStorage.getItem('onehope_token');
@@ -2341,7 +2335,6 @@ async function fetchEvents() {
             // Add Authorization header if token exists
             if (storedToken) {
                 headers['Authorization'] = `Bearer ${storedToken}`;
-                console.log('🔑 Adding Authorization header with token');
             }
             
             // Add credentials to ensure cookies are sent with timeout
@@ -2351,30 +2344,24 @@ async function fetchEvents() {
                 signal: AbortSignal.timeout(15000) // 15 second timeout for events
             });
             
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response ok:', response.ok);
+
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.log('❌ Error response:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            currentEvents = data.events || [];
-            console.log('✅ Events loaded:', currentEvents.length);
+                    if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        currentEvents = data.events || [];
             
             displayEvents(currentEvents);
             return; // Success, exit retry loop
             
         } catch (error) {
             retryCount++;
-            console.error(`❌ Error fetching events (attempt ${retryCount}/${maxRetries}):`, error);
             
             // If it's the last attempt, show error notification and display no events
             if (retryCount >= maxRetries) {
-                console.log('🔄 All retries failed, showing no events');
-                
                 if (error.name === 'AbortError') {
                     showNotification('Request timed out. Please check your connection and try again.', 'error');
                 } else if (error.message.includes('Load failed')) {
@@ -2389,7 +2376,6 @@ async function fetchEvents() {
             } else {
                 // Wait before retrying (exponential backoff)
                 const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
-                console.log(`⏳ Retrying in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -2530,13 +2516,7 @@ async function rsvpEvent(eventId) {
         const storedToken = localStorage.getItem('onehope_token');
         const userProfile = localStorage.getItem('onehope_user');
         
-        console.log('🔍 Authentication check:');
-        console.log('  - Token exists:', !!storedToken);
-        console.log('  - Token value:', storedToken ? storedToken.substring(0, 20) + '...' : 'null');
-        console.log('  - User profile exists:', !!userProfile);
-        console.log('  - User profile:', userProfile ? JSON.parse(userProfile).name || 'parsed' : 'null');
-        console.log('  - API_BASE:', API_BASE);
-        console.log('  - Current URL:', window.location.href);
+
         
         if (!storedToken && !userProfile) {
             // Show sign-in modal instead of just an error
@@ -2574,13 +2554,7 @@ async function rsvpEvent(eventId) {
         // Add Authorization header if token exists
         if (storedToken) {
             headers['Authorization'] = `Bearer ${storedToken}`;
-            console.log('🔑 Adding Authorization header with token');
         }
-        
-        console.log('📡 Making RSVP request:');
-        console.log('  - URL:', `${API_BASE}/api/events/${eventId}/rsvp`);
-        console.log('  - Headers:', headers);
-        console.log('  - Credentials:', 'include');
         
         const response = await fetch(`${API_BASE}/api/events/${eventId}/rsvp`, {
             method: 'POST',
@@ -2588,10 +2562,7 @@ async function rsvpEvent(eventId) {
             headers: headers
         });
         
-        console.log('📡 Response received:');
-        console.log('  - Status:', response.status);
-        console.log('  - OK:', response.ok);
-        console.log('  - Headers:', Object.fromEntries(response.headers.entries()));
+
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
