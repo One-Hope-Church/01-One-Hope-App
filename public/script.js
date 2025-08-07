@@ -2488,10 +2488,10 @@ function displayEvents(events) {
                     ${event.location ? `<p class="event-location"><i class="fas fa-map-marker-alt"></i> ${event.location}</p>` : ''}
                     ${description ? `<p class="event-description">${description}</p>` : ''}
                     <div class="event-actions">
-                        <button class="${rsvpButtonClass}" onclick="rsvpEvent('${event.id}')" ${rsvpButtonDisabled}>
+                        <button class="${rsvpButtonClass} event-rsvp-btn" data-event-id="${event.id}" ${rsvpButtonDisabled}>
                             <i class="fas fa-calendar-plus"></i> ${rsvpButtonText}
                         </button>
-                        <button class="btn-secondary" onclick="viewEventDetails('${event.id}')">
+                        <button class="btn-secondary event-details-btn" data-event-id="${event.id}">
                             <i class="fas fa-info-circle"></i> More Info
                         </button>
                     </div>
@@ -2501,7 +2501,26 @@ function displayEvents(events) {
     }).join('');
 }
 
-
+// Add event delegation for event buttons
+document.addEventListener('click', function(event) {
+    // Handle RSVP button clicks
+    if (event.target.closest('.event-rsvp-btn')) {
+        const button = event.target.closest('.event-rsvp-btn');
+        const eventId = button.getAttribute('data-event-id');
+        if (eventId && !button.disabled) {
+            rsvpEvent(eventId);
+        }
+    }
+    
+    // Handle event details button clicks
+    if (event.target.closest('.event-details-btn')) {
+        const button = event.target.closest('.event-details-btn');
+        const eventId = button.getAttribute('data-event-id');
+        if (eventId) {
+            viewEventDetails(eventId);
+        }
+    }
+});
 
 async function rsvpEvent(eventId) {
     try {
@@ -2535,7 +2554,7 @@ async function rsvpEvent(eventId) {
                 showNotification(result.message || 'RSVP sent successfully!', 'success');
             
             // Update button state
-                const button = document.querySelector(`button[onclick="rsvpEvent('${eventId}')"]`);
+                const button = document.querySelector(`button.event-rsvp-btn[data-event-id="${eventId}"]`);
                 if (button) {
             button.innerHTML = '<i class="fas fa-check"></i> RSVP\'d';
             button.classList.remove('btn-primary');
