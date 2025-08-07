@@ -1466,7 +1466,7 @@ body {
     padding: 2rem;
     max-width: 500px;
     margin: 0 auto;
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
 }
@@ -1590,6 +1590,7 @@ body {
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
+    margin-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
 .assessment-actions .btn-secondary,
