@@ -37,7 +37,7 @@ const PLANNING_CENTER_CONFIG = {
     clientId: process.env.PLANNING_CENTER_CLIENT_ID,
     clientSecret: process.env.PLANNING_CENTER_CLIENT_SECRET,
     redirectUri: process.env.NODE_ENV === 'production' 
-        ? 'https://01-one-hope-app.vercel.app/auth/callback'
+        ? 'https://steps.onehopechurch.com/auth/callback'
         : 'http://localhost:3000/auth/callback',
     scope: 'people groups services check_ins registrations'
 };
