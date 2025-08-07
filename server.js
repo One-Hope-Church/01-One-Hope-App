@@ -808,11 +808,18 @@ app.post('/api/bible/status', async (req, res) => {
 });
 
 // Helper functions
+function getChicagoDate() {
+    const now = new Date();
+    // Chicago is UTC-6 (CST) or UTC-5 (CDT)
+    const chicagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    return chicagoTime.toISOString().split('T')[0];
+}
+
 function parseHighlandsXML(xmlString) {
     try {
         // Extract date
         const dateMatch = xmlString.match(/<Reading Date="([^"]+)">/);
-        const date = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
+        const date = dateMatch ? dateMatch[1] : getChicagoDate();
         
         // Extract devotional
         const devotionalMatch = xmlString.match(/<Devotional[^>]*>([\s\S]*?)<\/Devotional>/);
@@ -849,7 +856,7 @@ function parseHighlandsXML(xmlString) {
     } catch (error) {
         console.error('❌ Error parsing Highlands XML:', error);
         return {
-            date: new Date().toISOString().split('T')[0],
+            date: getChicagoDate(),
             devotional: '',
             oldTestament: '',
             newTestament: '',

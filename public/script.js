@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to refresh reading status from database (called on page load)
 async function refreshReadingStatus() {
-    const currentDate = new Date().toISOString().split('T')[0];
+    const currentDate = getChicagoDate();
     await loadDailyReadingStatus(currentDate);
 }
 
@@ -289,7 +289,7 @@ async function showAppScreen(screenId) {
         fetchEvents();
     } else if (screenId === 'bibleScreen') {
         // Always load reading status when Bible screen is shown
-        const today = new Date().toISOString().split('T')[0];
+        const today = getChicagoDate();
         await loadDailyReadingStatus(today);
     } else if (screenId === 'nextStepsScreen') {
         // Check if user needs to take assessment
@@ -626,18 +626,12 @@ function updateUserInfo() {
     }
 }
 
-// Temporary debugging function to force reset checkmarks
-function forceResetCheckmarks() {
-    console.log('🔄 Force resetting checkmarks...');
-    dailyReadings = {
-        devotional: false,
-        oldTestament: false,
-        newTestament: false,
-        psalms: false,
-        proverbs: false
-    };
-    updateReadingUI();
-    console.log('✅ Checkmarks reset:', dailyReadings);
+// Get date in Chicago timezone (Central Time)
+function getChicagoDate() {
+    const now = new Date();
+    // Chicago is UTC-6 (CST) or UTC-5 (CDT)
+    const chicagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    return chicagoTime.toISOString().split('T')[0];
 }
 
 // Bible Reading Functions
@@ -962,13 +956,10 @@ async function initializeBibleData() {
     }
     
     // Always load reading status for today to ensure we have the latest state
-    const today = new Date().toISOString().split('T')[0];
-    console.log('📅 Today\'s date:', today);
+    const today = getChicagoDate();
+    console.log('📅 Today\'s date (Chicago time):', today);
     
-    // Force reset checkmarks first to ensure clean state
-    forceResetCheckmarks();
-    
-    // Then load from database
+    // Load from database
     await loadDailyReadingStatus(today);
     
     // Load bible data when user first accesses bible screen
@@ -1028,7 +1019,7 @@ async function markReadingComplete(section) {
     
     try {
         // Save reading status to database FIRST
-        const currentDate = new Date().toISOString().split('T')[0];
+        const currentDate = getChicagoDate();
         const saveSuccess = await saveDailyReadingStatus(currentDate);
         
         // Only update UI if database save was successful
@@ -1144,7 +1135,7 @@ function updateDailyCompletion() {
 
 async function markAllComplete() {
     console.log('markAllComplete function called');
-    const today = new Date().toDateString();
+    const today = getChicagoDate();
     
     // Check if already completed today
     if (userProgress.bibleReadings.includes(today)) {
@@ -1158,7 +1149,7 @@ async function markAllComplete() {
     });
     
     // Save reading status to database
-    const completionDate = new Date().toISOString().split('T')[0];
+    const completionDate = getChicagoDate();
     await saveDailyReadingStatus(completionDate);
     
     // Complete daily reading in streak tracking
@@ -2782,7 +2773,7 @@ async function loadDailyReadingStatus(date) {
             
             if (result.data && result.data.sections_completed) {
                 // Check if the loaded data is from today
-                const today = new Date().toISOString().split('T')[0];
+                const today = getChicagoDate();
                 const loadedDate = result.data.reading_date || date;
                 
                 console.log('🔍 Date comparison:', { today, loadedDate, requestedDate: date });

@@ -1,5 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// Helper function to get Chicago timezone date
+function getChicagoDate() {
+    const now = new Date();
+    // Chicago is UTC-6 (CST) or UTC-5 (CDT)
+    const chicagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    return chicagoTime.toISOString().split('T')[0];
+}
+
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -205,8 +213,11 @@ const db = {
 
     async updateUserStreak(userId, completedToday = false) {
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const today = getChicagoDate();
+            // Get yesterday in Chicago timezone
+            const yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+            const yesterdayChicago = new Date(yesterday.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+            const yesterdayDate = yesterdayChicago.toISOString().split('T')[0];
 
             // Get current progress
             const currentProgress = await this.getUserStreak(userId);
@@ -217,7 +228,7 @@ const db = {
 
             if (completedToday) {
                 // User completed today's reading
-                if (currentProgress.last_reading_date === yesterday) {
+                if (currentProgress.last_reading_date === yesterdayDate) {
                     // They read yesterday, increment streak
                     newStreak = (currentProgress.current_streak || 0) + 1;
                 } else if (currentProgress.last_reading_date === today) {
@@ -232,7 +243,7 @@ const db = {
                 lastReadingDate = today;
             } else {
                 // User didn't complete today's reading
-                if (currentProgress.last_reading_date === yesterday) {
+                if (currentProgress.last_reading_date === yesterdayDate) {
                     // They read yesterday but not today, reset streak
                     newStreak = 0;
                 } else {
