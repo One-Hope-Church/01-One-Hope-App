@@ -1466,9 +1466,10 @@ body {
     padding: 2rem;
     max-width: 500px;
     margin: 0 auto;
-    height: 100dvh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .assessment-header {
@@ -1518,6 +1519,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .assessment-question {
@@ -1553,6 +1555,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    min-height: 60px;
 }
 
 .assessment-option:hover {
@@ -1598,6 +1601,44 @@ body {
     flex: 1;
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
+}
+
+/* Mobile-specific assessment styles */
+@media (max-width: 480px) {
+    .assessment-container {
+        padding: 1rem;
+        height: 100vh;
+        overflow-y: auto;
+    }
+    
+    .assessment-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .assessment-question h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .assessment-option {
+        padding: 1.25rem 1rem;
+        min-height: 70px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .option-text {
+        font-size: 1.1rem;
+    }
+    
+    .assessment-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-color);
+        padding: 1rem;
+        margin: 0 -1rem;
+        border-top: 1px solid var(--border-color);
+        margin-bottom: env(safe-area-inset-bottom, 0);
+    }
 }
 
 .assessment-date-input {
