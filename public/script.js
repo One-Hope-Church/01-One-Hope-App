@@ -2371,44 +2371,21 @@ async function fetchEvents() {
             retryCount++;
             console.error(`❌ Error fetching events (attempt ${retryCount}/${maxRetries}):`, error);
             
-            // If it's the last attempt, show error notification and fallback to sample events
+            // If it's the last attempt, show error notification and display no events
             if (retryCount >= maxRetries) {
-                console.log('🔄 All retries failed, showing fallback events');
+                console.log('🔄 All retries failed, showing no events');
                 
                 if (error.name === 'AbortError') {
-                    showNotification('Request timed out. Showing sample events.', 'warning');
+                    showNotification('Request timed out. Please check your connection and try again.', 'error');
                 } else if (error.message.includes('Load failed')) {
-                    showNotification('Network error. Showing sample events.', 'warning');
+                    showNotification('Network error. Please check your connection and try again.', 'error');
                 } else {
-                    showNotification('Unable to load live events. Showing sample events.', 'warning');
+                    showNotification('Unable to load events at this time', 'error');
                 }
                 
-                // Show fallback sample events
-                const fallbackEvents = [
-                    {
-                        id: 'fallback-1',
-                        name: 'Water Baptism',
-                        description: 'Baptism is an essential step of obedience that shows others we have personally trusted Jesus for our salvation. When baptized, Christians are submerged under water to identify with the death and burial of Jesus and raised out of the water to identify with His resurrection.',
-                        starts_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-                        ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
-                        registration_url: 'https://onehope.churchcenter.com/registrations/events/123',
-                        details_url: 'https://onehope.churchcenter.com/events/123',
-                        featured: true
-                    },
-                    {
-                        id: 'fallback-2',
-                        name: 'One Hope Leadership Academy Interest',
-                        description: 'The One Hope Leadership Academy is designed for individuals who want to grow as Christian leaders in all areas of life. This program provides practical training and spiritual development.',
-                        starts_at: null, // TBD
-                        ends_at: null,
-                        registration_url: 'https://onehope.churchcenter.com/registrations/events/456',
-                        details_url: 'https://onehope.churchcenter.com/events/456',
-                        featured: false
-                    }
-                ];
-                
-                currentEvents = fallbackEvents;
-                displayEvents(fallbackEvents);
+                // Show no events
+                currentEvents = [];
+                displayEvents([]);
             } else {
                 // Wait before retrying (exponential backoff)
                 const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
