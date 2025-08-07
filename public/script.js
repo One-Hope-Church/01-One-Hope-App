@@ -2314,54 +2314,108 @@ function openExternalLink(type) {
 let currentEvents = [];
 
 async function fetchEvents() {
-    try {
-        console.log('📅 Fetching events from Planning Center...');
-        
-        // First check session
-        console.log('🔍 Checking session...');
-        const sessionResponse = await fetch(`${API_BASE}/api/session-check`, {
-            credentials: 'include'
-        });
-        const sessionData = await sessionResponse.json();
-        console.log('🔍 Session data:', sessionData);
-        
-        console.log('🔗 API URL:', `${API_BASE}/api/events`);
-        
-        // Get stored token for authentication
-        const storedToken = localStorage.getItem('onehope_token');
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        // Add Authorization header if token exists
-        if (storedToken) {
-            headers['Authorization'] = `Bearer ${storedToken}`;
-            console.log('🔑 Adding Authorization header with token');
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+        try {
+            console.log(`📅 Fetching events from Planning Center... (attempt ${retryCount + 1}/${maxRetries})`);
+            
+            // First check session
+            console.log('🔍 Checking session...');
+            const sessionResponse = await fetch(`${API_BASE}/api/session-check`, {
+                credentials: 'include',
+                signal: AbortSignal.timeout(10000) // 10 second timeout
+            });
+            const sessionData = await sessionResponse.json();
+            console.log('🔍 Session data:', sessionData);
+            
+            console.log('🔗 API URL:', `${API_BASE}/api/events`);
+            
+            // Get stored token for authentication
+            const storedToken = localStorage.getItem('onehope_token');
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            // Add Authorization header if token exists
+            if (storedToken) {
+                headers['Authorization'] = `Bearer ${storedToken}`;
+                console.log('🔑 Adding Authorization header with token');
+            }
+            
+            // Add credentials to ensure cookies are sent with timeout
+            const response = await fetch(`${API_BASE}/api/events`, {
+                credentials: 'include',
+                headers: headers,
+                signal: AbortSignal.timeout(15000) // 15 second timeout for events
+            });
+            
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.log('❌ Error response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            currentEvents = data.events || [];
+            console.log('✅ Events loaded:', currentEvents.length);
+            
+            displayEvents(currentEvents);
+            return; // Success, exit retry loop
+            
+        } catch (error) {
+            retryCount++;
+            console.error(`❌ Error fetching events (attempt ${retryCount}/${maxRetries}):`, error);
+            
+            // If it's the last attempt, show error notification and fallback to sample events
+            if (retryCount >= maxRetries) {
+                console.log('🔄 All retries failed, showing fallback events');
+                
+                if (error.name === 'AbortError') {
+                    showNotification('Request timed out. Showing sample events.', 'warning');
+                } else if (error.message.includes('Load failed')) {
+                    showNotification('Network error. Showing sample events.', 'warning');
+                } else {
+                    showNotification('Unable to load live events. Showing sample events.', 'warning');
+                }
+                
+                // Show fallback sample events
+                const fallbackEvents = [
+                    {
+                        id: 'fallback-1',
+                        name: 'Water Baptism',
+                        description: 'Baptism is an essential step of obedience that shows others we have personally trusted Jesus for our salvation. When baptized, Christians are submerged under water to identify with the death and burial of Jesus and raised out of the water to identify with His resurrection.',
+                        starts_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+                        ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+                        registration_url: 'https://onehope.churchcenter.com/registrations/events/123',
+                        details_url: 'https://onehope.churchcenter.com/events/123',
+                        featured: true
+                    },
+                    {
+                        id: 'fallback-2',
+                        name: 'One Hope Leadership Academy Interest',
+                        description: 'The One Hope Leadership Academy is designed for individuals who want to grow as Christian leaders in all areas of life. This program provides practical training and spiritual development.',
+                        starts_at: null, // TBD
+                        ends_at: null,
+                        registration_url: 'https://onehope.churchcenter.com/registrations/events/456',
+                        details_url: 'https://onehope.churchcenter.com/events/456',
+                        featured: false
+                    }
+                ];
+                
+                currentEvents = fallbackEvents;
+                displayEvents(fallbackEvents);
+            } else {
+                // Wait before retrying (exponential backoff)
+                const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
+                console.log(`⏳ Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
         }
-        
-        // Add credentials to ensure cookies are sent
-        const response = await fetch(`${API_BASE}/api/events`, {
-            credentials: 'include',
-            headers: headers
-        });
-        
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response ok:', response.ok);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.log('❌ Error response:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        currentEvents = data.events || [];
-        console.log('✅ Events loaded:', currentEvents.length);
-        
-        displayEvents(currentEvents);
-    } catch (error) {
-        console.error('❌ Error fetching events:', error);
-        showNotification('Unable to load events at this time', 'error');
     }
 }
 
