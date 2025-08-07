@@ -2526,11 +2526,22 @@ async function rsvpEvent(eventId) {
     try {
         console.log(`📝 RSVP for event ${eventId}...`);
         
+        // Get stored token for authentication
+        const storedToken = localStorage.getItem('onehope_token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add Authorization header if token exists
+        if (storedToken) {
+            headers['Authorization'] = `Bearer ${storedToken}`;
+            console.log('🔑 Adding Authorization header with token');
+        }
+        
         const response = await fetch(`${API_BASE}/api/events/${eventId}/rsvp`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            credentials: 'include',
+            headers: headers
         });
 
         if (!response.ok) {
