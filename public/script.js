@@ -2768,20 +2768,66 @@ async function loadDailyReadingStatus(date) {
         if (response.ok) {
             const result = await response.json();
             if (result.data && result.data.sections_completed) {
-                // Don't overwrite local state if we're currently saving
-                if (!isSavingReading) {
-                    dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
-                    console.log('✅ Daily reading status loaded from database:', dailyReadings);
-                    updateReadingUI();
+                // Check if the loaded data is from today
+                const today = new Date().toISOString().split('T')[0];
+                const loadedDate = result.data.reading_date || date;
+                
+                if (loadedDate === today) {
+                    // Don't overwrite local state if we're currently saving
+                    if (!isSavingReading) {
+                        dailyReadings = { ...dailyReadings, ...result.data.sections_completed };
+                        console.log('✅ Daily reading status loaded from database for today:', dailyReadings);
+                        updateReadingUI();
+                    } else {
+                        console.log('⚠️ Skipping database load - save in progress');
+                    }
                 } else {
-                    console.log('⚠️ Skipping database load - save in progress');
+                    // Data is from a different day, reset checkmarks for today
+                    console.log('🔄 Data from different day detected, resetting checkmarks for today');
+                    dailyReadings = {
+                        devotional: false,
+                        oldTestament: false,
+                        newTestament: false,
+                        psalms: false,
+                        proverbs: false
+                    };
+                    updateReadingUI();
                 }
+            } else {
+                // No data found, reset checkmarks for today
+                console.log('🔄 No reading data found, resetting checkmarks for today');
+                dailyReadings = {
+                    devotional: false,
+                    oldTestament: false,
+                    newTestament: false,
+                    psalms: false,
+                    proverbs: false
+                };
+                updateReadingUI();
             }
         } else {
             console.log('⚠️ No reading status found for date:', date);
+            // Reset checkmarks for today
+            dailyReadings = {
+                devotional: false,
+                oldTestament: false,
+                newTestament: false,
+                psalms: false,
+                proverbs: false
+            };
+            updateReadingUI();
         }
     } catch (error) {
         console.error('❌ Error loading daily reading status:', error);
+        // Reset checkmarks on error
+        dailyReadings = {
+            devotional: false,
+            oldTestament: false,
+            newTestament: false,
+            psalms: false,
+            proverbs: false
+        };
+        updateReadingUI();
     }
 }
 
