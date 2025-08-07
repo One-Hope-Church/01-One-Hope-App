@@ -2526,8 +2526,43 @@ async function rsvpEvent(eventId) {
     try {
         console.log(`📝 RSVP for event ${eventId}...`);
         
-        // Get stored token for authentication
+        // Check if user is authenticated
         const storedToken = localStorage.getItem('onehope_token');
+        const userProfile = localStorage.getItem('onehope_user');
+        
+        console.log('🔍 Authentication check:');
+        console.log('  - Token exists:', !!storedToken);
+        console.log('  - User profile exists:', !!userProfile);
+        
+        if (!storedToken && !userProfile) {
+            // Show sign-in modal instead of just an error
+            showNotification('Please sign in to RSVP for events', 'error');
+            
+            // Create a simple sign-in prompt
+            const signInModal = document.createElement('div');
+            signInModal.className = 'modal-overlay';
+            signInModal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Sign In Required</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>You need to sign in to RSVP for events.</p>
+                        <p>Would you like to sign in with Planning Center?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                        <button class="btn-primary" onclick="signInWithPlanningCenter(); this.closest('.modal-overlay').remove()">Sign In</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(signInModal);
+            document.body.style.overflow = 'hidden';
+            return;
+        }
+        
         const headers = {
             'Content-Type': 'application/json'
         };
