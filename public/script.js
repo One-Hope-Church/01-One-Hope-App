@@ -2562,9 +2562,6 @@ async function rsvpEvent(eventId) {
             button.disabled = true;
                 }
             }
-            
-            // Refresh events to update counts
-            await fetchEvents();
         }
     } catch (error) {
         console.error('❌ Error RSVPing for event:', error);
