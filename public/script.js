@@ -626,6 +626,20 @@ function updateUserInfo() {
     }
 }
 
+// Temporary debugging function to force reset checkmarks
+function forceResetCheckmarks() {
+    console.log('🔄 Force resetting checkmarks...');
+    dailyReadings = {
+        devotional: false,
+        oldTestament: false,
+        newTestament: false,
+        psalms: false,
+        proverbs: false
+    };
+    updateReadingUI();
+    console.log('✅ Checkmarks reset:', dailyReadings);
+}
+
 // Bible Reading Functions
 let dailyReadings = {
     devotional: false,
@@ -860,20 +874,11 @@ function convertVerseToPassageId(verse) {
 function updateBibleUI() {
     if (!currentBibleData) return;
     
-    // Update date
+    // Update date - use current date for consistency with homepage
     const dateElement = document.querySelector('.reading-date span');
-    if (dateElement && currentBibleData.Date && currentBibleData.Date[0]) {
-        // Handle date format from API (YYYY-MM-DD)
-        let date;
-        if (currentBibleData.Date[0].includes('-')) {
-            // API date format: YYYY-MM-DD
-            date = new Date(currentBibleData.Date[0]);
-        } else {
-            // Fallback to current date
-            date = new Date();
-        }
-        
-        dateElement.textContent = date.toLocaleDateString('en-US', { 
+    if (dateElement) {
+        const today = new Date();
+        dateElement.textContent = today.toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
@@ -958,6 +963,12 @@ async function initializeBibleData() {
     
     // Always load reading status for today to ensure we have the latest state
     const today = new Date().toISOString().split('T')[0];
+    console.log('📅 Today\'s date:', today);
+    
+    // Force reset checkmarks first to ensure clean state
+    forceResetCheckmarks();
+    
+    // Then load from database
     await loadDailyReadingStatus(today);
     
     // Load bible data when user first accesses bible screen
@@ -2767,10 +2778,15 @@ async function loadDailyReadingStatus(date) {
 
         if (response.ok) {
             const result = await response.json();
+            console.log('🔍 Database response:', result);
+            
             if (result.data && result.data.sections_completed) {
                 // Check if the loaded data is from today
                 const today = new Date().toISOString().split('T')[0];
                 const loadedDate = result.data.reading_date || date;
+                
+                console.log('🔍 Date comparison:', { today, loadedDate, requestedDate: date });
+                console.log('🔍 Sections completed:', result.data.sections_completed);
                 
                 if (loadedDate === today) {
                     // Don't overwrite local state if we're currently saving
