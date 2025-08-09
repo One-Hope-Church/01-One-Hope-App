@@ -65,22 +65,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const storedToken = localStorage.getItem('onehope_token');
         const storedUser = localStorage.getItem('onehope_user');
         
-        if (storedToken && storedUser) {
+        if (storedToken) {
             try {
-                console.log('🔍 Found stored token, processing...');
-                const userData = JSON.parse(storedUser);
+                console.log('🔍 Found stored token');
+                // Ensure onehope_user exists for UI if missing
+                let userData = storedUser ? JSON.parse(storedUser) : null;
+                if (!userData) {
+                    const payload = JSON.parse(atob(storedToken));
+                    userData = {
+                        id: payload.supabase_id || null,
+                        planning_center_id: payload.planning_center_id || null,
+                        name: payload.name || '',
+                        email: payload.email || '',
+                        avatar_url: payload.avatar_url || null
+                    };
+                    localStorage.setItem('onehope_user', JSON.stringify(userData));
+                }
                 currentUser = userData;
-                console.log('✅ Restored user from localStorage:', userData.name);
-                
-                // Update UI with restored user data
                 updateUserInfo();
                 
-                // Load user streak and steps data
+                // Load user data then show app
                 Promise.all([
                     fetchUserStreak(),
                     fetchUserSteps()
                 ]).then(() => {
-                    // Show main app after data is loaded
                     showScreen('mainApp');
                 });
             } catch (error) {
@@ -331,15 +339,294 @@ function updateNavigation(activeScreenId) {
     }
 }
 
-// Planning Center Authentication Functions
-function signInWithPlanningCenter() {
-    showNotification('Redirecting to Planning Center...', 'info');
-            window.location.href = `${API_BASE}/auth/planningcenter`;
+// Supabase Auth Initialization
+let supabaseClient = null;
+async function initSupabaseClient() {
+    try {
+        const resp = await fetch('/api/config');
+        const cfg = await resp.json();
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) {
+            console.warn('Supabase config missing');
+            return;
+        }
+        supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    } catch (e) {
+        console.error('Failed to init Supabase:', e);
+    }
+}
+initSupabaseClient();
+
+async function supabaseEmailSignIn() {
+    const email = document.getElementById('auth-email')?.value?.trim();
+    const password = document.getElementById('auth-password')?.value;
+    if (!email || !password) {
+        showNotification('Email and password required', 'error');
+        return;
+    }
+    if (!supabaseClient) await initSupabaseClient();
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+        showNotification(error.message || 'Sign in failed', 'error');
+        return;
+    }
+    try {
+        await fetch('/api/auth/profile/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supabase_user_id: data.user.id, email })
+        });
+    } catch {}
+    await afterSupabaseAuth(data.user);
 }
 
-function createPlanningCenterAccount() {
-    // Show confirmation modal
-    showPlanningCenterModal();
+async function supabaseEmailSignUp() {
+    const email = document.getElementById('auth-email')?.value?.trim();
+    const password = document.getElementById('auth-password')?.value;
+    if (!email || !password) {
+        showNotification('Email and password required', 'error');
+        return;
+    }
+    if (!supabaseClient) await initSupabaseClient();
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) {
+        showNotification(error.message || 'Sign up failed', 'error');
+        return;
+    }
+    showNotification('Account created. You are signed in.', 'success');
+    try {
+        await fetch('/api/auth/profile/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supabase_user_id: data.user.id, email })
+        });
+    } catch {}
+    await afterSupabaseAuth(data.user);
+}
+
+async function afterSupabaseAuth(user) {
+    if (!user) return;
+    // Determine current link status from DB and cache
+    let linked = JSON.parse(localStorage.getItem('onehope_pc_link') || 'null');
+    if (linked && linked.supabase_user_id && linked.supabase_user_id !== user.id) {
+        localStorage.removeItem('onehope_pc_link');
+        linked = null;
+    }
+    // Read DB user to see if already linked
+    let dbUser = null;
+    try {
+        if (!supabaseClient) await initSupabaseClient();
+        const { data } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+        dbUser = data || null;
+    } catch {}
+
+    const alreadyLinked = !!(linked?.planning_center_id || dbUser?.planning_center_id);
+
+    if (!alreadyLinked) {
+        // Run Planning Center check and prompt before proceeding
+        try {
+            const checkResp = await fetch('/api/auth/pc/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email })
+            });
+            if (checkResp.ok) {
+                const body = await checkResp.json();
+                const profiles = body.matches || [];
+                if (profiles.length === 1) {
+                    await showPcLinkModal(user, profiles[0]);
+                } else if (profiles.length > 1) {
+                    await showPcLinkChooser(user, profiles);
+                }
+            }
+        } catch {}
+    } else if (linked?.planning_center_id) {
+        // Refresh if linked via cache
+        await fetch('/api/auth/pc/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supabase_user_id: user.id, planning_center_id: linked.planning_center_id })
+        });
+        // Store app token so backend endpoints authorize
+        setAppAuthToken({
+            planning_center_id: linked.planning_center_id,
+            name: dbUser?.name || user.email,
+            email: dbUser?.planning_center_email || user.email,
+            avatar_url: dbUser?.avatar_url || null
+        });
+    }
+    await loadUserProfileIntoUI(user.id);
+    showScreen('mainApp');
+}
+
+function setAppAuthToken(profile) {
+    try {
+        const tokenPayload = {
+            planning_center_id: profile.planning_center_id,
+            name: profile.name || null,
+            email: profile.email || null,
+            avatar_url: profile.avatar_url || null,
+            timestamp: Date.now()
+        };
+        const token = btoa(JSON.stringify(tokenPayload));
+        localStorage.setItem('onehope_token', token);
+    } catch {}
+}
+
+async function showPcLinkModal(user, profile) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Is this you?</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <img src="${profile.avatar_url || ''}" alt="Avatar" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'"/>
+                        <div>
+                            <div><strong>${profile.name || 'Unknown'}</strong></div>
+                            <div style="color:#6B7280;">${profile.email || ''}</div>
+                        </div>
+                    </div>
+                    <p style="margin-top:12px;">We found a Planning Center profile with this email. Link it to personalize your experience.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="pc-link-skip">Not me</button>
+                    <button class="btn-primary" id="pc-link-confirm">Yes, link</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#pc-link-skip').onclick = () => {
+            modal.remove();
+            resolve();
+        };
+        modal.querySelector('#pc-link-confirm').onclick = async () => {
+            try {
+                const resp = await fetch('/api/auth/pc/link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ supabase_user_id: user.id, profile })
+                });
+                if (resp.ok) {
+                    localStorage.setItem('onehope_pc_link', JSON.stringify({ supabase_user_id: user.id, planning_center_id: profile.planning_center_id }));
+                    await fetch('/api/auth/pc/refresh', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ supabase_user_id: user.id, planning_center_id: profile.planning_center_id })
+                    });
+                    // Store app token so backend endpoints authorize
+                    setAppAuthToken({
+                        planning_center_id: profile.planning_center_id,
+                        name: profile.name || user.email,
+                        email: profile.email || user.email,
+                        avatar_url: profile.avatar_url || null
+                    });
+                    showNotification('Linked to Planning Center', 'success');
+                } else {
+                    showNotification('Failed to link Planning Center', 'error');
+                }
+            } catch (e) {
+                showNotification('Failed to link Planning Center', 'error');
+            }
+            modal.remove();
+            resolve();
+        };
+    });
+}
+
+async function showPcLinkChooser(user, profiles) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        const list = profiles.map(p => `
+            <li style="display:flex;align-items:center;gap:12px; padding:8px 0; cursor:pointer;" data-pcid="${p.planning_center_id}">
+                <img src="${p.avatar_url || ''}" alt="Avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;${p.avatar_url ? '' : 'display:none;'}"/>
+                <div style="flex:1;">
+                    <div><strong>${p.name || 'Unknown'}</strong></div>
+                    <div style="color:#6B7280; font-size:12px;">${p.email}${p.email_is_primary ? ' (primary)' : ''}</div>
+                </div>
+                <button class="btn-small">Select</button>
+            </li>`).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Select Your Planning Center Account</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <ul style="list-style:none; margin:0; padding:0;">
+                        ${list}
+                    </ul>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        modal.querySelectorAll('li[data-pcid]').forEach(li => {
+            li.onclick = async () => {
+                const pcid = li.getAttribute('data-pcid');
+                const profile = profiles.find(p => p.planning_center_id === pcid);
+                if (!profile) return;
+                await showPcLinkModal(user, profile);
+                modal.remove();
+                resolve();
+            };
+        });
+    });
+}
+
+async function loadUserProfileIntoUI(supabaseUserId) {
+    try {
+        if (!supabaseClient) await initSupabaseClient();
+        // Use service-backed endpoints if needed; for now we read from Supabase client-side
+        const { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', supabaseUserId)
+            .single();
+        if (error) return;
+
+        const name = data?.name || 'Welcome back';
+        const email = data?.planning_center_email || '';
+        const avatarUrl = data?.avatar_url || '';
+
+        const welcome = document.getElementById('home-welcome');
+        if (welcome) welcome.textContent = name ? `Welcome back, ${name.split(' ')[0]}` : 'Welcome back';
+
+        const homeAvatarImg = document.getElementById('home-avatar-img');
+        const homeAvatarFallback = document.getElementById('home-avatar-fallback');
+        if (avatarUrl && homeAvatarImg) {
+            homeAvatarImg.src = avatarUrl;
+            homeAvatarImg.style.display = 'block';
+            if (homeAvatarFallback) homeAvatarFallback.style.display = 'none';
+        } else {
+            if (homeAvatarImg) homeAvatarImg.style.display = 'none';
+            if (homeAvatarFallback) homeAvatarFallback.style.display = '';
+        }
+
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        const profileAvatarImg = document.getElementById('profile-avatar-img');
+        const profileAvatarFallback = document.getElementById('profile-avatar-fallback');
+        if (profileName) profileName.textContent = data?.name || 'Your Name';
+        if (profileEmail) profileEmail.textContent = email || '';
+        if (avatarUrl && profileAvatarImg) {
+            profileAvatarImg.src = avatarUrl;
+            profileAvatarImg.style.display = 'block';
+            if (profileAvatarFallback) profileAvatarFallback.style.display = 'none';
+        } else {
+            if (profileAvatarImg) profileAvatarImg.style.display = 'none';
+            if (profileAvatarFallback) profileAvatarFallback.style.display = '';
+        }
+    } catch {}
 }
 
 function showPlanningCenterModal() {

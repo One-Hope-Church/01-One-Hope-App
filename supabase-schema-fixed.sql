@@ -6,14 +6,19 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table (core user data)
 CREATE TABLE IF NOT EXISTS users (
+    -- Prefer aligning this with Supabase Auth user id when creating a profile row
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    planning_center_id TEXT UNIQUE NOT NULL,
-    planning_center_email TEXT NOT NULL,
-    name TEXT NOT NULL,
+    planning_center_id TEXT UNIQUE,
+    planning_center_email TEXT,
+    name TEXT,
+    phone TEXT,
     avatar_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Ensure new columns exist on pre-existing users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
 
 -- Add indexes for performance (ignore if they exist)
 DO $$ 
@@ -90,11 +95,41 @@ BEGIN
     END IF;
 END $$;
 
+-- Planning Center group memberships per user
+CREATE TABLE IF NOT EXISTS pc_group_memberships (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    pc_group_id TEXT NOT NULL,
+    pc_group_name TEXT,
+    role TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, pc_group_id)
+);
+
+-- Planning Center event registrations per user
+CREATE TABLE IF NOT EXISTS pc_event_registrations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    pc_event_id TEXT NOT NULL,
+    pc_event_name TEXT,
+    pc_event_time_id TEXT,
+    status TEXT,
+    starts_at TIMESTAMP WITH TIME ZONE,
+    ends_at TIMESTAMP WITH TIME ZONE,
+    registration_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, pc_event_id)
+);
+
 -- Row Level Security (RLS) policies
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reading_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_steps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pc_group_memberships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pc_event_registrations ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist, then recreate them
 DO $$ 
@@ -117,6 +152,16 @@ BEGIN
     DROP POLICY IF EXISTS "Users can view own steps" ON user_steps;
     DROP POLICY IF EXISTS "Users can update own steps" ON user_steps;
     DROP POLICY IF EXISTS "Users can insert own steps" ON user_steps;
+    
+    -- Group memberships policies (idempotent)
+    DROP POLICY IF EXISTS "Users can view own group memberships" ON pc_group_memberships;
+    DROP POLICY IF EXISTS "Users can upsert own group memberships" ON pc_group_memberships;
+    DROP POLICY IF EXISTS "Users can update own group memberships" ON pc_group_memberships;
+    
+    -- Event registrations policies (idempotent)
+    DROP POLICY IF EXISTS "Users can view own event registrations" ON pc_event_registrations;
+    DROP POLICY IF EXISTS "Users can upsert own event registrations" ON pc_event_registrations;
+    DROP POLICY IF EXISTS "Users can update own event registrations" ON pc_event_registrations;
 END $$;
 
 -- Users can only access their own data
@@ -156,6 +201,26 @@ CREATE POLICY "Users can update own steps" ON user_steps
 CREATE POLICY "Users can insert own steps" ON user_steps
     FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
 
+-- Group memberships policies
+CREATE POLICY "Users can view own group memberships" ON pc_group_memberships
+    FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can upsert own group memberships" ON pc_group_memberships
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can update own group memberships" ON pc_group_memberships
+    FOR UPDATE USING (auth.uid()::text = user_id::text);
+
+-- Event registrations policies
+CREATE POLICY "Users can view own event registrations" ON pc_event_registrations
+    FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can upsert own event registrations" ON pc_event_registrations
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can update own event registrations" ON pc_event_registrations
+    FOR UPDATE USING (auth.uid()::text = user_id::text);
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -168,6 +233,8 @@ $$ language 'plpgsql';
 -- Drop existing triggers if they exist
 DROP TRIGGER IF EXISTS update_user_progress_updated_at ON user_progress;
 DROP TRIGGER IF EXISTS update_user_steps_updated_at ON user_steps;
+DROP TRIGGER IF EXISTS update_pc_group_memberships_updated_at ON pc_group_memberships;
+DROP TRIGGER IF EXISTS update_pc_event_registrations_updated_at ON pc_event_registrations;
 
 -- Triggers for updated_at
 CREATE TRIGGER update_user_progress_updated_at 
@@ -176,6 +243,14 @@ CREATE TRIGGER update_user_progress_updated_at
 
 CREATE TRIGGER update_user_steps_updated_at 
     BEFORE UPDATE ON user_steps 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_pc_group_memberships_updated_at 
+    BEFORE UPDATE ON pc_group_memberships 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_pc_event_registrations_updated_at 
+    BEFORE UPDATE ON pc_event_registrations 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Success message

@@ -80,6 +80,82 @@ const db = {
         }
     },
 
+    // Create or update user ensuring the row id aligns with Supabase Auth user id
+    async upsertUserWithAuthId(authUserId, planningCenterData) {
+        try {
+            // Try by id first
+            let existingUser = null;
+            {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', authUserId)
+                    .single();
+                if (!error) existingUser = data;
+            }
+
+            // If not found by id, try by planning_center_id
+            if (!existingUser && planningCenterData?.id) {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('planning_center_id', planningCenterData.id)
+                    .single();
+                if (!error) existingUser = data;
+            }
+
+            const userData = {
+                id: authUserId,
+                planning_center_id: planningCenterData?.id || null,
+                planning_center_email: planningCenterData?.email || null,
+                name: planningCenterData?.name || null,
+                phone: planningCenterData?.phone || null,
+                avatar_url: planningCenterData?.avatar_url || null,
+                last_login: new Date().toISOString()
+            };
+
+            let result;
+            if (existingUser) {
+                result = await supabase
+                    .from('users')
+                    .update(userData)
+                    .eq('id', existingUser.id)
+                    .select()
+                    .single();
+            } else {
+                result = await supabase
+                    .from('users')
+                    .insert(userData)
+                    .select()
+                    .single();
+            }
+
+            if (result.error) {
+                console.error('❌ Error upserting user with auth id:', result.error);
+                throw result.error;
+            }
+
+            return result.data;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    async updateUserLastLogin(userId) {
+        const { data, error } = await supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', userId)
+            .select()
+            .single();
+        if (error) {
+            console.error('❌ Error updating last_login:', error);
+            return null;
+        }
+        return data;
+    },
+
     // Get user by Planning Center ID
     async getUserByPlanningCenterId(planningCenterId) {
         try {
@@ -390,6 +466,86 @@ const db = {
 
             console.log('✅ User steps cleared for user:', userId);
             return true;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    }
+    ,
+
+    // Replace all Planning Center group memberships for a user
+    async replaceGroupMemberships(userId, memberships) {
+        try {
+            // Delete existing
+            const { error: delErr } = await supabase
+                .from('pc_group_memberships')
+                .delete()
+                .eq('user_id', userId);
+            if (delErr) {
+                console.error('❌ Error clearing group memberships:', delErr);
+                throw delErr;
+            }
+
+            if (!memberships || memberships.length === 0) return [];
+
+            const rows = memberships.map(m => ({
+                user_id: userId,
+                pc_group_id: m.pc_group_id,
+                pc_group_name: m.pc_group_name || null,
+                role: m.role || null,
+                updated_at: new Date().toISOString()
+            }));
+
+            const { data, error } = await supabase
+                .from('pc_group_memberships')
+                .upsert(rows, { onConflict: 'user_id,pc_group_id', ignoreDuplicates: false })
+                .select();
+            if (error) {
+                console.error('❌ Error upserting group memberships:', error);
+                throw error;
+            }
+            return data;
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    // Replace all Planning Center event registrations for a user
+    async replaceEventRegistrations(userId, registrations) {
+        try {
+            const { error: delErr } = await supabase
+                .from('pc_event_registrations')
+                .delete()
+                .eq('user_id', userId);
+            if (delErr) {
+                console.error('❌ Error clearing event registrations:', delErr);
+                throw delErr;
+            }
+
+            if (!registrations || registrations.length === 0) return [];
+
+            const rows = registrations.map(r => ({
+                user_id: userId,
+                pc_event_id: r.pc_event_id,
+                pc_event_name: r.pc_event_name || null,
+                pc_event_time_id: r.pc_event_time_id || null,
+                status: r.status || null,
+                starts_at: r.starts_at || null,
+                ends_at: r.ends_at || null,
+                registration_url: r.registration_url || null,
+                updated_at: new Date().toISOString()
+            }));
+
+            const { data, error } = await supabase
+                .from('pc_event_registrations')
+                .upsert(rows, { onConflict: 'user_id,pc_event_id', ignoreDuplicates: false })
+                .select();
+            if (error) {
+                console.error('❌ Error upserting event registrations:', error);
+                throw error;
+            }
+            return data;
         } catch (error) {
             console.error('❌ Database error:', error);
             throw error;

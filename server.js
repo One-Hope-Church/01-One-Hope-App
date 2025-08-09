@@ -3,7 +3,9 @@ const axios = require('axios');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+// Force-load .env from project root and override any stale shell exports in dev
+require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
 
 // Import Supabase database operations
 const { db } = require('./supabase');
@@ -41,6 +43,38 @@ const PLANNING_CENTER_CONFIG = {
         : 'http://localhost:3000/auth/callback',
     scope: 'people groups services check_ins registrations'
 };
+
+// Planning Center Personal Token configuration
+const PLANNING_CENTER_API_TOKEN = process.env.PLANNING_CENTER_API_TOKEN;
+const PLANNING_CENTER_APP_ID = process.env.PLANNING_CENTER_APP_ID;
+const PLANNING_CENTER_APP_SECRET = process.env.PLANNING_CENTER_APP_SECRET;
+
+// Build a list of auth header strategies to try when calling Planning Center APIs
+function buildPlanningCenterAuthHeaderOptions() {
+    const options = [];
+
+    // Preferred: App ID + Secret via Basic auth
+    if (PLANNING_CENTER_APP_ID && PLANNING_CENTER_APP_SECRET) {
+        const basic = Buffer.from(`${PLANNING_CENTER_APP_ID}:${PLANNING_CENTER_APP_SECRET}`).toString('base64');
+        options.push({ Authorization: `Basic ${basic}`, Accept: 'application/json' });
+    }
+
+    // Fallbacks: Single Personal Token
+    if (PLANNING_CENTER_API_TOKEN) {
+        // Try Bearer first
+        options.push({ Authorization: `Bearer ${PLANNING_CENTER_API_TOKEN}`, Accept: 'application/json' });
+        // Then Basic with token as username and empty password
+        const basicToken = Buffer.from(`${PLANNING_CENTER_API_TOKEN}:`).toString('base64');
+        options.push({ Authorization: `Basic ${basicToken}`, Accept: 'application/json' });
+    }
+
+    // Always include an Accept header if somehow no auth is configured (will likely fail fast)
+    if (options.length === 0) {
+        options.push({ Accept: 'application/json' });
+    }
+
+    return options;
+}
 
 // Debug OAuth configuration
 console.log('🔧 OAuth Configuration Debug:');
@@ -322,36 +356,37 @@ app.get('/api/signout', (req, res) => {
     });
 });
 
-app.get('/api/events', async (req, res) => {
-    
-    // Check if user exists in session
-    if (req.session.user) {
-        // User found in session
-    } else {
-        // Check if user exists in app.locals backup
-        const userSessions = req.app.locals.userSessions || {};
-        const backupUser = userSessions[req.sessionID];
-        
-        if (backupUser) {
-            req.session.user = backupUser;
-        } else {
-            // Try to get user from Authorization header (token-based)
-            const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                try {
-                    const token = authHeader.substring(7);
-                    const userData = JSON.parse(Buffer.from(token, 'base64').toString());
-                    req.session.user = userData;
-                } catch (error) {
-                    return res.status(401).json({ error: 'Not authenticated' });
-                }
-            } else {
-                return res.status(401).json({ error: 'Not authenticated' });
-            }
-        }
-    }
+// Public config endpoint for frontend to initialize Supabase client
+app.get('/api/config', (req, res) => {
+    res.json({
+        supabaseUrl: process.env.SUPABASE_URL || null,
+        supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null
+    });
+});
 
+// Dev-only: environment presence check (no secrets). Disabled in production
+app.get('/api/debug/env', (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).end();
+    }
+    const mask = (v) => (v ? `${String(v).length} chars` : null);
+    res.json({
+        NODE_ENV: process.env.NODE_ENV || null,
+        SUPABASE_URL_present: !!process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY_present: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        SUPABASE_SERVICE_ROLE_KEY_length: mask(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        SUPABASE_ANON_KEY_present: !!process.env.SUPABASE_ANON_KEY,
+        SUPABASE_ANON_KEY_length: mask(process.env.SUPABASE_ANON_KEY)
+    });
+});
+
+app.get('/api/events', async (req, res) => {
     try {
+        const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
+        if (!authHeaderOptions || authHeaderOptions.length === 0 || (!PLANNING_CENTER_API_TOKEN && !(PLANNING_CENTER_APP_ID && PLANNING_CENTER_APP_SECRET))) {
+            console.error('❌ No Planning Center personal token configured');
+            return res.status(500).json({ error: 'Planning Center personal token not configured on server' });
+        }
         
         // Try different possible Planning Center endpoints
         const possibleEndpoints = [
@@ -374,105 +409,103 @@ app.get('/api/events', async (req, res) => {
         let endpointFound = false;
 
         for (const endpoint of possibleEndpoints) {
-            try {
-                console.log(`🔍 Trying endpoint: ${endpoint}`);
-                const response = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}${endpoint}`, {
-                    headers: {
-                        'Authorization': `Bearer ${req.session.user.accessToken}`,
-                        'Accept': 'application/json'
-                    }
-                });
+            let lastError = null;
+            for (const headers of authHeaderOptions) {
+                try {
+                    console.log(`🔍 Trying endpoint: ${endpoint} with headers: ${headers.Authorization ? headers.Authorization.split(' ')[0] : 'none'}`);
+                    const response = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}${endpoint}`, { headers });
 
-                console.log(`✅ Endpoint ${endpoint} worked! Status:`, response.status);
-                console.log('📄 Response data:', JSON.stringify(response.data, null, 2));
-                
-                // Parse the response based on the endpoint structure
-                if (response.data.data && response.data.data.length > 0) {
-                    console.log('📄 Raw response structure:', JSON.stringify(response.data, null, 2));
-                    console.log('🔍 Available fields for first event:', JSON.stringify(response.data.data[0]?.attributes, null, 2));
+                    console.log(`✅ Endpoint ${endpoint} worked! Status:`, response.status);
+                    console.log('📄 Response data:', JSON.stringify(response.data, null, 2));
                     
-                    if (endpoint.includes('/signups')) {
-                        // Handle signups endpoint
-                        events = response.data.data
-                            .filter(signup => {
-                                // Filter for events that are visible on Church Center
-                                const now = new Date();
-                                const closeAt = signup.attributes?.close_at ? new Date(signup.attributes.close_at) : null;
-                                const hasChurchCenterUrl = signup.attributes?.new_registration_url?.includes('churchcenter.com');
-                                
-                                // Check if event has "public" category (ID: 98823)
-                                const hasPublicCategory = signup.relationships?.categories?.data?.some(cat => cat.id === '98823');
-                                
-                                // Event should be:
-                                // 1. Not archived (handled by API filter)
-                                // 2. Have "public" category (ID: 98823)
-                                // 3. Currently open (or no close date set)
-                                // 4. Have a Church Center registration URL
-                                const isVisible = hasPublicCategory && (!closeAt || closeAt > now) && hasChurchCenterUrl;
-                                
-                                console.log(`📅 Event "${signup.attributes?.name}": archived=${signup.attributes?.archived}, hasPublicCategory=${hasPublicCategory}, hasChurchCenterUrl=${hasChurchCenterUrl}, closeAt=${closeAt}, isVisible=${isVisible}`);
-                                
-                                return isVisible;
-                            })
-                            .map(signup => {
-                                const nextSignupTime = signup.relationships?.next_signup_time?.data;
-                                const included = response.data.included || [];
-                                const signupTime = included.find(item => 
-                                    item.type === 'SignupTime' && item.id === nextSignupTime?.id
-                                );
-                                
-                                // Clean up HTML from description
-                                const cleanDescription = signup.attributes?.description 
-                                    ? signup.attributes.description.replace(/<[^>]*>/g, '').trim()
-                                    : '';
-                                
-                                // Create details URL by appending event ID to base URL
-                                const registrationUrl = signup.attributes?.new_registration_url || null;
-                                const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${signup.id}`;
+                    // Parse the response based on the endpoint structure
+                    if (response.data.data && response.data.data.length > 0) {
+                        console.log('📄 Raw response structure:', JSON.stringify(response.data, null, 2));
+                        console.log('🔍 Available fields for first event:', JSON.stringify(response.data.data[0]?.attributes, null, 2));
+                        
+                        if (endpoint.includes('/signups')) {
+                            // Handle signups endpoint
+                            events = response.data.data
+                                .filter(signup => {
+                                    // Filter for events that are visible on Church Center
+                                    const now = new Date();
+                                    const closeAt = signup.attributes?.close_at ? new Date(signup.attributes.close_at) : null;
+                                    const hasChurchCenterUrl = signup.attributes?.new_registration_url?.includes('churchcenter.com');
+                                    
+                                    // Check if event has "public" category (ID: 98823)
+                                    const hasPublicCategory = signup.relationships?.categories?.data?.some(cat => cat.id === '98823');
+                                    
+                                    // Event should be visible, open, and public
+                                    const isVisible = hasPublicCategory && (!closeAt || closeAt > now) && hasChurchCenterUrl;
+                                    
+                                    console.log(`📅 Event "${signup.attributes?.name}": archived=${signup.attributes?.archived}, hasPublicCategory=${hasPublicCategory}, hasChurchCenterUrl=${hasChurchCenterUrl}, closeAt=${closeAt}, isVisible=${isVisible}`);
+                                    
+                                    return isVisible;
+                                })
+                                .map(signup => {
+                                    const nextSignupTime = signup.relationships?.next_signup_time?.data;
+                                    const included = response.data.included || [];
+                                    const signupTime = included.find(item => 
+                                        item.type === 'SignupTime' && item.id === nextSignupTime?.id
+                                    );
+                                    
+                                    // Clean up HTML from description
+                                    const cleanDescription = signup.attributes?.description 
+                                        ? signup.attributes.description.replace(/<[^>]*>/g, '').trim()
+                                        : '';
+                                    
+                                    // Create details URL by appending event ID to base URL
+                                    const registrationUrl = signup.attributes?.new_registration_url || null;
+                                    const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${signup.id}`;
+                                    
+                                    return {
+                                        id: signup.id,
+                                        title: signup.attributes?.name || 'Event',
+                                        description: cleanDescription,
+                                        starts_at: signupTime?.attributes?.starts_at || signup.attributes?.starts_at,
+                                        ends_at: signupTime?.attributes?.ends_at || signup.attributes?.ends_at,
+                                        location: signupTime?.attributes?.location || signup.attributes?.location || '',
+                                        featured: signup.attributes?.featured || false,
+                                        registration_url: registrationUrl,
+                                        details_url: detailsUrl,
+                                        capacity: signupTime?.attributes?.capacity || signup.attributes?.capacity,
+                                        registered_count: signupTime?.attributes?.registered_count || signup.attributes?.registered_count || 0
+                                    };
+                                });
+                        } else {
+                            // Handle events endpoint (fallback)
+                            events = response.data.data.map(event => {
+                                const registrationUrl = event.attributes?.registration_url || null;
+                                const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${event.id}`;
                                 
                                 return {
-                                    id: signup.id,
-                                    title: signup.attributes?.name || 'Event',
-                                    description: cleanDescription,
-                                    starts_at: signupTime?.attributes?.starts_at || signup.attributes?.starts_at,
-                                    ends_at: signupTime?.attributes?.ends_at || signup.attributes?.ends_at,
-                                    location: signupTime?.attributes?.location || signup.attributes?.location || '',
-                                    featured: signup.attributes?.featured || false,
+                                    id: event.id,
+                                    title: event.attributes?.name || event.attributes?.title || 'Event',
+                                    description: event.attributes?.description || '',
+                                    starts_at: event.attributes?.starts_at || event.attributes?.start_time,
+                                    ends_at: event.attributes?.ends_at || event.attributes?.end_time,
+                                    location: event.attributes?.location || '',
+                                    featured: event.attributes?.featured || false,
                                     registration_url: registrationUrl,
                                     details_url: detailsUrl,
-                                    capacity: signupTime?.attributes?.capacity || signup.attributes?.capacity,
-                                    registered_count: signupTime?.attributes?.registered_count || signup.attributes?.registered_count || 0
+                                    capacity: event.attributes?.capacity,
+                                    registered_count: event.attributes?.registered_count || 0
                                 };
                             });
-                    } else {
-                        // Handle events endpoint (fallback)
-                        events = response.data.data.map(event => {
-                            // Create details URL by appending event ID to base URL
-                            const registrationUrl = event.attributes?.registration_url || null;
-                            const detailsUrl = `https://onehopenola.churchcenter.com/registrations/events/${event.id}`;
-                            
-                            return {
-                                id: event.id,
-                                title: event.attributes?.name || event.attributes?.title || 'Event',
-                                description: event.attributes?.description || '',
-                                starts_at: event.attributes?.starts_at || event.attributes?.start_time,
-                                ends_at: event.attributes?.ends_at || event.attributes?.end_time,
-                                location: event.attributes?.location || '',
-                                featured: event.attributes?.featured || false,
-                                registration_url: registrationUrl,
-                                details_url: detailsUrl,
-                                capacity: event.attributes?.capacity,
-                                registered_count: event.attributes?.registered_count || 0
-                            };
-                        });
+                        }
+                        
+                        endpointFound = true;
+                        break;
                     }
-                    
-                    endpointFound = true;
-                    break;
+                } catch (endpointError) {
+                    lastError = endpointError;
+                    console.log(`❌ Endpoint ${endpoint} failed with ${headers.Authorization ? headers.Authorization.split(' ')[0] : 'no-auth'}:`, endpointError.response?.status || endpointError.message);
+                    continue;
                 }
-            } catch (endpointError) {
-                console.log(`❌ Endpoint ${endpoint} failed:`, endpointError.response?.status || endpointError.message);
-                continue;
+            }
+            if (endpointFound) break;
+            if (lastError) {
+                console.log(`❌ All auth strategies failed for endpoint ${endpoint}`);
             }
         }
 
@@ -612,6 +645,226 @@ app.post('/api/events/:eventId/rsvp', async (req, res) => {
 
 
 
+// Supabase-first auth flow: link a Supabase user to Planning Center by email
+// 1) Client signs up/logs in via Supabase; sends supabase_user_id and email here
+// 2) Server looks up Planning Center person by email
+// 3) If found, returns Planning Center profile preview; client confirms linking via /api/auth/pc/link
+app.post('/api/auth/pc/check', async (req, res) => {
+    try {
+        const { email } = req.body || {};
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        const emailLower = String(email).trim().toLowerCase();
+        const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
+        const matches = [];
+        let lastError = null;
+
+        const queryVariants = [
+            `people/v2/people?where[email]=${encodeURIComponent(emailLower)}`,
+            `people/v2/people?where[email_address]=${encodeURIComponent(emailLower)}`,
+            `people/v2/people?where[search_name_or_email]=${encodeURIComponent(emailLower)}`
+        ];
+
+        const seenIds = new Set();
+
+        for (const headers of authHeaderOptions) {
+            for (const variant of queryVariants) {
+                try {
+                    const peopleResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/${variant}`, { headers });
+                    const people = Array.isArray(peopleResp.data?.data) ? peopleResp.data.data : [];
+                    for (const person of people) {
+                        const personId = person?.id;
+                        if (!personId || seenIds.has(personId)) continue;
+
+                        // Fetch emails for this person to verify the requested email is one of their primary/secondary emails
+                        try {
+                            const emailsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/people/${personId}/emails`, { headers });
+                            const emails = Array.isArray(emailsResp.data?.data) ? emailsResp.data.data : [];
+                            const matchedEmail = emails.find(e => (e?.attributes?.address || '').trim().toLowerCase() === emailLower);
+                            if (matchedEmail) {
+                                seenIds.add(personId);
+                                matches.push({
+                                    planning_center_id: personId,
+                                    name: person.attributes?.name || null,
+                                    email: matchedEmail.attributes?.address || emailLower,
+                                    email_is_primary: !!matchedEmail.attributes?.primary,
+                                    phone: person.attributes?.phone_number || null,
+                                    avatar_url: person.attributes?.demographic_avatar_url || null
+                                });
+                            }
+                        } catch (e) {
+                            // If emails fetch fails, skip this person
+                            continue;
+                        }
+                    }
+                } catch (e) {
+                    lastError = e;
+                    continue;
+                }
+            }
+            if (matches.length > 0) break;
+        }
+
+        if (matches.length === 0) {
+            const status = lastError?.response?.status || 404;
+            return res.status(status).json({ error: 'No Planning Center accounts found for that email' });
+        }
+
+        return res.json({ success: true, matches });
+    } catch (error) {
+        console.error('❌ /api/auth/pc/check error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to check Planning Center person' });
+    }
+});
+
+// Link Supabase user to Planning Center after client confirmation
+app.post('/api/auth/pc/link', async (req, res) => {
+    try {
+        const { supabase_user_id, profile } = req.body || {};
+        if (!supabase_user_id || !profile?.planning_center_id) {
+            return res.status(400).json({ error: 'supabase_user_id and profile with planning_center_id are required' });
+        }
+
+        const supabaseUser = await db.upsertUserWithAuthId(supabase_user_id, {
+            id: profile.planning_center_id,
+            email: profile.email,
+            name: profile.name,
+            phone: profile.phone,
+            avatar_url: profile.avatar_url
+        });
+
+        return res.json({ success: true, user: supabaseUser });
+    } catch (error) {
+        console.error('❌ /api/auth/pc/link error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to link Planning Center profile to user' });
+    }
+});
+
+// Refresh Planning Center data for a linked user on login
+app.post('/api/auth/pc/refresh', async (req, res) => {
+    try {
+        const { supabase_user_id, planning_center_id } = req.body || {};
+        if (!supabase_user_id || !planning_center_id) {
+            return res.status(400).json({ error: 'supabase_user_id and planning_center_id are required' });
+        }
+
+        const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
+        let lastError = null;
+        let headersUsed = null;
+        for (const headers of authHeaderOptions) {
+            try {
+                // Verify person exists and pull profile
+                const personResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/people/${planning_center_id}`, { headers });
+                const person = personResp.data?.data;
+                const updatedProfile = {
+                    id: planning_center_id,
+                    email: person?.attributes?.email || person?.attributes?.login_identifier || null,
+                    name: person?.attributes?.name || null,
+                    phone: person?.attributes?.phone_number || null,
+                    avatar_url: person?.attributes?.demographic_avatar_url || null
+                };
+                await db.upsertUserWithAuthId(supabase_user_id, updatedProfile);
+                headersUsed = headers;
+                break;
+            } catch (e) {
+                lastError = e;
+                continue;
+            }
+        }
+
+        if (!headersUsed) {
+            const status = lastError?.response?.status || 500;
+            return res.status(status).json({ error: 'Failed to refresh Planning Center profile' });
+        }
+
+        // Fetch groups memberships
+        let memberships = [];
+        try {
+            // Endpoint: groups memberships for a person
+            const groupsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/groups/v2/people/${planning_center_id}/group_memberships?include=group`, { headers: headersUsed });
+            const included = groupsResp.data?.included || [];
+            const groupMap = new Map();
+            included.forEach(item => { if (item.type === 'Group') groupMap.set(item.id, item); });
+
+            memberships = (groupsResp.data?.data || []).map(m => {
+                const groupRelId = m.relationships?.group?.data?.id;
+                const group = groupMap.get(groupRelId);
+                return {
+                    pc_group_id: groupRelId || m.id,
+                    pc_group_name: group?.attributes?.name || null,
+                    role: m.attributes?.role || null
+                };
+            });
+        } catch (e) {
+            console.log('⚠️ Could not fetch group memberships:', e.response?.status || e.message);
+        }
+
+        await db.replaceGroupMemberships(supabase_user_id, memberships);
+
+        // Fetch registrations
+        let registrations = [];
+        try {
+            // Endpoint: signups filtered by person
+            const regsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/registrations/v2/signups?where[person_id]=${planning_center_id}&include=event,event_time`, { headers: headersUsed });
+            const included = regsResp.data?.included || [];
+            const eventMap = new Map();
+            const timeMap = new Map();
+            included.forEach(item => {
+                if (item.type === 'Event') eventMap.set(item.id, item);
+                if (item.type === 'EventTime') timeMap.set(item.id, item);
+            });
+
+            registrations = (regsResp.data?.data || []).map(r => {
+                const eventId = r.relationships?.event?.data?.id;
+                const timeId = r.relationships?.event_time?.data?.id;
+                const event = eventMap.get(eventId);
+                const time = timeMap.get(timeId);
+                return {
+                    pc_event_id: eventId || r.id,
+                    pc_event_name: event?.attributes?.name || null,
+                    pc_event_time_id: timeId || null,
+                    status: r.attributes?.status || null,
+                    starts_at: time?.attributes?.starts_at || null,
+                    ends_at: time?.attributes?.ends_at || null,
+                    registration_url: event ? `https://onehopenola.churchcenter.com/registrations/events/${event.id}` : null
+                };
+            });
+        } catch (e) {
+            console.log('⚠️ Could not fetch event registrations:', e.response?.status || e.message);
+        }
+
+        await db.replaceEventRegistrations(supabase_user_id, registrations);
+
+        await db.updateUserLastLogin(supabase_user_id);
+
+        return res.json({ success: true, membershipsCount: memberships.length, registrationsCount: registrations.length });
+    } catch (error) {
+        console.error('❌ /api/auth/pc/refresh error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to refresh Planning Center data' });
+    }
+});
+
+// Initialize minimal user profile in our database after Supabase signup/signin
+app.post('/api/auth/profile/init', async (req, res) => {
+    try {
+        const { supabase_user_id, email, name } = req.body || {};
+        if (!supabase_user_id || !email) {
+            return res.status(400).json({ error: 'supabase_user_id and email are required' });
+        }
+
+        const user = await db.upsertUserWithAuthId(supabase_user_id, {
+            id: null,
+            email: email,
+            name: name || null,
+            phone: null,
+            avatar_url: null
+        });
+        res.json({ success: true, user });
+    } catch (error) {
+        console.error('❌ /api/auth/profile/init error:', error);
+        res.status(500).json({ error: 'Failed to initialize user profile' });
+    }
+});
 app.get('/api/bible/daily', async (req, res) => {
         try {
         

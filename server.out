@@ -1,0 +1,11 @@
+
+> one-hope-app@1.0.0 start
+> node server.js
+
+🔧 OAuth Configuration Debug:
+🔧 Client ID: Present
+🔧 Client Secret: Present
+🔧 Redirect URI: http://localhost:3000/auth/callback
+🔧 Environment: development
+🔧 Vercel URL: undefined
+🚀 One Hope App server running on port 3000

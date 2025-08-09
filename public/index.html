@@ -58,20 +58,27 @@
         <div class="auth-container">
             <div class="auth-header">
                 <h1>Welcome to One Hope</h1>
-                <p>Sign in with your Planning Center account</p>
+                <p>Sign in with your email to continue</p>
             </div>
             <div class="auth-form">
-                <button type="button" class="btn-planning-center" onclick="signInWithPlanningCenter()">
-                    <i class="fas fa-users"></i>
-                    Sign in with Planning Center
-                </button>
-                <div class="auth-divider">
-                    <span>or</span>
-                </div>
-                <button type="button" class="btn-secondary" onclick="createPlanningCenterAccount()">
-                    <i class="fas fa-user-plus"></i>
-                    Create Planning Center Account
-                </button>
+                <form id="supabase-auth-form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="auth-email">Email</label>
+                        <input id="auth-email" type="email" placeholder="you@example.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password">Password</label>
+                        <input id="auth-password" type="password" placeholder="••••••••" required />
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-primary" onclick="supabaseEmailSignIn()">
+                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="supabaseEmailSignUp()">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                    </div>
+                </form>
             </div>
             <div class="auth-links">
                 <p>Need help? <a href="mailto:info@onehopechurch.com">Contact us</a></p>
@@ -464,9 +471,10 @@
         <!-- Home Screen -->
         <div id="homeScreen" class="app-screen active">
             <div class="header">
-                <h1>Welcome back, John</h1>
+                <h1 id="home-welcome">Welcome back</h1>
                 <div class="user-avatar" onclick="showAppScreen('profileScreen')">
-                    <i class="fas fa-user"></i>
+                    <img id="home-avatar-img" alt="Avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:none;" />
+                    <i class="fas fa-user" id="home-avatar-fallback"></i>
                 </div>
             </div>
 
@@ -870,10 +878,11 @@
             <div class="content">
                 <div class="profile-card">
                     <div class="profile-avatar">
-                        <i class="fas fa-user"></i>
+                        <img id="profile-avatar-img" alt="Avatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;display:none;" />
+                        <i class="fas fa-user" id="profile-avatar-fallback"></i>
                     </div>
-                    <h3>John Doe</h3>
-                    <p>john.doe@email.com</p>
+                    <h3 id="profile-name">Your Name</h3>
+                    <p id="profile-email">your@email.com</p>
                 </div>
 
                 <div class="stats-grid">
@@ -926,6 +935,7 @@
         </nav>
     </div>
 
-    <script src="/script.js?v=2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/script.js?v=3"></script>
 </body>
 </html> 
