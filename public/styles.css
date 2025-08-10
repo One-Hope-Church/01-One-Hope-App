@@ -1079,6 +1079,18 @@ body {
     border-color: var(--success-color);
 }
 
+/* Highlight effect for buttons */
+.btn-secondary.highlight {
+    animation: pulse 2s infinite;
+    border: 2px solid var(--warning-color);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+}
+
+.btn-secondary.highlight:hover {
+    border-color: var(--warning-color);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
 .auth-divider {
     display: flex;
     align-items: center;

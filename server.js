@@ -619,6 +619,16 @@ app.post('/api/auth/pc/link', async (req, res) => {
         return res.json({ success: true, user: supabaseUser });
     } catch (error) {
         console.error('❌ /api/auth/pc/link error:', error.response?.data || error.message);
+        
+        // Handle specific Planning Center linking errors
+        if (error.message && error.message.includes('Planning Center account is already linked to another user')) {
+            return res.status(409).json({ 
+                error: 'Planning Center account already linked',
+                message: error.message,
+                code: 'PC_ALREADY_LINKED'
+            });
+        }
+        
         res.status(500).json({ error: 'Failed to link Planning Center profile to user' });
     }
 });

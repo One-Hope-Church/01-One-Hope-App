@@ -211,6 +211,14 @@
               if (!linkResp.ok) { 
                 const errorData = await linkResp.json();
                 console.error('❌ Link failed:', errorData);
+                
+                // Handle specific Planning Center linking errors
+                if (errorData.code === 'PC_ALREADY_LINKED') {
+                  setMsg(`Planning Center account already linked to: ${errorData.message.split('(')[1].split(')')[0]}`, 'warning');
+                  resolve(false); 
+                  return;
+                }
+                
                 resolve(false); 
                 return; 
               }
@@ -264,6 +272,13 @@
         setMsg('Signing in...', 'info');
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) {
+          // Check if this is a "user not found" error
+          if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid login credentials')) {
+            setMsg('Account not found. Please create an account first.', 'warning');
+            // Highlight the create account button
+            document.getElementById('btn-up').classList.add('highlight');
+            return;
+          }
           setMsg(error.message,'error');
           return;
         }
@@ -298,27 +313,14 @@
           }
         } catch {}
         
-        // Attempt PC link before redirect if not linked yet
-        setMsg('Checking Planning Center...', 'info');
-        console.log('🔍 About to call linkPlanningCenterIfNeeded with:', { email, supabaseUser: data.user });
-        const linked = await linkPlanningCenterIfNeeded(email, data.user);
-        console.log('🔍 linkPlanningCenterIfNeeded returned:', linked);
-        
-        if (linked) {
-          console.log('✅ Account linked successfully, showing success message and redirecting...');
-          setMsg('Account linked successfully! Redirecting...', 'success');
-          setTimeout(() => {
-            console.log('🔄 Redirecting to homepage...');
-            location.href = '/';
-          }, 1000);
-        } else {
-          console.log('ℹ️ No Planning Center account found, redirecting...');
-          setMsg('No Planning Center account found. Redirecting...', 'info');
-          setTimeout(() => {
-            console.log('🔄 Redirecting to homepage...');
-            location.href = '/';
-          }, 1000);
-        }
+                // For existing users signing in, skip Planning Center linking and go straight to app
+        setMsg('Sign in successful! Redirecting...', 'success');
+        // Remove highlight from create account button
+        document.getElementById('btn-up').classList.remove('highlight');
+        setTimeout(() => {
+          console.log('🔄 Redirecting to homepage...');
+          location.href = '/';
+        }, 1000);
       } finally {
         // Re-enable buttons
         btnIn.disabled = false;
@@ -383,9 +385,13 @@
         
         if (linked) {
           // Success message already shown by linkPlanningCenterIfNeeded, just redirect
+          // Remove highlight from create account button
+          document.getElementById('btn-up').classList.remove('highlight');
           setTimeout(() => location.href = '/', 1000);
         } else {
           setMsg('No Planning Center account found. Redirecting...', 'info');
+          // Remove highlight from create account button
+          document.getElementById('btn-up').classList.remove('highlight');
           setTimeout(() => location.href = '/', 1000);
         }
       } finally {
@@ -407,6 +413,12 @@
     document.getElementById('btn-in').onclick = signIn;
     document.getElementById('btn-up').onclick = signUp;
     document.getElementById('btn-forgot').onclick = function(e){ e.preventDefault(); forgot(); };
+    
+    // Remove highlight when user types in email field
+    document.getElementById('email').addEventListener('input', function() {
+      document.getElementById('btn-up').classList.remove('highlight');
+    });
+    
     init();
   </script>
 </body>

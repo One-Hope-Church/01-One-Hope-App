@@ -618,7 +618,14 @@ async function showPcLinkModal(user, profile) {
                         window.location.reload();
                     }, 2000);
                 } else {
-                    showNotification('Failed to link Planning Center', 'error');
+                    const errorData = await resp.json();
+                    
+                    // Handle specific Planning Center linking errors
+                    if (errorData.code === 'PC_ALREADY_LINKED') {
+                        showNotification(`Planning Center account already linked to: ${errorData.message.split('(')[1].split(')')[0]}`, 'warning');
+                    } else {
+                        showNotification('Failed to link Planning Center', 'error');
+                    }
                 }
             } catch (e) {
                 showNotification('Failed to link Planning Center', 'error');

@@ -94,14 +94,18 @@ const db = {
                 if (!error) existingUser = data;
             }
 
-            // If not found by id, try by planning_center_id
-            if (!existingUser && planningCenterData?.id) {
-                const { data, error } = await supabase
+            // Check if Planning Center ID is already linked to a different user
+            if (planningCenterData?.id) {
+                const { data: pcUser, error: pcError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('planning_center_id', planningCenterData.id)
                     .single();
-                if (!error) existingUser = data;
+                
+                if (!pcError && pcUser && pcUser.id !== authUserId) {
+                    console.log('⚠️ Planning Center ID already linked to different user:', pcUser.id);
+                    throw new Error(`Planning Center account is already linked to another user (${pcUser.email || pcUser.name})`);
+                }
             }
 
             console.log('🔧 Database function received planningCenterData:', planningCenterData);
