@@ -1091,6 +1091,11 @@ body {
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
 }
 
+/* Login page button spacing */
+.form-actions .btn-primary {
+    margin-bottom: 1rem;
+}
+
 .auth-divider {
     display: flex;
     align-items: center;
