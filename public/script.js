@@ -75,22 +75,54 @@ document.addEventListener('DOMContentLoaded', function() {
                     userData = {
                         id: payload.supabase_id || null,
                         planning_center_id: payload.planning_center_id || null,
-                        name: payload.name || '',
-                        email: payload.email || '',
+                        name: payload.name || payload.email || 'Friend',
+                        email: payload.email || 'user@example.com',
                         avatar_url: payload.avatar_url || null
                     };
                     localStorage.setItem('onehope_user', JSON.stringify(userData));
                 }
                 currentUser = userData;
                 updateUserInfo();
-                
+
+                // Pull latest profile (name, avatar) from Supabase
+                try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    const storedToken = localStorage.getItem('onehope_token');
+                    if (storedToken) headers['Authorization'] = `Bearer ${storedToken}`;
+                    fetch(`${API_BASE}/api/user/profile`, { headers, credentials: 'include' })
+                        .then(r => r.ok ? r.json() : null)
+                        .then(j => {
+                            if (j && j.data) {
+                                const prof = j.data;
+                                currentUser.name = prof.name || currentUser.name;
+                                currentUser.email = prof.email || currentUser.email;
+                                currentUser.avatar_url = prof.avatar_url || currentUser.avatar_url;
+                                currentUser.planning_center_id = prof.planning_center_id || currentUser.planning_center_id;
+                                localStorage.setItem('onehope_user', JSON.stringify(currentUser));
+                updateUserInfo();
+                                // Planning Center linking is now manual via profile button
+                            }
+                        })
+                        .catch(() => {});
+                } catch {}
+
+                // Proactively refresh server-side profile/groups/registrations
+                const tokenPayload = JSON.parse(atob(storedToken));
+                if (tokenPayload?.planning_center_id && tokenPayload?.planning_center_id !== 'null') {
+                    fetch('/api/auth/pc/refresh', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            supabase_user_id: tokenPayload.supabase_id || userData.id,
+                            planning_center_id: tokenPayload.planning_center_id
+                        })
+                    }).catch(() => {});
+                }
+
                 // Load user data then show app
-                Promise.all([
-                    fetchUserStreak(),
-                    fetchUserSteps()
-                ]).then(() => {
-                    showScreen('mainApp');
-                });
+                Promise.all([fetchUserStreak(), fetchUserSteps()])
+                    .then(() => showScreen('mainApp'))
+                    .catch(() => showScreen('mainApp'));
             } catch (error) {
                 console.error('❌ Error processing stored token:', error);
                 localStorage.removeItem('onehope_token');
@@ -356,6 +388,46 @@ async function initSupabaseClient() {
 }
 initSupabaseClient();
 
+function togglePasswordVisibility(inputId, buttonEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    if (buttonEl) {
+        const icon = buttonEl.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        }
+        buttonEl.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    }
+}
+
+async function supabaseForgotPassword() {
+    try {
+        const email = document.getElementById('auth-email')?.value?.trim();
+        if (!email) {
+            setAuthMessage('Enter your email first to reset your password.', 'warning');
+            return;
+        }
+        if (!supabaseClient) await initSupabaseClient();
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin
+        });
+        if (error) throw error;
+        setAuthMessage('Password reset email sent. Check your inbox.', 'success');
+    } catch (e) {
+        setAuthMessage(e.message || 'Failed to start password reset.', 'error');
+    }
+}
+
+function setAuthMessage(message, variant = 'info') {
+    const el = document.getElementById('auth-message');
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = `helper-text ${variant}`;
+}
+
 async function supabaseEmailSignIn() {
     const email = document.getElementById('auth-email')?.value?.trim();
     const password = document.getElementById('auth-password')?.value;
@@ -528,7 +600,23 @@ async function showPcLinkModal(user, profile) {
                         email: profile.email || user.email,
                         avatar_url: profile.avatar_url || null
                     });
-                    showNotification('Linked to Planning Center', 'success');
+                    
+                    // Update current user with Planning Center data
+                    currentUser.planning_center_id = profile.planning_center_id;
+                    currentUser.name = profile.name || currentUser.name;
+                    currentUser.avatar_url = profile.avatar_url || currentUser.avatar_url;
+                    localStorage.setItem('onehope_user', JSON.stringify(currentUser));
+                    
+                    // Show success message and countdown
+                    showNotification('Successfully linked to Planning Center! Refreshing page in 2 seconds...', 'success');
+                    
+                    // Update the link button to show success state
+                    updatePlanningCenterLinkButton();
+                    
+                    // Auto-refresh page after 2 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 } else {
                     showNotification('Failed to link Planning Center', 'error');
                 }
@@ -910,6 +998,85 @@ function updateUserInfo() {
         }
     } else {
         console.log('❌ Home screen avatar element not found');
+    }
+    
+    // Update Planning Center link button
+    updatePlanningCenterLinkButton();
+}
+
+// Update Planning Center link button visibility and text
+function updatePlanningCenterLinkButton() {
+    const linkButton = document.getElementById('link-pc-button');
+    if (!linkButton) return;
+    
+    if (currentUser && currentUser.planning_center_id) {
+        // User is already linked
+        linkButton.innerHTML = '<i class="fas fa-check"></i> Planning Center Linked';
+        linkButton.className = 'btn-success';
+        linkButton.disabled = true;
+        linkButton.onclick = null;
+    } else {
+        // User is not linked
+        linkButton.innerHTML = '<i class="fas fa-link"></i> Link Planning Center Account';
+        linkButton.className = 'btn-primary';
+        linkButton.disabled = false;
+        linkButton.onclick = initiatePlanningCenterLink;
+    }
+}
+
+// Initiate Planning Center account linking
+async function initiatePlanningCenterLink() {
+    if (!currentUser || !currentUser.email) {
+        showNotification('Please log in first', 'error');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        const linkButton = document.getElementById('link-pc-button');
+        if (linkButton) {
+            linkButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            linkButton.disabled = true;
+        }
+        
+        // Check for Planning Center profiles
+        const response = await fetch('/api/auth/pc/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: currentUser.email })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to check Planning Center profiles');
+        }
+        
+        const body = await response.json();
+        const profiles = (body && body.matches) ? body.matches : [];
+        
+        if (profiles.length === 0) {
+            showNotification('No Planning Center profile found for this email', 'info');
+            if (linkButton) {
+                linkButton.innerHTML = '<i class="fas fa-link"></i> Link Planning Center Account';
+                linkButton.disabled = false;
+            }
+        } else if (profiles.length === 1) {
+            // Single profile found - show confirmation modal
+            await showPcLinkModal({ id: currentUser.id }, profiles[0]);
+        } else {
+            // Multiple profiles found - show chooser modal
+            await showPcLinkChooser({ id: currentUser.id }, profiles);
+        }
+        
+    } catch (error) {
+        console.error('Error initiating Planning Center link:', error);
+        showNotification('Failed to check Planning Center profiles', 'error');
+        
+        // Reset button state
+        const linkButton = document.getElementById('link-pc-button');
+        if (linkButton) {
+            linkButton.innerHTML = '<i class="fas fa-link"></i> Link Planning Center Account';
+            linkButton.disabled = false;
+        }
     }
 }
 
@@ -1918,8 +2085,8 @@ function signOut() {
         currentBibleData = null;
         dailyReadings = null;
         
-        // Show login screen
-        showScreen('loginScreen');
+        // Redirect to dedicated login page
+        window.location.replace('/login');
         
         // Show notification
         showNotification('Signed out successfully', 'success');
@@ -1927,7 +2094,7 @@ function signOut() {
     .catch(error => {
         console.error('❌ Error signing out:', error);
         
-        // Even if API call fails, clear local data and show login
+        // Even if API call fails, clear local data and go to login
         localStorage.removeItem('onehope_token');
         localStorage.removeItem('onehope_user');
         localStorage.removeItem('userProgress');
@@ -1939,8 +2106,7 @@ function signOut() {
         currentBibleData = null;
         dailyReadings = null;
         
-        showScreen('loginScreen');
-        showNotification('Signed out successfully', 'success');
+        window.location.replace('/login');
     });
 }
 

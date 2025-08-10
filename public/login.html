@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In • One Hope</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Splash/Loading Screen -->
+  <div id="splash" class="screen active" style="display:flex;align-items:center;justify-content:center;text-align:center;background:#00A0DF;color:#fff;">
+    <div>
+      <div class="logo" style="margin-bottom:16px;">
+        <img src="/images/01_OneHopePrimary_Light.png" alt="One Hope" style="max-width: 160px; height: auto;" />
+      </div>
+      <p class="tagline" style="opacity:.9">Preparing login…</p>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div id="login" class="screen" style="transform:none;">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h1>Welcome to One Hope</h1>
+        <p>Sign in with your email to continue</p>
+      </div>
+      <div class="auth-form">
+        <form id="login-form" onsubmit="return false;">
+          <div class="input-group input-with-icon">
+            <label for="email">Email</label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope input-icon-left" aria-hidden="true"></i>
+              <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+          </div>
+          <div class="input-group input-with-icon">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon-left" aria-hidden="true"></i>
+              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+              <button type="button" class="input-suffix" aria-label="Show password" onclick="togglePw()"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div id="msg" class="helper-text" role="status" aria-live="polite"></div>
+          <div class="form-actions">
+            <button id="btn-in" class="btn-primary" type="button"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+            <button id="btn-up" class="btn-secondary" type="button"><i class="fas fa-user-plus"></i> Create Account</button>
+          </div>
+          <div class="auth-links" style="margin-top: 0.75rem;">
+            <a href="#" id="btn-forgot">Forgot password?</a>
+          </div>
+        </form>
+      </div>
+      <div class="auth-links">
+        <p>Need help? <a href="mailto:info@onehopechurch.com">Contact us</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    let sb = null;
+    async function init() {
+      try {
+        const r = await fetch('/api/config');
+        const cfg = await r.json();
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return setMsg('Missing Supabase config', 'error');
+        sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+        // Hide splash and show form
+        document.getElementById('splash').classList.remove('active');
+        document.getElementById('login').classList.add('active');
+      } catch (e) {
+        setMsg('Failed to init auth', 'error');
+      }
+    }
+    function togglePw(){
+      const i = document.getElementById('password');
+      const btn = event.currentTarget; const icon = btn.querySelector('i');
+      const isPw = i.type === 'password'; i.type = isPw ? 'text' : 'password';
+      icon.classList.toggle('fa-eye'); icon.classList.toggle('fa-eye-slash');
+    }
+    function setMsg(m, v='info'){ 
+      try {
+        const el = document.getElementById('msg'); 
+        if (el) {
+          el.textContent = m || ''; 
+          el.className = `helper-text ${v}`; 
+          console.log('✅ setMsg called successfully:', { message: m, variant: v });
+        } else {
+          console.warn('⚠️ setMsg: msg element not found, message:', m, 'variant:', v);
+          // Fallback: try to find any element with class 'helper-text'
+          const fallbackEl = document.querySelector('.helper-text');
+          if (fallbackEl) {
+            fallbackEl.textContent = m || '';
+            fallbackEl.className = `helper-text ${v}`;
+            console.log('✅ setMsg used fallback element');
+          } else {
+            console.error('❌ setMsg: No msg element or fallback found');
+          }
+        }
+      } catch (error) {
+        console.error('❌ setMsg error:', error, 'message:', m, 'variant:', v);
+      }
+    }
+    async function profileInit(userId, email){
+      try { await fetch('/api/auth/profile/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({supabase_user_id:userId,email})}); } catch {}
+    }
+    function setPlaceholderToken(user, planningCenterId=null, name=null, avatarUrl=null){
+      try {
+        const payload = { supabase_id: user.id, name: name || user.email, email: user.email, planning_center_id: planningCenterId, avatar_url: avatarUrl, timestamp: Date.now() };
+        localStorage.setItem('onehope_token', btoa(JSON.stringify(payload)));
+        localStorage.setItem('onehope_user', JSON.stringify({ id: user.id, name: user.email, email: user.email }));
+      } catch {}
+    }
+
+    function setAppAuthToken(profile, supabaseUser){
+      try {
+        const payload = {
+          supabase_id: supabaseUser.id,
+          planning_center_id: profile.planning_center_id,
+          name: profile.name || supabaseUser.email,
+          email: profile.email || supabaseUser.email,
+          avatar_url: profile.avatar_url || null,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('onehope_token', btoa(JSON.stringify(payload)));
+        localStorage.setItem('onehope_user', JSON.stringify({ id: supabaseUser.id, name: payload.name, email: payload.email, avatar_url: payload.avatar_url }));
+      } catch {}
+    }
+
+    function showModal(contentHtml){
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `<div class="modal-content">${contentHtml}</div>`;
+      document.body.appendChild(overlay);
+      return overlay;
+    }
+
+    function closeModal(el){ if (el && el.parentNode) el.parentNode.remove(); }
+
+    function showPcLinkModal(profile, onConfirm, onCancel){
+      console.log('🔍 showPcLinkModal called with profile:', profile);
+      const html = `
+        <div class="modal-header">
+          <h3>Is this you?</h3>
+          <button class="modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="${profile.avatar_url || ''}" alt="Avatar" style="width:48px;height:48px;border-radius:50%;object-fit:cover;${profile.avatar_url?'':'display:none;'}" />
+            <div>
+              <div><strong>${profile.name || 'Unknown'}</strong></div>
+              <div style="color:#6B7280;">${profile.email || ''}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-cancel">Not me</button>
+          <button class="btn-primary" id="btn-confirm">Yes, link</button>
+        </div>`;
+      const modal = showModal(html);
+      modal.querySelector('.modal-close').onclick = ()=>{ closeModal(modal); onCancel && onCancel(); };
+      modal.querySelector('#btn-cancel').onclick = ()=>{ closeModal(modal); onCancel && onCancel(); };
+      modal.querySelector('#btn-confirm').onclick = ()=>{ 
+        console.log('🔍 User clicked "Yes, link" for profile:', profile);
+        onConfirm(profile, () => closeModal(modal)); 
+      };
+    }
+
+    function showPcLinkChooser(profiles, onPick){
+      const items = profiles.map(p=>`
+        <li style="display:flex;align-items:center;gap:12px; padding:10px; cursor:pointer;" data-id="${p.planning_center_id}">
+          <img src="${p.avatar_url||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;${p.avatar_url?'':'display:none;'}" />
+          <div style="flex:1;">
+            <div><strong>${p.name||'Unknown'}</strong></div>
+            <div style="color:#6B7280;font-size:12px;">${p.email||''}${p.email_is_primary?' (primary)':''}</div>
+          </div>
+          <button class="btn-small">Select</button>
+        </li>`).join('');
+      const html = `
+        <div class="modal-header"><h3>Select Your Planning Center Account</h3><button class="modal-close" aria-label="Close">×</button></div>
+        <div class="modal-body"><ul style="list-style:none;margin:0;padding:0;">${items}</ul></div>`;
+      const modal = showModal(html);
+      modal.querySelector('.modal-close').onclick = ()=> closeModal(modal);
+      modal.querySelectorAll('li[data-id]').forEach(li=>{
+        li.onclick = ()=>{ const id = li.getAttribute('data-id'); const p = profiles.find(x=>x.planning_center_id===id); onPick && onPick(p, ()=>closeModal(modal)); };
+      });
+    }
+
+    async function linkPlanningCenterIfNeeded(email, supabaseUser){
+      try {
+        console.log('🔍 linkPlanningCenterIfNeeded called with:', { email, supabaseUser });
+        const resp = await fetch('/api/auth/pc/check',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email })});
+        if (!resp.ok) return false;
+        const body = await resp.json();
+        console.log('🔍 PC check response:', body);
+        const matches = Array.isArray(body.matches)? body.matches: [];
+        console.log('🔍 Found matches:', matches);
+        return new Promise((resolve)=>{
+          if (matches.length === 0) return resolve(false);
+          const link = async (profile, done)=>{
+            try {
+              console.log('🔗 Linking profile:', profile); // Debug log
+              const linkResp = await fetch('/api/auth/pc/link',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ supabase_user_id: supabaseUser.id, profile })
+              });
+              if (!linkResp.ok) { 
+                const errorData = await linkResp.json();
+                console.error('❌ Link failed:', errorData);
+                resolve(false); 
+                return; 
+              }
+              const refreshResp = await fetch('/api/auth/pc/refresh',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ supabase_user_id: supabaseUser.id, planning_center_id: profile.planning_center_id })
+              });
+              if (!refreshResp.ok) { 
+                const errorData = await refreshResp.json();
+                console.error('❌ Refresh failed:', errorData);
+                resolve(false); 
+                return; 
+              }
+              setAppAuthToken(profile, supabaseUser);
+              done && done();
+              resolve(true);
+            } catch (error) {
+              console.error('❌ Link error:', error);
+              resolve(false);
+            } 
+          };
+          if (matches.length === 1) {
+            console.log('🔍 Showing single profile modal for:', matches[0]);
+            showPcLinkModal(matches[0], link, ()=>resolve(false));
+          } else {
+            console.log('🔍 Showing profile chooser for multiple matches');
+            showPcLinkChooser(matches, (profile, done)=> link(profile, done));
+          }
+        });
+      } catch (error) {
+        console.error('❌ PC check error:', error);
+        return false; 
+      }
+    }
+    async function signIn(){
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) return setMsg('Email and password required','warning');
+      if (!sb) await init();
+      
+      // Disable buttons and show loading
+      const btnIn = document.getElementById('btn-in');
+      const btnUp = document.getElementById('btn-up');
+      btnIn.disabled = true;
+      btnUp.disabled = true;
+      btnIn.classList.add('loading');
+      btnUp.classList.add('loading');
+      
+      try {
+        setMsg('Signing in...', 'info');
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          setMsg(error.message,'error');
+          return;
+        }
+        
+        setMsg('Setting up profile...', 'info');
+        await profileInit(data.user.id, email);
+        
+        // Seed placeholder token so backend profile endpoint can auth
+        setPlaceholderToken(data.user);
+        
+        // Check if already linked in DB and seed full token if so
+        try {
+          const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('onehope_token')}` };
+          const r = await fetch('/api/user/profile',{ headers, credentials:'include' });
+          if (r.ok) {
+            const prof = (await r.json()).data;
+            if (prof && prof.planning_center_id) {
+              setMsg('Refreshing Planning Center data...', 'info');
+              // Pull latest PC data before redirect
+              try { 
+                await fetch('/api/auth/pc/refresh',{ 
+                  method:'POST', 
+                  headers:{'Content-Type':'application/json'}, 
+                  body: JSON.stringify({ supabase_user_id: prof.id, planning_center_id: prof.planning_center_id })
+                }); 
+              } catch {}
+              setAppAuthToken({ planning_center_id: prof.planning_center_id, name: prof.name, email: prof.email, avatar_url: prof.avatar_url }, { id: prof.id });
+              setMsg('Redirecting to app...', 'success');
+              setTimeout(() => location.href = '/', 1000);
+              return;
+            }
+          }
+        } catch {}
+        
+        // Attempt PC link before redirect if not linked yet
+        setMsg('Checking Planning Center...', 'info');
+        console.log('🔍 About to call linkPlanningCenterIfNeeded with:', { email, supabaseUser: data.user });
+        const linked = await linkPlanningCenterIfNeeded(email, data.user);
+        console.log('🔍 linkPlanningCenterIfNeeded returned:', linked);
+        
+        if (linked) {
+          console.log('✅ Account linked successfully, showing success message and redirecting...');
+          setMsg('Account linked successfully! Redirecting...', 'success');
+          setTimeout(() => {
+            console.log('🔄 Redirecting to homepage...');
+            location.href = '/';
+          }, 1000);
+        } else {
+          console.log('ℹ️ No Planning Center account found, redirecting...');
+          setMsg('No Planning Center account found. Redirecting...', 'info');
+          setTimeout(() => {
+            console.log('🔄 Redirecting to homepage...');
+            location.href = '/';
+          }, 1000);
+        }
+      } finally {
+        // Re-enable buttons
+        btnIn.disabled = false;
+        btnUp.disabled = false;
+        btnIn.classList.remove('loading');
+        btnUp.classList.remove('loading');
+      }
+    }
+    async function signUp(){
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) return setMsg('Email and password required','warning');
+      if (!sb) await init();
+      
+      // Disable buttons and show loading
+      const btnIn = document.getElementById('btn-in');
+      const btnUp = document.getElementById('btn-up');
+      btnIn.disabled = true;
+      btnUp.disabled = true;
+      btnIn.classList.add('loading');
+      btnUp.classList.add('loading');
+      
+      try {
+        setMsg('Creating account...', 'info');
+        const { data, error } = await sb.auth.signUp({ email, password });
+        if (error) {
+          setMsg(error.message,'error');
+          return;
+        }
+        
+        setMsg('Setting up profile...', 'info');
+        await profileInit(data.user.id, email);
+        
+        setMsg('Account created. Checking Planning Center...', 'success');
+        // Seed placeholder token and check profile for existing PC link (e.g., imported users)
+        setPlaceholderToken(data.user);
+        
+        try {
+          const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('onehope_token')}` };
+          const r = await fetch('/api/user/profile',{ headers, credentials:'include' });
+          if (r.ok) {
+            const prof = (await r.json()).data;
+            if (prof && prof.planning_center_id) {
+              setMsg('Refreshing Planning Center data...', 'info');
+              try { 
+                await fetch('/api/auth/pc/refresh',{ 
+                  method:'POST', 
+                  headers:{'Content-Type':'application/json'}, 
+                  body: JSON.stringify({ supabase_user_id: prof.id, planning_center_id: prof.planning_center_id })
+                }); 
+              } catch {}
+              setAppAuthToken({ planning_center_id: prof.planning_center_id, name: prof.name, email: prof.email, avatar_url: prof.avatar_url }, { id: prof.id });
+              setMsg('Account linked successfully! Redirecting...', 'success');
+              setTimeout(() => location.href = '/', 1000);
+              return;
+            }
+          }
+        } catch {}
+        
+        setMsg('Checking Planning Center...', 'info');
+        const linked = await linkPlanningCenterIfNeeded(email, data.user);
+        
+        if (linked) {
+          // Success message already shown by linkPlanningCenterIfNeeded, just redirect
+          setTimeout(() => location.href = '/', 1000);
+        } else {
+          setMsg('No Planning Center account found. Redirecting...', 'info');
+          setTimeout(() => location.href = '/', 1000);
+        }
+      } finally {
+        // Re-enable buttons
+        btnIn.disabled = false;
+        btnUp.disabled = false;
+        btnIn.classList.remove('loading');
+        btnUp.classList.remove('loading');
+      }
+    }
+    async function forgot(){
+      const email = document.getElementById('email').value.trim();
+      if (!email) return setMsg('Enter your email first.','warning');
+      if (!sb) await init();
+      const { error } = await sb.auth.resetPasswordForEmail(email,{ redirectTo: location.origin });
+      if (error) return setMsg(error.message,'error');
+      setMsg('Password reset email sent.','success');
+    }
+    document.getElementById('btn-in').onclick = signIn;
+    document.getElementById('btn-up').onclick = signUp;
+    document.getElementById('btn-forgot').onclick = function(e){ e.preventDefault(); forgot(); };
+    init();
+  </script>
+</body>
+</html>
+

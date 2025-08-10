@@ -234,6 +234,111 @@ body {
     background: #fff;
 }
 
+/* Enhanced input UX */
+.input-with-icon .input-wrapper {
+    position: relative;
+}
+
+.input-with-icon .input-icon-left {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.input-with-icon input {
+    padding-left: 40px;
+}
+
+.input-suffix {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.input-suffix:hover {
+    background: #f1f5f9;
+}
+
+.helper-text {
+    margin: 8px 0 0 2px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* Login form message states */
+.helper-text.info {
+  color: #3B82F6;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.helper-text.success {
+  color: #059669;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.helper-text.warning {
+  color: #D97706;
+  background: #FFFBEB;
+  border: 1px solid #FED7AA;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.helper-text.error {
+  color: #DC2626;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+/* Loading animation for buttons */
+.btn-primary.loading,
+.btn-secondary.loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn-primary.loading::after,
+.btn-secondary.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .input-group input:focus {
     outline: none;
     border-color: #667eea;
@@ -902,7 +1007,7 @@ body {
 }
 
 /* Buttons */
-.btn-primary, .btn-secondary, .btn-danger, .btn-planning-center {
+.btn-primary, .btn-secondary, .btn-danger, .btn-planning-center, .btn-success {
     padding: 1rem 1.5rem;
     border: none;
     border-radius: 12px;
@@ -960,6 +1065,18 @@ body {
 .btn-planning-center:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(44, 62, 80, 0.4);
+}
+
+.btn-success {
+    background: var(--success-color);
+    border: 2px solid var(--success-color);
+    color: white;
+    cursor: default;
+}
+
+.btn-success:hover {
+    background: var(--success-color);
+    border-color: var(--success-color);
 }
 
 .auth-divider {
@@ -1128,7 +1245,7 @@ body {
     }
     
     /* Button text */
-    .btn-primary, .btn-secondary, .btn-danger, .btn-planning-center {
+    .btn-primary, .btn-secondary, .btn-danger, .btn-planning-center, .btn-success {
         font-size: 14px !important;
         padding: 10px 16px !important;
     }

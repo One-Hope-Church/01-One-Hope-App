@@ -3,6 +3,8 @@
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Ensure gen_random_uuid is available (used throughout)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Users table (core user data)
 CREATE TABLE IF NOT EXISTS users (
@@ -17,8 +19,37 @@ CREATE TABLE IF NOT EXISTS users (
     last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Ensure new columns exist on pre-existing users table
+-- Ensure new columns/constraints for pre-existing users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS planning_center_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS planning_center_email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- Make previously NOT NULL columns nullable to support Supabase-first auth
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'planning_center_id' AND is_nullable = 'NO'
+    ) THEN
+        EXECUTE 'ALTER TABLE users ALTER COLUMN planning_center_id DROP NOT NULL';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'planning_center_email' AND is_nullable = 'NO'
+    ) THEN
+        EXECUTE 'ALTER TABLE users ALTER COLUMN planning_center_email DROP NOT NULL';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'name' AND is_nullable = 'NO'
+    ) THEN
+        EXECUTE 'ALTER TABLE users ALTER COLUMN name DROP NOT NULL';
+    END IF;
+END $$;
 
 -- Add indexes for performance (ignore if they exist)
 DO $$ 
@@ -54,9 +85,13 @@ CREATE TABLE IF NOT EXISTS reading_history (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     reading_date DATE NOT NULL,
     completed BOOLEAN DEFAULT false,
+    sections_completed JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, reading_date)
 );
+
+-- Backfill for existing deployments: ensure sections_completed exists
+ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS sections_completed JSONB;
 
 -- User Steps table (track personalized step completions)
 CREATE TABLE IF NOT EXISTS user_steps (

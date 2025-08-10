@@ -33,60 +33,54 @@ app.use(session({
     name: 'onehope.sid'
 }));
 
-// Planning Center OAuth configuration
-const PLANNING_CENTER_CONFIG = {
-    baseUrl: 'https://api.planningcenteronline.com',
-    clientId: process.env.PLANNING_CENTER_CLIENT_ID,
-    clientSecret: process.env.PLANNING_CENTER_CLIENT_SECRET,
-    redirectUri: process.env.NODE_ENV === 'production' 
-        ? 'https://steps.onehopechurch.com/auth/callback'
-        : 'http://localhost:3000/auth/callback',
-    scope: 'people groups services check_ins registrations'
-};
-
-// Planning Center Personal Token configuration
+// Planning Center Personal Access Token configuration (no OAuth)
 const PLANNING_CENTER_API_TOKEN = process.env.PLANNING_CENTER_API_TOKEN;
-const PLANNING_CENTER_APP_ID = process.env.PLANNING_CENTER_APP_ID;
 const PLANNING_CENTER_APP_SECRET = process.env.PLANNING_CENTER_APP_SECRET;
+const PLANNING_CENTER_BASE_URL = 'https://api.planningcenteronline.com';
 
-// Build a list of auth header strategies to try when calling Planning Center APIs
+// Debug token values (first few characters only)
+console.log('🔧 Token Debug (first 10 chars):');
+console.log('🔧 App ID (PAT):', PLANNING_CENTER_API_TOKEN ? PLANNING_CENTER_API_TOKEN.substring(0, 10) + '...' : 'Missing');
+console.log('🔧 Secret (PAT):', PLANNING_CENTER_APP_SECRET ? PLANNING_CENTER_APP_SECRET.substring(0, 10) + '...' : 'Missing');
+
+// Build auth header options for Planning Center API calls
 function buildPlanningCenterAuthHeaderOptions() {
     const options = [];
 
-    // Preferred: App ID + Secret via Basic auth
-    if (PLANNING_CENTER_APP_ID && PLANNING_CENTER_APP_SECRET) {
-        const basic = Buffer.from(`${PLANNING_CENTER_APP_ID}:${PLANNING_CENTER_APP_SECRET}`).toString('base64');
-        options.push({ Authorization: `Basic ${basic}`, Accept: 'application/json' });
-    }
-
-    // Fallbacks: Single Personal Token
-    if (PLANNING_CENTER_API_TOKEN) {
-        // Try Bearer first
-        options.push({ Authorization: `Bearer ${PLANNING_CENTER_API_TOKEN}`, Accept: 'application/json' });
-        // Then Basic with token as username and empty password
-        const basicToken = Buffer.from(`${PLANNING_CENTER_API_TOKEN}:`).toString('base64');
-        options.push({ Authorization: `Basic ${basicToken}`, Accept: 'application/json' });
+    // Primary: Personal Token via HTTP Basic Auth (app_id:secret)
+    if (PLANNING_CENTER_API_TOKEN && PLANNING_CENTER_APP_SECRET) {
+        const auth = Buffer.from(`${PLANNING_CENTER_API_TOKEN}:${PLANNING_CENTER_APP_SECRET}`).toString('base64');
+        const headers = { Authorization: `Basic ${auth}`, Accept: 'application/json' };
+        console.log('🔧 Generated Primary PAT headers (Basic Auth):', { Authorization: `Basic ${auth.substring(0, 10)}...`, Accept: 'application/json' });
+        options.push(headers);
     }
 
     // Always include an Accept header if somehow no auth is configured (will likely fail fast)
     if (options.length === 0) {
+        console.log('⚠️ No auth headers generated!');
         options.push({ Accept: 'application/json' });
     }
 
+    console.log(`🔧 Total auth options generated: ${options.length}`);
+    console.log('🔧 Final auth options:', JSON.stringify(options, null, 2));
     return options;
 }
 
-// Debug OAuth configuration
-console.log('🔧 OAuth Configuration Debug:');
-console.log('🔧 Client ID:', process.env.PLANNING_CENTER_CLIENT_ID ? 'Present' : 'Missing');
-console.log('🔧 Client Secret:', process.env.PLANNING_CENTER_CLIENT_SECRET ? 'Present' : 'Missing');
-console.log('🔧 Redirect URI:', PLANNING_CENTER_CONFIG.redirectUri);
+// Debug Planning Center configuration (Personal Access Token only)
+console.log('🔧 Planning Center Configuration Debug:');
+console.log('🔧 App ID (PAT):', process.env.PLANNING_CENTER_API_TOKEN ? 'Present' : 'Missing');
+console.log('🔧 Secret (PAT):', process.env.PLANNING_CENTER_APP_SECRET ? 'Present' : 'Missing');
 console.log('🔧 Environment:', process.env.NODE_ENV);
 console.log('🔧 Vercel URL:', process.env.VERCEL_URL);
 
 // Serve the main app
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
+});
+
+// Serve dedicated login page
+app.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/public/login.html');
 });
 
 // Debug route for CSS
@@ -147,171 +141,6 @@ app.get('/api/session-check', (req, res) => {
     });
 });
 
-// Planning Center OAuth routes
-app.get('/auth/planningcenter', (req, res) => {
-    const authUrl = `${PLANNING_CENTER_CONFIG.baseUrl}/oauth/authorize?` +
-        `client_id=${PLANNING_CENTER_CONFIG.clientId}&` +
-        `redirect_uri=${encodeURIComponent(PLANNING_CENTER_CONFIG.redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(PLANNING_CENTER_CONFIG.scope)}`;
-    
-
-    
-    res.redirect(authUrl);
-});
-
-app.get('/auth/callback', async (req, res) => {
-    const { code, error } = req.query;
-    
-    if (error) {
-        console.error('❌ OAuth error:', error);
-        return res.redirect('/?auth=error&error=' + encodeURIComponent(error));
-    }
-    
-    if (!code) {
-        console.error('❌ No authorization code received');
-        return res.redirect('/?auth=error&error=no_code');
-    }
-    
-    try {
-        const tokenResponse = await axios.post(`${PLANNING_CENTER_CONFIG.baseUrl}/oauth/token`, {
-            grant_type: 'authorization_code',
-            code: code,
-            client_id: PLANNING_CENTER_CONFIG.clientId,
-            client_secret: PLANNING_CENTER_CONFIG.clientSecret,
-            redirect_uri: PLANNING_CENTER_CONFIG.redirectUri
-        });
-        
-        const accessToken = tokenResponse.data.access_token;
-        
-        // Get user profile
-        const profileResponse = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/me`, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Accept': 'application/json'
-            }
-        });
-        
-        const user = profileResponse.data.data;
-        const userId = user.id;
-        
-        // Get user's email
-        let userEmail = user.attributes?.login_identifier;
-        try {
-            console.log('📧 Fetching user emails...');
-            const emailsResponse = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/people/${userId}/emails`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Accept': 'application/json'
-                }
-            });
-            
-            console.log('📧 Emails response:', JSON.stringify(emailsResponse.data, null, 2));
-            
-            const primaryEmail = emailsResponse.data.data.find(email => email.attributes.primary);
-            if (primaryEmail) {
-                userEmail = primaryEmail.attributes.address;
-                console.log('📧 Found primary email:', userEmail);
-            }
-        } catch (emailError) {
-            console.log('⚠️ Could not fetch emails, using login_identifier:', userEmail);
-        }
-        
-        // Create a simple token for authentication
-        const userToken = Buffer.from(JSON.stringify({
-            id: userId,
-            name: user.attributes?.name || 'User',
-            email: userEmail,
-            accessToken: accessToken,
-            timestamp: Date.now()
-        })).toString('base64');
-        
-        console.log('✅ OAuth successful! User token created');
-        console.log('📧 Email from Planning Center:', userEmail);
-        
-        // Create/update user in Supabase database
-        try {
-            console.log('🗄️ Upserting user in Supabase...');
-            const supabaseUser = await db.upsertUser({
-                id: userId,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null
-            });
-            
-            console.log('✅ User upserted in Supabase:', supabaseUser.id);
-            
-            // Create enhanced token with Supabase user ID
-            const enhancedToken = Buffer.from(JSON.stringify({
-                planning_center_id: userId,
-                supabase_id: supabaseUser.id,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null,
-                accessToken: accessToken,
-                timestamp: Date.now()
-            })).toString('base64');
-            
-            // Store user in session as backup
-            req.session.user = {
-                planning_center_id: userId,
-                supabase_id: supabaseUser.id,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null,
-                accessToken: accessToken
-            };
-            console.log('🔍 Stored avatar_url in session:', req.session.user.avatar_url);
-            
-            // Also store in app.locals for serverless environment
-            req.app.locals.userSessions = req.app.locals.userSessions || {};
-            req.app.locals.userSessions[req.sessionID] = {
-                planning_center_id: userId,
-                supabase_id: supabaseUser.id,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null,
-                accessToken: accessToken,
-                timestamp: Date.now()
-            };
-            console.log('🔍 Stored avatar_url in app.locals:', req.app.locals.userSessions[req.sessionID].avatar_url);
-            
-            console.log('✅ User session stored in app.locals');
-            
-            // Redirect with enhanced token
-            res.redirect(`/?auth=success&token=${encodeURIComponent(enhancedToken)}`);
-            
-        } catch (dbError) {
-            console.error('❌ Database error:', dbError);
-            console.log('⚠️ Falling back to original token method');
-            
-            // Fallback to original method if database fails
-            req.session.user = {
-                id: userId,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null,
-                accessToken: accessToken
-            };
-            
-            req.app.locals.userSessions = req.app.locals.userSessions || {};
-            req.app.locals.userSessions[req.sessionID] = {
-                id: userId,
-                name: user.attributes?.name || 'User',
-                email: userEmail,
-                avatar_url: user.attributes?.demographic_avatar_url || null,
-                accessToken: accessToken,
-                timestamp: Date.now()
-            };
-            
-            res.redirect(`/?auth=success&token=${encodeURIComponent(userToken)}`);
-        }
-    } catch (error) {
-        console.error('❌ OAuth error:', error.response?.data || error.message);
-        res.redirect('/?auth=error&error=' + encodeURIComponent(error.message));
-    }
-});
-
 // API routes
 app.get('/api/user', (req, res) => {
     console.log('🔍 /api/user called');
@@ -356,6 +185,80 @@ app.get('/api/signout', (req, res) => {
     });
 });
 
+// Return current user's profile (from Supabase) based on session or bearer token
+app.get('/api/user/profile', async (req, res) => {
+    try {
+        // Get user from session or token
+        let appUser = req.session.user;
+        if (!appUser) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.substring(7);
+                    appUser = JSON.parse(Buffer.from(token, 'base64').toString());
+                } catch (error) {
+                    return res.status(401).json({ error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+        }
+
+        // Resolve Supabase user row (planning_center_id first, then Supabase ID)
+        let supabaseUser = null;
+        try {
+            if (appUser.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(appUser.planning_center_id);
+            }
+            if (!supabaseUser && (appUser.supabase_id || appUser.id)) {
+                supabaseUser = await db.getUserById(appUser.supabase_id || appUser.id);
+            }
+        } catch {}
+
+        if (!supabaseUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // If name/avatar missing but we have Planning Center ID, enrich from Planning Center API
+        try {
+            if ((!supabaseUser.name || !supabaseUser.avatar_url) && supabaseUser.planning_center_id) {
+                const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
+                for (const headers of authHeaderOptions) {
+                    try {
+                        const pcResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/people/v2/people/${supabaseUser.planning_center_id}`, { headers });
+                        const person = pcResp.data?.data;
+                        if (person) {
+                            const updated = await db.upsertUserWithAuthId(supabaseUser.id, {
+                                id: supabaseUser.planning_center_id,
+                                email: person.attributes?.email || person.attributes?.login_identifier || supabaseUser.planning_center_email,
+                                name: person.attributes?.name || supabaseUser.name,
+                                phone: person.attributes?.phone_number || null,
+                                avatar_url: person.attributes?.demographic_avatar_url || supabaseUser.avatar_url
+                            });
+                            supabaseUser = updated || supabaseUser;
+                        }
+                        break;
+                    } catch { continue; }
+                }
+            }
+        } catch {}
+
+        res.json({
+            success: true,
+            data: {
+                id: supabaseUser.id,
+                planning_center_id: supabaseUser.planning_center_id || null,
+                name: supabaseUser.name || null,
+                email: supabaseUser.planning_center_email || null,
+                avatar_url: supabaseUser.avatar_url || null
+            }
+        });
+    } catch (error) {
+        console.error('❌ /api/user/profile error:', error);
+        res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+});
+
 // Public config endpoint for frontend to initialize Supabase client
 app.get('/api/config', (req, res) => {
     res.json({
@@ -383,9 +286,9 @@ app.get('/api/debug/env', (req, res) => {
 app.get('/api/events', async (req, res) => {
     try {
         const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
-        if (!authHeaderOptions || authHeaderOptions.length === 0 || (!PLANNING_CENTER_API_TOKEN && !(PLANNING_CENTER_APP_ID && PLANNING_CENTER_APP_SECRET))) {
-            console.error('❌ No Planning Center personal token configured');
-            return res.status(500).json({ error: 'Planning Center personal token not configured on server' });
+        if (!authHeaderOptions || authHeaderOptions.length === 0) {
+            console.error('❌ No Planning Center authentication configured');
+            return res.status(500).json({ error: 'Planning Center authentication not configured on server' });
         }
         
         // Try different possible Planning Center endpoints
@@ -412,8 +315,9 @@ app.get('/api/events', async (req, res) => {
             let lastError = null;
             for (const headers of authHeaderOptions) {
                 try {
-                    console.log(`🔍 Trying endpoint: ${endpoint} with headers: ${headers.Authorization ? headers.Authorization.split(' ')[0] : 'none'}`);
-                    const response = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}${endpoint}`, { headers });
+                    console.log(`🔍 Trying endpoint: ${endpoint}`);
+                    console.log(`🔍 Full headers being sent:`, JSON.stringify(headers, null, 2));
+                    const response = await axios.get(`${PLANNING_CENTER_BASE_URL}${endpoint}`, { headers });
 
                     console.log(`✅ Endpoint ${endpoint} worked! Status:`, response.status);
                     console.log('📄 Response data:', JSON.stringify(response.data, null, 2));
@@ -510,44 +414,8 @@ app.get('/api/events', async (req, res) => {
         }
 
         if (!endpointFound) {
-            console.log('🔄 No working endpoints found, using sample events as fallback');
-            
-            // Provide sample events for testing
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            const nextWeek = new Date(today);
-            nextWeek.setDate(nextWeek.getDate() + 7);
-            
-            events = [
-                {
-                    id: 'water-baptism-1',
-                    title: 'Water Baptism',
-                    description: 'Join us for water baptism. This is a significant step in your faith journey.',
-                    starts_at: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    ends_at: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000 + 120 * 60 * 1000).toISOString(),
-                    location: 'Main Sanctuary',
-                    featured: true,
-                    capacity: 50,
-                    registered_count: 8,
-                    registration_url: 'https://onehopenola.churchcenter.com/registrations/events/water-baptism-1',
-                    details_url: 'https://onehopenola.churchcenter.com/registrations/events/water-baptism-1'
-                },
-                {
-                    id: 'sample-1',
-                    title: 'Sunday Service',
-                    description: 'Join us for worship and teaching this Sunday',
-                    starts_at: tomorrow.toISOString(),
-                    ends_at: new Date(tomorrow.getTime() + 90 * 60 * 1000).toISOString(),
-                    location: 'Main Sanctuary',
-                    featured: false,
-                    capacity: 200,
-                    registered_count: 45,
-                    registration_url: 'https://onehopenola.churchcenter.com/registrations/events/sample-1',
-                    details_url: 'https://onehopenola.churchcenter.com/registrations/events/sample-1'
-                }
-            ];
+            console.log('🔄 No working endpoints found');
+            events = [];
         }
 
         // Store events in app.locals for RSVP endpoint to access
@@ -558,28 +426,7 @@ app.get('/api/events', async (req, res) => {
         console.error('❌ Error fetching Planning Center events:', error.response?.data || error.message);
         console.error('🔍 Full error:', error);
         
-        // Return sample events as fallback
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const events = [
-            {
-                id: 'fallback-1',
-                title: 'Sunday Service',
-                description: 'Join us for worship and teaching this Sunday',
-                starts_at: tomorrow.toISOString(),
-                ends_at: new Date(tomorrow.getTime() + 90 * 60 * 1000).toISOString(),
-                location: 'Main Sanctuary',
-                featured: true,
-                capacity: 200,
-                registered_count: 45,
-                registration_url: 'https://onehopenola.churchcenter.com/registrations/events/fallback-1',
-                details_url: 'https://onehopenola.churchcenter.com/registrations/events/fallback-1'
-            }
-        ];
-        
-        res.json({ events, message: 'Using sample events - Planning Center integration in progress' });
+        res.json({ events: [], message: 'No events available' });
     }
 });
 
@@ -655,64 +502,81 @@ app.post('/api/auth/pc/check', async (req, res) => {
         if (!email) return res.status(400).json({ error: 'Email is required' });
 
         const emailLower = String(email).trim().toLowerCase();
+        
+        // Use personal access token approach (same as events API)
         const authHeaderOptions = buildPlanningCenterAuthHeaderOptions();
+        if (!authHeaderOptions || authHeaderOptions.length === 0) {
+            return res.status(500).json({ error: 'No Planning Center personal access token configured' });
+        }
+        const headers = authHeaderOptions[0]; // Use the first auth option
+
         const matches = [];
         let lastError = null;
 
-        const queryVariants = [
-            `people/v2/people?where[email]=${encodeURIComponent(emailLower)}`,
-            `people/v2/people?where[email_address]=${encodeURIComponent(emailLower)}`,
-            `people/v2/people?where[search_name_or_email]=${encodeURIComponent(emailLower)}`
-        ];
-
-        const seenIds = new Set();
-
-        for (const headers of authHeaderOptions) {
-            for (const variant of queryVariants) {
-                try {
-                    const peopleResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/${variant}`, { headers });
-                    const people = Array.isArray(peopleResp.data?.data) ? peopleResp.data.data : [];
-                    for (const person of people) {
-                        const personId = person?.id;
-                        if (!personId || seenIds.has(personId)) continue;
-
-                        // Fetch emails for this person to verify the requested email is one of their primary/secondary emails
-                        try {
-                            const emailsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/people/${personId}/emails`, { headers });
-                            const emails = Array.isArray(emailsResp.data?.data) ? emailsResp.data.data : [];
-                            const matchedEmail = emails.find(e => (e?.attributes?.address || '').trim().toLowerCase() === emailLower);
-                            if (matchedEmail) {
-                                seenIds.add(personId);
-                                matches.push({
-                                    planning_center_id: personId,
-                                    name: person.attributes?.name || null,
-                                    email: matchedEmail.attributes?.address || emailLower,
-                                    email_is_primary: !!matchedEmail.attributes?.primary,
-                                    phone: person.attributes?.phone_number || null,
-                                    avatar_url: person.attributes?.demographic_avatar_url || null
-                                });
-                            }
-                        } catch (e) {
-                            // If emails fetch fails, skip this person
-                            continue;
-                        }
-                    }
-                } catch (e) {
-                    lastError = e;
-                    continue;
-                }
+                // Search for emails first, then get person details
+        // This is more efficient and matches the Planning Center API structure
+        const emailSearchEndpoint = `people/v2/emails?where[address]=${encodeURIComponent(emailLower)}`;
+        
+        try {
+            console.log(`🔍 Searching Planning Center emails for: ${emailLower}`);
+            const emailsResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/${emailSearchEndpoint}`, { headers });
+            const emails = Array.isArray(emailsResp.data?.data) ? emailsResp.data.data : [];
+            
+            if (emails.length === 0) {
+                return res.status(404).json({ error: 'No Planning Center accounts found for that email' });
             }
-            if (matches.length > 0) break;
+            
+            // Take the first email match
+            const emailMatch = emails[0];
+            const personId = emailMatch?.relationships?.person?.data?.id;
+            
+            if (!personId) {
+                return res.status(404).json({ error: 'Invalid email relationship data' });
+            }
+            
+            // Get the person details using the person ID from the email relationship
+            console.log(`👤 Fetching person details for ID: ${personId}`);
+            const personResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/people/v2/people/${personId}`, { headers });
+            const person = personResp.data?.data;
+            
+            if (!person) {
+                return res.status(404).json({ error: 'Person not found' });
+            }
+            
+            // Create the match object
+            const match = {
+                planning_center_id: personId,
+                name: person.attributes?.name || null,
+                email: emailMatch.attributes?.address || emailLower,
+                email_is_primary: !!emailMatch.attributes?.primary,
+                phone: person.attributes?.phone_number || null,
+                avatar_url: person.attributes?.demographic_avatar_url || null
+            };
+            
+            console.log(`✅ Found Planning Center profile: ${match.name} (${match.email}) - Primary: ${match.email_is_primary}`);
+            return res.json({ success: true, matches: [match] });
+            
+        } catch (e) {
+            console.log(`⚠️ Planning Center search failed:`, e.response?.status, e.message);
+            if (e.response?.data) {
+                console.log(`📄 Response data:`, JSON.stringify(e.response.data, null, 2));
+            }
+            
+            if (e.response?.status === 429) {
+                return res.status(429).json({ error: 'Rate limit exceeded. Please try again in a few minutes.' });
+            }
+            
+            if (e.response?.status === 404) {
+                return res.status(404).json({ error: 'No Planning Center accounts found for that email' });
+            }
+            
+            throw e; // Re-throw other errors
         }
-
-        if (matches.length === 0) {
-            const status = lastError?.response?.status || 404;
-            return res.status(status).json({ error: 'No Planning Center accounts found for that email' });
-        }
-
-        return res.json({ success: true, matches });
     } catch (error) {
         console.error('❌ /api/auth/pc/check error:', error.response?.data || error.message);
+        if (error.response?.status === 429) {
+            return res.status(429).json({ error: 'Rate limit exceeded. Please try again in a few minutes.' });
+        }
         res.status(500).json({ error: 'Failed to check Planning Center person' });
     }
 });
@@ -721,18 +585,35 @@ app.post('/api/auth/pc/check', async (req, res) => {
 app.post('/api/auth/pc/link', async (req, res) => {
     try {
         const { supabase_user_id, profile } = req.body || {};
-        if (!supabase_user_id || !profile?.planning_center_id) {
-            return res.status(400).json({ error: 'supabase_user_id and profile with planning_center_id are required' });
-        }
-
-        const supabaseUser = await db.upsertUserWithAuthId(supabase_user_id, {
-            id: profile.planning_center_id,
-            email: profile.email,
-            name: profile.name,
-            phone: profile.phone,
-            avatar_url: profile.avatar_url
+        console.log('🔗 /api/auth/pc/link payload:', {
+            supabase_user_id,
+            profile_received: !!profile,
+            pc_keys: profile ? Object.keys(profile) : [],
+            profile_data: profile || 'NO_PROFILE'
         });
 
+        // Accept either planning_center_id or id in the posted profile
+        const planningCenterId = profile?.planning_center_id || profile?.id || null;
+
+        if (!supabase_user_id) {
+            console.log('❌ Missing supabase_user_id');
+            return res.status(400).json({ error: 'supabase_user_id is required' });
+        }
+        if (!planningCenterId) {
+            console.log('❌ Missing planning_center_id, profile:', profile);
+            return res.status(400).json({ error: 'profile.planning_center_id (or profile.id) is required' });
+        }
+
+        console.log('✅ Linking user', supabase_user_id, 'to PC profile', planningCenterId);
+        const supabaseUser = await db.upsertUserWithAuthId(supabase_user_id, {
+            id: planningCenterId,
+            email: profile?.email || null,
+            name: profile?.name || null,
+            phone: profile?.phone || null,
+            avatar_url: profile?.avatar_url || null
+        });
+
+        console.log('✅ Successfully linked user:', supabaseUser.id);
         return res.json({ success: true, user: supabaseUser });
     } catch (error) {
         console.error('❌ /api/auth/pc/link error:', error.response?.data || error.message);
@@ -754,7 +635,7 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
         for (const headers of authHeaderOptions) {
             try {
                 // Verify person exists and pull profile
-                const personResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/people/v2/people/${planning_center_id}`, { headers });
+                const personResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/people/v2/people/${planning_center_id}`, { headers });
                 const person = personResp.data?.data;
                 const updatedProfile = {
                     id: planning_center_id,
@@ -781,7 +662,7 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
         let memberships = [];
         try {
             // Endpoint: groups memberships for a person
-            const groupsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/groups/v2/people/${planning_center_id}/group_memberships?include=group`, { headers: headersUsed });
+            const groupsResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/groups/v2/people/${planning_center_id}/group_memberships?include=group`, { headers: headersUsed });
             const included = groupsResp.data?.included || [];
             const groupMap = new Map();
             included.forEach(item => { if (item.type === 'Group') groupMap.set(item.id, item); });
@@ -805,7 +686,7 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
         let registrations = [];
         try {
             // Endpoint: signups filtered by person
-            const regsResp = await axios.get(`${PLANNING_CENTER_CONFIG.baseUrl}/registrations/v2/signups?where[person_id]=${planning_center_id}&include=event,event_time`, { headers: headersUsed });
+            const regsResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/registrations/v2/signups?where[person_id]=${planning_center_id}&include=event,event_time`, { headers: headersUsed });
             const included = regsResp.data?.included || [];
             const eventMap = new Map();
             const timeMap = new Map();
@@ -852,10 +733,21 @@ app.post('/api/auth/profile/init', async (req, res) => {
             return res.status(400).json({ error: 'supabase_user_id and email are required' });
         }
 
+        // Derive a friendly display name from email if none provided
+        let derivedName = name;
+        if (!derivedName) {
+            try {
+                const local = String(email).split('@')[0] || '';
+                derivedName = local
+                    .replace(/[._-]+/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase());
+            } catch { derivedName = null; }
+        }
+
         const user = await db.upsertUserWithAuthId(supabase_user_id, {
             id: null,
             email: email,
-            name: name || null,
+            name: derivedName || null,
             phone: null,
             avatar_url: null
         });
@@ -935,8 +827,16 @@ app.get('/api/user/streak', async (req, res) => {
             }
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        // Get user's Supabase row (by planning_center_id if linked, otherwise by Supabase auth id)
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -969,8 +869,15 @@ app.post('/api/user/streak/complete', async (req, res) => {
             }
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -1006,8 +913,15 @@ app.get('/api/bible/status/:date', async (req, res) => {
 
         const { date } = req.params;
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -1046,8 +960,15 @@ app.post('/api/bible/status', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields: date, sections_completed' });
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -1213,8 +1134,15 @@ app.get('/api/user/steps', async (req, res) => {
             }
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -1253,8 +1181,15 @@ app.post('/api/user/steps/assessment', async (req, res) => {
             return res.status(400).json({ error: 'Missing assessment answers' });
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch {}
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }

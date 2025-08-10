@@ -38,6 +38,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Early redirect if not authenticated -->
+    <script>
+      try {
+        var hasToken = !!localStorage.getItem('onehope_token');
+        if (!hasToken) { window.location.replace('/login'); }
+      } catch (e) {}
+    </script>
     <!-- Splash Screen -->
     <div id="splashScreen" class="screen active">
         <div class="splash-content">
@@ -53,38 +60,7 @@
         </div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="screen">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h1>Welcome to One Hope</h1>
-                <p>Sign in with your email to continue</p>
-            </div>
-            <div class="auth-form">
-                <form id="supabase-auth-form" onsubmit="return false;">
-                    <div class="form-group">
-                        <label for="auth-email">Email</label>
-                        <input id="auth-email" type="email" placeholder="you@example.com" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="auth-password">Password</label>
-                        <input id="auth-password" type="password" placeholder="••••••••" required />
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-primary" onclick="supabaseEmailSignIn()">
-                            <i class="fas fa-sign-in-alt"></i> Sign In
-                        </button>
-                        <button type="button" class="btn-secondary" onclick="supabaseEmailSignUp()">
-                            <i class="fas fa-user-plus"></i> Create Account
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="auth-links">
-                <p>Need help? <a href="mailto:info@onehopechurch.com">Contact us</a></p>
-            </div>
-        </div>
-    </div>
+    <!-- Login screen removed; dedicated login page is at /login -->
 
 
 
@@ -897,6 +873,9 @@
                 </div>
 
                 <div class="profile-actions">
+                    <button class="btn-primary" id="link-pc-button" onclick="initiatePlanningCenterLink()">
+                        <i class="fas fa-link"></i> Link Planning Center Account
+                    </button>
                     <button class="btn-secondary" onclick="openExternalLink('small-group')">
                         <i class="fas fa-users"></i> Find a Small Group
                     </button>
