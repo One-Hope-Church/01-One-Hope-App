@@ -2756,7 +2756,7 @@ function openExternalLink(type) {
     
     switch(type) {
         case 'small-group':
-            url = 'https://onehopenola.churchcenter.com/groups';
+            url = 'https://onehopewebsite.vercel.app/smallgroups/directory';
             message = 'Opening Small Groups page...';
             break;
         case 'give':
