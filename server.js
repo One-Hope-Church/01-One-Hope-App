@@ -605,13 +605,15 @@ app.post('/api/auth/pc/link', async (req, res) => {
         }
 
         console.log('✅ Linking user', supabase_user_id, 'to PC profile', planningCenterId);
-        const supabaseUser = await db.upsertUserWithAuthId(supabase_user_id, {
+        const profileData = {
             id: planningCenterId,
             email: profile?.email || null,
             name: profile?.name || null,
             phone: profile?.phone || null,
             avatar_url: profile?.avatar_url || null
-        });
+        };
+        console.log('🔧 Profile data being sent to database:', profileData);
+        const supabaseUser = await db.upsertUserWithAuthId(supabase_user_id, profileData);
 
         console.log('✅ Successfully linked user:', supabaseUser.id);
         return res.json({ success: true, user: supabaseUser });
@@ -634,12 +636,33 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
         let headersUsed = null;
         for (const headers of authHeaderOptions) {
             try {
-                // Verify person exists and pull profile
+                // Use the same logic as the /api/auth/pc/link endpoint
+                // First, search for the person by their Planning Center ID to get the exact same data structure
                 const personResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/people/v2/people/${planning_center_id}`, { headers });
                 const person = personResp.data?.data;
+                
+                // Get the person's emails to find the correct email address (same as link endpoint)
+                const emailsResp = await axios.get(`${PLANNING_CENTER_BASE_URL}/people/v2/people/${planning_center_id}/emails`, { headers });
+                const emails = emailsResp.data?.data || [];
+                
+                // Find the primary email or use the first email available (same logic as link endpoint)
+                let emailAddress = null;
+                let emailIsPrimary = false;
+                if (emails.length > 0) {
+                    const primaryEmail = emails.find(e => e.attributes?.primary);
+                    if (primaryEmail) {
+                        emailAddress = primaryEmail.attributes.address;
+                        emailIsPrimary = true;
+                    } else {
+                        emailAddress = emails[0].attributes.address;
+                        emailIsPrimary = false;
+                    }
+                }
+                
+                // Create the exact same profile structure as the link endpoint
                 const updatedProfile = {
                     id: planning_center_id,
-                    email: person?.attributes?.email || person?.attributes?.login_identifier || null,
+                    email: emailAddress || null,
                     name: person?.attributes?.name || null,
                     phone: person?.attributes?.phone_number || null,
                     avatar_url: person?.attributes?.demographic_avatar_url || null
@@ -731,6 +754,18 @@ app.post('/api/auth/profile/init', async (req, res) => {
         const { supabase_user_id, email, name } = req.body || {};
         if (!supabase_user_id || !email) {
             return res.status(400).json({ error: 'supabase_user_id and email are required' });
+        }
+
+        // Check if user already exists and has Planning Center data
+        let existingUser = null;
+        try {
+            existingUser = await db.getUserById(supabase_user_id);
+        } catch {}
+
+        // If user already exists and has Planning Center data, don't overwrite it
+        if (existingUser && existingUser.planning_center_id) {
+            console.log('🔒 User already has Planning Center data, skipping profile init overwrite');
+            return res.json({ success: true, user: existingUser, skipped: true });
         }
 
         // Derive a friendly display name from email if none provided

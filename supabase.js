@@ -104,6 +104,7 @@ const db = {
                 if (!error) existingUser = data;
             }
 
+            console.log('🔧 Database function received planningCenterData:', planningCenterData);
             const userData = {
                 id: authUserId,
                 planning_center_id: planningCenterData?.id || null,
@@ -113,6 +114,7 @@ const db = {
                 avatar_url: planningCenterData?.avatar_url || null,
                 last_login: new Date().toISOString()
             };
+            console.log('🔧 Database function created userData:', userData);
 
             let result;
             if (existingUser) {
