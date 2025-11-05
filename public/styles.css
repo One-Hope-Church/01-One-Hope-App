@@ -1433,100 +1433,6 @@ body {
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    body {
-        background: #1a1a1a;
-        color: #fff;
-    }
-    
-    .screen {
-        background: #1a1a1a;
-    }
-    
-    .card, .header, .bottom-nav {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .input-group input {
-        background: #2d2d2d;
-        border-color: #404040;
-        color: #fff;
-    }
-    
-    .scripture-text {
-        background: #2d2d2d;
-    }
-    
-    .step-item {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .progress-header {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .reading-section {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .reading-section.completed {
-        background: #1a2e1a;
-        border-color: #51cf66;
-    }
-    
-    .reading-content p {
-        color: #ccc;
-    }
-    
-    .daily-completion {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .btn-small {
-        background: #2d2d2d;
-        border-color: #404040;
-        color: #667eea;
-    }
-    
-    .btn-small:hover {
-        background: #404040;
-    }
-    
-    .reading-section:hover {
-        background: #404040;
-    }
-    
-    /* Fix dark mode text colors */
-    .card h3, .header h1, .step-content h4, .reading-content h5, .event-content h4 {
-        color: #fff;
-    }
-    
-    .step-content p, .event-description, .event-time, .event-location {
-        color: #ccc;
-    }
-    
-    .reading-date, .reading-content .verse-reference {
-        color: #00A0DF;
-    }
-    
-    .completion-progress span, .plan-progress span {
-        color: #fff;
-    }
-    
-    .stat-number, .stat-label {
-        color: #fff;
-    }
-    
-    .profile-card h3, .profile-card p {
-        color: #fff;
-    }
-}
 
 /* Reading Detail Screen */
 .reading-detail-content {
@@ -1593,33 +1499,6 @@ body {
     padding-bottom: 1.5rem;
 }
 
-/* Dark mode support for reading detail */
-@media (prefers-color-scheme: dark) {
-    .reading-detail-content {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .reading-detail-content h2 {
-        color: #00A0DF;
-    }
-    
-    .reading-detail-content h3 {
-        color: #fff;
-    }
-    
-    .reading-detail-content p {
-        color: #ccc;
-    }
-    
-    .reading-detail-content .scripture-text {
-        background: #1a1a1a;
-    }
-    
-    .reading-detail-content .verse-reference-header {
-        background: linear-gradient(135deg, #00A0DF, #0090C9);
-    }
-}
 
 /* Assessment Styles */
 .assessment-container {
@@ -2026,27 +1905,6 @@ body {
     font-size: 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-    .results-container {
-        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    }
-    
-    .result-card {
-        background: var(--card-bg);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-    
-    .result-card h2,
-    .result-card h3,
-    .recommendations li {
-        color: var(--text-primary);
-    }
-    
-    .result-card p,
-    .team-signature {
-        color: var(--text-secondary);
-    }
-}
 
 /* Welcome Quiz Screen */
 .quiz-container {
@@ -2169,32 +2027,6 @@ body {
     flex: 1;
 }
 
-/* Dark mode support for quiz */
-@media (prefers-color-scheme: dark) {
-    .quiz-header h1 {
-        color: #fff;
-    }
-    
-    .quiz-question h3 {
-        color: #fff;
-    }
-    
-    .quiz-option {
-        background: #2d2d2d;
-        border-color: #404040;
-        color: #ccc;
-    }
-    
-    .quiz-option:hover {
-        background: #404040;
-        border-color: #667eea;
-    }
-    
-    .quiz-option.selected {
-        background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
-        border-color: #667eea;
-    }
-}
 
 /* Events Screen */
 .events-filter {
@@ -2337,30 +2169,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* Dark mode support for events */
-@media (prefers-color-scheme: dark) {
-    .event-item {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-    
-    .event-item.featured {
-        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-        border-color: #00A0DF;
-    }
-    
-    .filter-btn {
-        background: #2d2d2d;
-        border-color: #404040;
-        color: #ccc;
-    }
-    
-    .filter-btn:hover {
-        background: #404040;
-        border-color: #00A0DF;
-        color: #00A0DF;
-    }
-}
 
 /* Bible Button Styles */
 .bible-button-container {
@@ -2429,24 +2237,6 @@ body {
     transform: translateY(0);
 }
 
-/* Dark mode support for new elements */
-@media (prefers-color-scheme: dark) {
-    .bible-button {
-        background: #00A0DF;
-    }
-    
-    .quick-action-btn {
-        border-color: #4a5568;
-        background: #2d3748;
-        color: #e2e8f0;
-    }
-    
-    .quick-action-btn:hover {
-        border-color: #667eea;
-        background: #4a5568;
-        color: #667eea;
-    }
-}
 
 /* Loading Overlay */
 .loading-overlay {
@@ -2531,20 +2321,6 @@ body {
     margin-bottom: 1rem;
 }
 
-/* Dark mode support for new elements */
-@media (prefers-color-scheme: dark) {
-    .loading-overlay {
-        background: rgba(0, 0, 0, 0.95);
-    }
-    
-    .error-message {
-        color: #ff6b6b;
-    }
-    
-    .bible-version {
-        background: #495057;
-    }
-} 
 
 .event-actions .btn-primary,
 .event-actions .btn-secondary {
@@ -2716,21 +2492,6 @@ body {
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    .modal-content {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-    }
-    
-    .modal-header {
-        border-bottom-color: var(--border-color);
-    }
-    
-    .modal-footer {
-        background-color: var(--background);
-        border-top-color: var(--border-color);
-    }
-}
 
 /* Notes Screen Styles */
 .loading-state, .empty-state {
