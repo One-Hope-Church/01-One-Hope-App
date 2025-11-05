@@ -437,6 +437,32 @@ body {
     z-index: 101;
 }
 
+/* Note Editor Screen Header */
+#noteEditScreen .header {
+    position: relative;
+}
+
+#noteEditScreen .header h1 {
+    flex: 1;
+    text-align: center;
+    margin-left: 2.5rem; /* Space for back button */
+    margin-right: 2.5rem; /* Space for save button */
+}
+
+#noteEditScreen .back-button {
+    position: absolute;
+    left: 1.5rem;
+    z-index: 101;
+}
+
+#noteEditScreen .header .detail-actions {
+    position: absolute;
+    right: 1.5rem;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+}
+
 .header h1 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -2703,5 +2729,249 @@ body {
     .modal-footer {
         background-color: var(--background);
         border-top-color: var(--border-color);
+    }
+}
+
+/* Notes Screen Styles */
+.loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    min-height: 300px;
+}
+
+.loading-state p, .empty-state p {
+    margin-top: 16px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-body);
+}
+
+.empty-state h3 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: var(--font-size-subheading);
+}
+
+.notes-list {
+    padding: 0;
+}
+
+.notes-date-group {
+    margin-bottom: 32px;
+}
+
+.notes-date-header {
+    font-size: var(--font-size-subheading);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding: 0 var(--padding-horizontal);
+}
+
+.notes-date-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.note-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin: 0 var(--padding-horizontal);
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-type);
+}
+
+.note-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.note-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.note-item-header h4 {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    flex: 1;
+    margin: 0;
+}
+
+.note-time {
+    font-size: var(--font-size-caption);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    margin-left: 12px;
+}
+
+.note-preview {
+    font-size: var(--font-size-caption);
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.note-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all var(--transition-duration) var(--transition-type);
+}
+
+.btn-icon:hover {
+    background: var(--background);
+    color: var(--primary-color);
+}
+
+/* Note Editor Screen Styles */
+#noteEditScreen .content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.note-edit-meta {
+    padding: 16px var(--padding-horizontal);
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.note-meta-info {
+    color: var(--text-secondary);
+    font-size: var(--font-size-caption);
+}
+
+.note-meta-info p {
+    margin: 0;
+}
+
+.note-meta-info i {
+    margin-right: 6px;
+}
+
+.note-editor-container {
+    flex: 1;
+    padding: 24px var(--padding-horizontal);
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#quill-editor {
+    background: var(--card-bg);
+    min-height: 300px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#quill-editor .ql-editor {
+    font-size: var(--font-size-body);
+    line-height: 1.6;
+    color: var(--text-primary);
+    min-height: 300px;
+}
+
+#quill-editor .ql-toolbar {
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    background: var(--background);
+}
+
+#quill-editor .ql-container {
+    border-bottom: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    background: var(--card-bg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#quill-editor .ql-container .ql-editor {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.note-edit-actions {
+    padding: 16px var(--padding-horizontal);
+    border-top: 1px solid var(--border-color);
+    background: var(--card-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.note-save-status {
+    font-size: var(--font-size-caption);
+    color: var(--text-secondary);
+}
+
+.note-save-status.saved {
+    color: var(--success-color);
+}
+
+.note-save-status.error {
+    color: var(--error-color);
+}
+
+@media (max-width: 768px) {
+    .notes-date-header {
+        font-size: var(--font-size-body);
+    }
+    
+    .note-item {
+        padding: 12px;
+    }
+    
+    .note-item-header h4 {
+        font-size: var(--font-size-caption);
+    }
+    
+    .note-editor-container {
+        padding: 16px;
+        min-height: 300px;
+    }
+    
+    #quill-editor .ql-editor {
+        min-height: 250px;
+    }
+    
+    .note-edit-actions {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
     }
 }

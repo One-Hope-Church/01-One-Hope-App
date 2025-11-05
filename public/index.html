@@ -42,7 +42,12 @@
     <script>
       try {
         var hasToken = !!localStorage.getItem('onehope_token');
-        if (!hasToken) { window.location.replace('/login'); }
+        if (!hasToken) { 
+          // Preserve hash when redirecting to login
+          var hash = window.location.hash;
+          var returnUrl = window.location.pathname + (hash || '');
+          window.location.replace('/login?return=' + encodeURIComponent(returnUrl));
+        }
       } catch (e) {}
     </script>
     <!-- Splash Screen -->
@@ -889,6 +894,71 @@
             </div>
         </div>
 
+        <!-- Notes Screen -->
+        <div id="notesScreen" class="app-screen">
+            <div class="header">
+                <h1>Message Notes</h1>
+            </div>
+
+            <div class="content">
+                <div id="notes-loading" class="loading-state" style="display: none;">
+                    <div class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <p>Loading your notes...</p>
+                </div>
+
+                <div id="notes-empty" class="empty-state" style="display: none;">
+                    <i class="fas fa-sticky-note" style="font-size: 48px; color: #9CA3AF; margin-bottom: 16px;"></i>
+                    <h3>No notes yet</h3>
+                    <p>Start taking notes on messages to see them here</p>
+                    <button class="btn-primary" onclick="openExternalLink('watch-message')">
+                        <i class="fas fa-play-circle"></i> Watch a Message
+                    </button>
+                </div>
+
+                <div id="notes-list" class="notes-list">
+                    <!-- Notes will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Note Edit Screen -->
+        <div id="noteEditScreen" class="app-screen">
+            <div class="header">
+                <button class="back-button" onclick="closeNoteEditor()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 id="note-edit-title">Edit Note</h1>
+                <div class="detail-actions">
+                    <button class="btn-primary" id="save-note-btn" onclick="saveEditedNote()" style="padding: 8px 16px; font-size: 14px;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div id="note-edit-meta" class="note-edit-meta">
+                    <!-- Message info will be displayed here -->
+                </div>
+
+                <div id="note-editor-container" class="note-editor-container">
+                    <!-- Quill editor will be initialized here -->
+                </div>
+
+                <div class="note-edit-actions">
+                    <div id="note-save-status" class="note-save-status">
+                        <!-- Save status will be displayed here -->
+                    </div>
+                    <button class="btn-secondary" onclick="openNoteInBrowserFromEditor()">
+                        <i class="fas fa-external-link-alt"></i> View Message
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Navigation -->
         <nav class="bottom-nav" style="position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; background: white !important; border-top: 1px solid #E5E7EB !important; display: flex !important; padding: 0.5rem 0 !important; z-index: 9999 !important; min-height: 60px !important; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important; visibility: visible !important; opacity: 1 !important;">
             <button class="nav-item active" onclick="showAppScreen('homeScreen')">
@@ -903,9 +973,14 @@
                 <i class="fas fa-arrow-right"></i>
                 <span>Steps</span>
             </button>
-            <button class="nav-item" onclick="showAppScreen('eventsScreen')">
+            <!-- Events tab temporarily hidden -->
+            <!-- <button class="nav-item" onclick="showAppScreen('eventsScreen')">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Events</span>
+            </button> -->
+            <button class="nav-item" onclick="showAppScreen('notesScreen')">
+                <i class="fas fa-sticky-note"></i>
+                <span>Notes</span>
             </button>
             <button class="nav-item" onclick="showAppScreen('profileScreen')">
                 <i class="fas fa-user"></i>
@@ -915,6 +990,9 @@
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Quill.js for rich text editing -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="/script.js?v=3"></script>
 </body>
 </html> 

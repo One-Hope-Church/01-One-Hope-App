@@ -25,6 +25,65 @@ let lastReadingDate = null;
 let userSteps = []; // Store user steps from Supabase
 let isSavingReading = false; // Flag to prevent multiple simultaneous saves
 
+// Note Editor State
+let noteEditor = null;
+let currentEditingNote = null;
+let noteSaveTimeout = null;
+
+// URL Routing System
+const routeMap = {
+    'home': 'homeScreen',
+    'bible': 'bibleScreen',
+    'next-steps': 'nextStepsScreen',
+    'events': 'eventsScreen',
+    'notes': 'notesScreen',
+    'profile': 'profileScreen'
+};
+
+const screenToRoute = {
+    'homeScreen': 'home',
+    'bibleScreen': 'bible',
+    'nextStepsScreen': 'next-steps',
+    'eventsScreen': 'events',
+    'notesScreen': 'notes',
+    'profileScreen': 'profile'
+};
+
+// Get current route from hash
+function getRouteFromHash() {
+    const hash = window.location.hash.replace('#', '');
+    return hash || null;
+}
+
+// Navigate to route
+function navigateToRoute(route) {
+    if (routeMap[route]) {
+        const screenId = routeMap[route];
+        // Update URL hash without triggering navigation
+        if (window.location.hash !== `#${route}`) {
+            window.history.replaceState(null, '', `#${route}`);
+        }
+        showAppScreen(screenId);
+        return true;
+    }
+    return false;
+}
+
+// Handle hash changes (browser back/forward buttons)
+function handleHashChange() {
+    const route = getRouteFromHash();
+    if (route) {
+        // Check if user is authenticated and on main app
+        const storedToken = localStorage.getItem('onehope_token');
+        if (storedToken) {
+            const mainApp = document.getElementById('mainApp');
+            if (mainApp && mainApp.classList.contains('active')) {
+                navigateToRoute(route);
+            }
+        }
+    }
+}
+
 
 
 // Initialize app
@@ -121,8 +180,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Load user data then show app
                 Promise.all([fetchUserStreak(), fetchUserSteps()])
-                    .then(() => showScreen('mainApp'))
-                    .catch(() => showScreen('mainApp'));
+                    .then(() => {
+                        showScreen('mainApp');
+                        // Check for route in URL hash after showing main app
+                        const route = getRouteFromHash();
+                        if (route && navigateToRoute(route)) {
+                            // Route navigation handled
+                        } else {
+                            // Default to home if no route specified
+                            showAppScreen('homeScreen');
+                        }
+                    })
+                    .catch(() => {
+                        showScreen('mainApp');
+                        // Check for route in URL hash after showing main app
+                        const route = getRouteFromHash();
+                        if (route && navigateToRoute(route)) {
+                            // Route navigation handled
+                        } else {
+                            // Default to home if no route specified
+                            showAppScreen('homeScreen');
+                        }
+                    });
             } catch (error) {
                 console.error('❌ Error processing stored token:', error);
                 localStorage.removeItem('onehope_token');
@@ -136,6 +215,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Timeout reached, navigating to:', currentUser ? 'mainApp' : 'loginScreen');
             if (currentUser) {
                 showScreen('mainApp');
+                // Check for route in URL hash after showing main app
+                const route = getRouteFromHash();
+                if (route && navigateToRoute(route)) {
+                    // Route navigation handled
+                } else {
+                    // Default to home if no route specified
+                    showAppScreen('homeScreen');
+                }
             } else {
                 showScreen('loginScreen');
             }
@@ -150,6 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup navigation
     console.log('Setting up navigation');
     setupNavigation();
+    
+    // Setup hash-based routing
+    console.log('Setting up hash-based routing');
+    window.addEventListener('hashchange', handleHashChange);
     
     // Initialize homepage next step (will be called after user data loads)
     console.log('Initializing homepage next step');
@@ -190,8 +281,9 @@ async function processAuthToken(token) {
         await signInUser(userData);
         showNotification('Successfully signed in!', 'success');
         
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clean up URL parameters but preserve hash for routing
+        const hash = window.location.hash;
+        window.history.replaceState({}, document.title, window.location.pathname + (hash || ''));
         
         console.log('✅ User signed in:', currentUser.name);
         
@@ -321,6 +413,12 @@ async function showAppScreen(screenId) {
         targetScreen.classList.add('active');
     }
     
+    // Update URL hash for routing
+    const route = screenToRoute[screenId];
+    if (route && window.location.hash !== `#${route}`) {
+        window.history.replaceState(null, '', `#${route}`);
+    }
+    
     // Update navigation
     updateNavigation(screenId);
     
@@ -331,6 +429,9 @@ async function showAppScreen(screenId) {
         // Always load reading status when Bible screen is shown
         const today = getChicagoDate();
         await loadDailyReadingStatus(today);
+    } else if (screenId === 'notesScreen') {
+        // Load all message notes when Notes screen is shown
+        await fetchAllMessageNotes();
     } else if (screenId === 'nextStepsScreen') {
         // Check if user needs to take assessment
         if (needsAssessment()) {
@@ -361,8 +462,9 @@ function updateNavigation(activeScreenId) {
         'homeScreen': 0,
         'bibleScreen': 1,
         'nextStepsScreen': 2,
-        'eventsScreen': 3,
-        'profileScreen': 4
+        // 'eventsScreen': 3, // Temporarily hidden
+        'notesScreen': 3, // Adjusted after hiding events
+        'profileScreen': 4 // Adjusted after hiding events
     };
     
     const navItems = document.querySelectorAll('.nav-item');
@@ -884,8 +986,9 @@ async function signInUser(userProfile) {
     currentUser = userProfile;
     localStorage.setItem('onehope_user', JSON.stringify(userProfile));
     
-    // Clear URL parameters
-    window.history.replaceState({}, document.title, window.location.pathname);
+    // Clear URL parameters but preserve hash for routing
+    const hash = window.location.hash;
+    window.history.replaceState({}, document.title, window.location.pathname + (hash || ''));
     
     // Update UI with user info
     updateUserInfo();
@@ -902,7 +1005,15 @@ async function signInUser(userProfile) {
     
     // Navigate to main app AFTER data is loaded
     showScreen('mainApp');
-    showAppScreen('homeScreen');
+    
+    // Check for route in URL hash after showing main app
+    const route = getRouteFromHash();
+    if (route && navigateToRoute(route)) {
+        // Route navigation handled
+    } else {
+        // Default to home if no route specified
+        showAppScreen('homeScreen');
+    }
     
     console.log('✅ User signed in successfully:', userProfile);
 }
@@ -2182,7 +2293,7 @@ function handleSwipe(direction) {
     const currentScreen = document.querySelector('.app-screen.active');
     if (!currentScreen) return;
     
-    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', 'eventsScreen', 'profileScreen'];
+    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', /* 'eventsScreen', */ 'profileScreen']; // Events temporarily hidden
     const currentIndex = screens.indexOf(currentScreen.id);
     
     if (direction === 'left' && currentIndex < screens.length - 1) {
@@ -2976,6 +3087,510 @@ function displayEvents(events) {
             </div>
         `;
     }).join('');
+}
+
+// Fetch all message notes from Supabase
+async function fetchAllMessageNotes() {
+    const notesLoading = document.getElementById('notes-loading');
+    const notesEmpty = document.getElementById('notes-empty');
+    const notesList = document.getElementById('notes-list');
+    
+    // Show loading state
+    if (notesLoading) notesLoading.style.display = 'flex';
+    if (notesEmpty) notesEmpty.style.display = 'none';
+    if (notesList) notesList.innerHTML = '';
+    
+    try {
+        // Check if user is authenticated
+        const storedToken = localStorage.getItem('onehope_token');
+        if (!storedToken) {
+            throw new Error('User not authenticated');
+        }
+        
+        // Get Supabase client
+        if (!supabaseClient) {
+            await initSupabaseClient();
+        }
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client not initialized');
+        }
+        
+        // Set auth session
+        const sbAccessToken = localStorage.getItem('sb_access_token');
+        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
+        
+        if (sbAccessToken && sbRefreshToken) {
+            await supabaseClient.auth.setSession({
+                access_token: sbAccessToken,
+                refresh_token: sbRefreshToken
+            });
+        }
+        
+        // Get current user
+        const user = currentUser || JSON.parse(localStorage.getItem('onehope_user') || '{}');
+        if (!user.id) {
+            throw new Error('User ID not found');
+        }
+        
+        // Fetch all notes for this user, sorted by message date (most recent first)
+        // Fall back to updated_at if message_date is null or column doesn't exist
+        let { data, error } = await supabaseClient
+            .from('message_notes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('message_date', { ascending: false, nullsFirst: false })
+            .order('updated_at', { ascending: false });
+        
+        // If error is about missing column, try again without message_date ordering
+        if (error && (error.message?.includes('message_date') || error.code === '42703')) {
+            console.log('message_date column not found, using updated_at for sorting');
+            const result = await supabaseClient
+                .from('message_notes')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('updated_at', { ascending: false });
+            data = result.data;
+            error = result.error;
+        }
+        
+        if (error) {
+            console.error('Error fetching notes:', error);
+            throw error;
+        }
+        
+        console.log('Fetched notes:', data?.length || 0, 'notes');
+        
+        // Display notes
+        displayMessageNotes(data || []);
+        
+    } catch (error) {
+        console.error('Error fetching message notes:', error);
+        
+        // Hide loading, show empty state
+        if (notesLoading) notesLoading.style.display = 'none';
+        if (notesEmpty) notesEmpty.style.display = 'flex';
+        if (notesList) notesList.innerHTML = '';
+        
+        // Only show error notification if it's not just "no notes found"
+        if (error && error.code !== 'PGRST116') {
+            showNotification('Unable to load notes. Please try again.', 'error');
+        }
+    }
+}
+
+// Display message notes grouped by date
+function displayMessageNotes(notes) {
+    const notesLoading = document.getElementById('notes-loading');
+    const notesEmpty = document.getElementById('notes-empty');
+    const notesList = document.getElementById('notes-list');
+    
+    // Hide loading and empty states
+    if (notesLoading) notesLoading.style.display = 'none';
+    
+    if (!notes || notes.length === 0) {
+        if (notesEmpty) notesEmpty.style.display = 'flex';
+        if (notesList) notesList.innerHTML = '';
+        return;
+    }
+    
+    if (notesEmpty) notesEmpty.style.display = 'none';
+    
+    // Group notes by date
+    const notesByDate = {};
+    const dateKeys = [];
+    
+    notes.forEach(note => {
+        // Use message_date if available, otherwise fall back to updated_at
+        const date = note.message_date 
+            ? new Date(note.message_date) 
+            : new Date(note.updated_at || note.created_at);
+        const dateKey = date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        if (!notesByDate[dateKey]) {
+            notesByDate[dateKey] = [];
+            dateKeys.push({ key: dateKey, timestamp: date.getTime() });
+        }
+        
+        notesByDate[dateKey].push(note);
+    });
+    
+    // Sort dates (most recent first) using timestamp
+    const sortedDates = dateKeys
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .map(item => item.key);
+    
+    // Build HTML
+    let html = '';
+    
+    sortedDates.forEach(dateKey => {
+        const dateNotes = notesByDate[dateKey];
+        
+        html += `
+            <div class="notes-date-group">
+                <h3 class="notes-date-header">${dateKey}</h3>
+                <div class="notes-date-items">
+        `;
+        
+        dateNotes.forEach(note => {
+            // Extract message title from url_path (format: /media/message/slug)
+            const urlParts = note.url_path.split('/');
+            const slug = urlParts[urlParts.length - 1];
+            const messageTitle = slug
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            
+            // Extract preview from content (strip HTML tags)
+            const contentPreview = note.content
+                ? note.content.replace(/<[^>]*>/g, '').substring(0, 150).trim()
+                : '';
+            
+            // Format time
+            const updatedDate = new Date(note.updated_at || note.created_at);
+            const timeString = updatedDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit' 
+            });
+            
+            html += `
+                <div class="note-item" onclick="openNoteEditor('${note.message_id}', '${note.url_path.replace(/'/g, "\\'")}')">
+                    <div class="note-item-header">
+                        <h4>${messageTitle}</h4>
+                        <span class="note-time">${timeString}</span>
+                    </div>
+                    ${contentPreview ? `<p class="note-preview">${contentPreview}${contentPreview.length >= 150 ? '...' : ''}</p>` : ''}
+                    <div class="note-item-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); openNoteInBrowser('${note.url_path.replace(/'/g, "\\'")}')" title="View Message">
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    if (notesList) {
+        notesList.innerHTML = html;
+    }
+}
+
+// Open note editor
+async function openNoteEditor(messageId, urlPath) {
+    try {
+        // Show loading state
+        showAppScreen('noteEditScreen');
+        const editorContainer = document.getElementById('note-editor-container');
+        if (editorContainer) {
+            editorContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading note...</div>';
+        }
+        
+        // Get Supabase client
+        if (!supabaseClient) {
+            await initSupabaseClient();
+        }
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client not initialized');
+        }
+        
+        // Set auth session
+        const sbAccessToken = localStorage.getItem('sb_access_token');
+        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
+        
+        if (sbAccessToken && sbRefreshToken) {
+            await supabaseClient.auth.setSession({
+                access_token: sbAccessToken,
+                refresh_token: sbRefreshToken
+            });
+        }
+        
+        // Get current user
+        const user = currentUser || JSON.parse(localStorage.getItem('onehope_user') || '{}');
+        if (!user.id) {
+            throw new Error('User ID not found');
+        }
+        
+        // Fetch the note
+        const { data, error } = await supabaseClient
+            .from('message_notes')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('message_id', messageId)
+            .eq('url_path', urlPath)
+            .single();
+        
+        if (error && error.code !== 'PGRST116') {
+            throw error;
+        }
+        
+        // Store current note
+        currentEditingNote = {
+            message_id: messageId,
+            url_path: urlPath,
+            content: data?.content || '',
+            id: data?.id || null,
+            message_date: data?.message_date || null // Preserve message_date if it exists
+        };
+        
+        // Extract message title from URL
+        const urlParts = urlPath.split('/');
+        const slug = urlParts[urlParts.length - 1];
+        const messageTitle = slug
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        
+        // Update header
+        const titleElement = document.getElementById('note-edit-title');
+        if (titleElement) {
+            titleElement.textContent = messageTitle;
+        }
+        
+        // Update meta info
+        const metaElement = document.getElementById('note-edit-meta');
+        if (metaElement) {
+            const updatedDate = data ? new Date(data.updated_at || data.created_at) : new Date();
+            const dateString = updatedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const timeString = updatedDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            metaElement.innerHTML = `
+                <div class="note-meta-info">
+                    <p><i class="fas fa-calendar"></i> ${dateString} • ${timeString}</p>
+                </div>
+            `;
+        }
+        
+        // Initialize Quill editor
+        if (editorContainer) {
+            editorContainer.innerHTML = '<div id="quill-editor"></div>';
+            
+            // Wait for Quill to be available
+            if (typeof Quill === 'undefined') {
+                throw new Error('Quill editor not loaded');
+            }
+            
+            // Destroy existing editor if any
+            if (noteEditor) {
+                noteEditor = null;
+            }
+            
+            // Create new Quill instance
+            noteEditor = new Quill('#quill-editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['clean']
+                    ]
+                },
+                placeholder: 'Start editing your notes...'
+            });
+            
+            // Set content
+            noteEditor.root.innerHTML = currentEditingNote.content || '';
+            
+            // Set up auto-save on content change
+            noteEditor.on('text-change', function() {
+                // Clear existing timeout
+                if (noteSaveTimeout) {
+                    clearTimeout(noteSaveTimeout);
+                }
+                
+                // Set new timeout for auto-save (2 seconds after typing stops)
+                noteSaveTimeout = setTimeout(() => {
+                    saveEditedNote(true); // Auto-save (silent)
+                }, 2000);
+            });
+            
+            // Update save status
+            updateNoteSaveStatus('Ready');
+        }
+        
+    } catch (error) {
+        console.error('Error opening note editor:', error);
+        showNotification('Unable to load note. Please try again.', 'error');
+        showAppScreen('notesScreen');
+    }
+}
+
+// Save edited note
+async function saveEditedNote(isAutoSave = false) {
+    if (!noteEditor || !currentEditingNote) {
+        return;
+    }
+    
+    try {
+        const content = noteEditor.root.innerHTML;
+        
+        // Don't save empty notes
+        const textContent = noteEditor.root.textContent || '';
+        if (!textContent.trim()) {
+            updateNoteSaveStatus('Note is empty');
+            return;
+        }
+        
+        // Update save status
+        if (!isAutoSave) {
+            updateNoteSaveStatus('Saving...');
+        }
+        
+        // Get Supabase client
+        if (!supabaseClient) {
+            await initSupabaseClient();
+        }
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client not initialized');
+        }
+        
+        // Set auth session
+        const sbAccessToken = localStorage.getItem('sb_access_token');
+        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
+        
+        if (sbAccessToken && sbRefreshToken) {
+            await supabaseClient.auth.setSession({
+                access_token: sbAccessToken,
+                refresh_token: sbRefreshToken
+            });
+        }
+        
+        // Get current user
+        const user = currentUser || JSON.parse(localStorage.getItem('onehope_user') || '{}');
+        if (!user.id) {
+            throw new Error('User ID not found');
+        }
+        
+        // Prepare upsert data
+        const upsertData = {
+            user_id: user.id,
+            message_id: currentEditingNote.message_id,
+            url_path: currentEditingNote.url_path,
+            content: content,
+            updated_at: new Date().toISOString()
+        };
+        
+        // Preserve message_date if it exists (for sorting by message date)
+        if (currentEditingNote.message_date) {
+            upsertData.message_date = currentEditingNote.message_date;
+        }
+        
+        // Save to Supabase
+        const { data, error } = await supabaseClient
+            .from('message_notes')
+            .upsert(upsertData, {
+                onConflict: 'user_id,message_id,url_path'
+            })
+            .select()
+            .single();
+        
+        if (error) {
+            throw error;
+        }
+        
+        // Update current note
+        currentEditingNote.id = data.id;
+        currentEditingNote.content = content;
+        
+        // Update save status
+        const savedDate = new Date(data.updated_at);
+        const timeString = savedDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+        updateNoteSaveStatus(`Saved at ${timeString}`);
+        
+        if (!isAutoSave) {
+            showNotification('Note saved successfully!', 'success');
+        }
+        
+    } catch (error) {
+        console.error('Error saving note:', error);
+        updateNoteSaveStatus('Error saving');
+        showNotification('Unable to save note. Please try again.', 'error');
+    }
+}
+
+// Update save status display
+function updateNoteSaveStatus(status) {
+    const statusElement = document.getElementById('note-save-status');
+    if (statusElement) {
+        statusElement.textContent = status;
+        statusElement.className = 'note-save-status';
+        if (status.includes('Error')) {
+            statusElement.classList.add('error');
+        } else if (status.includes('Saved')) {
+            statusElement.classList.add('saved');
+        }
+    }
+}
+
+// Close note editor
+async function closeNoteEditor() {
+    // Check if there are unsaved changes
+    if (noteEditor && currentEditingNote) {
+        const currentContent = noteEditor.root.innerHTML;
+        const textContent = noteEditor.root.textContent || '';
+        
+        // Only warn if there's actual content and it's different
+        if (textContent.trim() && currentContent !== currentEditingNote.content) {
+            if (confirm('You have unsaved changes. Do you want to save before closing?')) {
+                // Save before closing
+                await saveEditedNote();
+            }
+        }
+    }
+    
+    // Clear editor
+    if (noteEditor) {
+        noteEditor = null;
+    }
+    currentEditingNote = null;
+    if (noteSaveTimeout) {
+        clearTimeout(noteSaveTimeout);
+    }
+    
+    // Go back to notes screen
+    showAppScreen('notesScreen');
+    // Refresh notes list
+    fetchAllMessageNotes();
+}
+
+// Open note in browser from editor
+function openNoteInBrowserFromEditor() {
+    if (currentEditingNote) {
+        openNoteInBrowser(currentEditingNote.url_path);
+    }
+}
+
+// Open note in browser (opens the onehope-production message page)
+function openNoteInBrowser(urlPath) {
+    // Determine the production URL based on current environment
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const productionUrl = isLocal 
+        ? 'http://localhost:3000' 
+        : 'https://onehopechurch.com';
+    
+    // Open in new tab/window
+    window.open(`${productionUrl}${urlPath}`, '_blank');
 }
 
 // Add event delegation for event buttons
