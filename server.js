@@ -11,7 +11,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env'), override: true })
 const { db } = require('./supabase');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001; // Default to 3001 for local dev (onehope-production uses 3000)
 
 // Middleware
 app.use(cors());

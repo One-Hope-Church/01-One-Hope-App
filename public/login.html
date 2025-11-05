@@ -62,6 +62,41 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
     let sb = null;
+    // Get return URL from query parameter
+    function getReturnUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('return') || '/';
+    }
+    
+    // Build redirect URL with auth token (for cross-origin localhost testing)
+    function buildRedirectUrl(returnUrl) {
+      const token = localStorage.getItem('onehope_token');
+      const user = localStorage.getItem('onehope_user');
+      const sbAccessToken = localStorage.getItem('sb_access_token');
+      const sbRefreshToken = localStorage.getItem('sb_refresh_token');
+      
+      // Only pass token in URL for localhost (local testing)
+      // This allows cross-origin localStorage sharing for local dev
+      const isLocalhost = returnUrl.includes('localhost') || returnUrl.includes('127.0.0.1');
+      
+      if (isLocalhost && token) {
+        const url = new URL(returnUrl);
+        url.searchParams.set('auth_token', token);
+        if (user) {
+          url.searchParams.set('auth_user', user);
+        }
+        // Also pass Supabase tokens for authentication
+        if (sbAccessToken) {
+          url.searchParams.set('sb_access_token', sbAccessToken);
+        }
+        if (sbRefreshToken) {
+          url.searchParams.set('sb_refresh_token', sbRefreshToken);
+        }
+        return url.toString();
+      }
+      
+      return returnUrl;
+    }
     async function init() {
       try {
         const r = await fetch('/api/config');
@@ -289,6 +324,12 @@
         setMsg('Setting up profile...', 'info');
         await profileInit(data.user.id, email);
         
+        // Store Supabase session tokens for cross-app authentication
+        if (data.session) {
+          localStorage.setItem('sb_access_token', data.session.access_token);
+          localStorage.setItem('sb_refresh_token', data.session.refresh_token);
+        }
+        
         // Seed placeholder token so backend profile endpoint can auth
         setPlaceholderToken(data.user);
         
@@ -309,8 +350,10 @@
                 }); 
               } catch {}
               setAppAuthToken({ planning_center_id: prof.planning_center_id, name: prof.name, email: prof.email, avatar_url: prof.avatar_url }, { id: prof.id });
-              setMsg('Redirecting to app...', 'success');
-              setTimeout(() => location.href = '/', 1000);
+              setMsg('Redirecting...', 'success');
+              const returnUrl = getReturnUrl();
+              const redirectUrl = buildRedirectUrl(returnUrl);
+              setTimeout(() => location.href = redirectUrl, 1000);
               return;
             }
           }
@@ -321,9 +364,11 @@
         // Remove highlight from create account button
         const btnUp = document.getElementById('btn-up');
         if (btnUp) btnUp.classList.remove('highlight');
+        const returnUrl = getReturnUrl();
+        const redirectUrl = buildRedirectUrl(returnUrl);
         setTimeout(() => {
-          console.log('🔄 Redirecting to homepage...');
-          location.href = '/';
+          console.log('🔄 Redirecting to:', redirectUrl);
+          location.href = redirectUrl;
         }, 1000);
       } finally {
         // Re-enable buttons
@@ -358,6 +403,12 @@
         setMsg('Setting up profile...', 'info');
         await profileInit(data.user.id, email);
         
+        // Store Supabase session tokens for cross-app authentication
+        if (data.session) {
+          localStorage.setItem('sb_access_token', data.session.access_token);
+          localStorage.setItem('sb_refresh_token', data.session.refresh_token);
+        }
+        
         setMsg('Account created. Checking Planning Center...', 'success');
         // Seed placeholder token and check profile for existing PC link (e.g., imported users)
         setPlaceholderToken(data.user);
@@ -378,7 +429,9 @@
               } catch {}
               setAppAuthToken({ planning_center_id: prof.planning_center_id, name: prof.name, email: prof.email, avatar_url: prof.avatar_url }, { id: prof.id });
               setMsg('Account linked successfully! Redirecting...', 'success');
-              setTimeout(() => location.href = '/', 1000);
+              const returnUrl = getReturnUrl();
+              const redirectUrl = buildRedirectUrl(returnUrl);
+              setTimeout(() => location.href = redirectUrl, 1000);
               return;
             }
           }
@@ -392,13 +445,17 @@
           // Remove highlight from create account button
           const btnUp = document.getElementById('btn-up');
           if (btnUp) btnUp.classList.remove('highlight');
-          setTimeout(() => location.href = '/', 1000);
+          const returnUrl = getReturnUrl();
+          const redirectUrl = buildRedirectUrl(returnUrl);
+          setTimeout(() => location.href = redirectUrl, 1000);
         } else {
           setMsg('No Planning Center account found. Redirecting...', 'info');
           // Remove highlight from create account button
           const btnUp = document.getElementById('btn-up');
           if (btnUp) btnUp.classList.remove('highlight');
-          setTimeout(() => location.href = '/', 1000);
+          const returnUrl = getReturnUrl();
+          const redirectUrl = buildRedirectUrl(returnUrl);
+          setTimeout(() => location.href = redirectUrl, 1000);
         }
       } finally {
         // Re-enable buttons
