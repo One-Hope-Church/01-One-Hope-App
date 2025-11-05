@@ -1,0 +1,18 @@
+Confirm Your Email Address - One Hope Church
+
+Thank you for signing up for the One Hope App! To complete your account setup, please confirm your email address by clicking the link below.
+
+{{ .ConfirmationURL }}
+
+Or copy and paste this link into your browser:
+{{ .ConfirmationURL }}
+
+If you didn't create an account with One Hope, you can safely ignore this email.
+
+---
+
+One Hope Church
+This is an automated email. Please do not reply.
+
+Need help? Contact us at info@onehopechurch.com
+

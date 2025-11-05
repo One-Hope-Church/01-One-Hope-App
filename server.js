@@ -761,8 +761,10 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
 // Initialize minimal user profile in our database after Supabase signup/signin
 app.post('/api/auth/profile/init', async (req, res) => {
     try {
+        console.log('📝 Profile init request received:', { body: req.body });
         const { supabase_user_id, email, name } = req.body || {};
         if (!supabase_user_id || !email) {
+            console.error('❌ Missing required fields:', { supabase_user_id: !!supabase_user_id, email: !!email });
             return res.status(400).json({ error: 'supabase_user_id and email are required' });
         }
 
@@ -770,7 +772,10 @@ app.post('/api/auth/profile/init', async (req, res) => {
         let existingUser = null;
         try {
             existingUser = await db.getUserById(supabase_user_id);
-        } catch {}
+            console.log('🔍 Existing user check:', existingUser ? 'Found' : 'Not found');
+        } catch (err) {
+            console.error('❌ Error checking existing user:', err);
+        }
 
         // If user already exists and has Planning Center data, don't overwrite it
         if (existingUser && existingUser.planning_center_id) {
@@ -789,6 +794,7 @@ app.post('/api/auth/profile/init', async (req, res) => {
             } catch { derivedName = null; }
         }
 
+        console.log('💾 Upserting user with auth id:', supabase_user_id);
         const user = await db.upsertUserWithAuthId(supabase_user_id, {
             id: null,
             email: email,
@@ -796,10 +802,37 @@ app.post('/api/auth/profile/init', async (req, res) => {
             phone: null,
             avatar_url: null
         });
+        console.log('✅ Profile init successful:', user?.id || 'No user returned');
         res.json({ success: true, user });
     } catch (error) {
         console.error('❌ /api/auth/profile/init error:', error);
-        res.status(500).json({ error: 'Failed to initialize user profile' });
+        console.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            name: error.name
+        });
+        
+        // Return detailed error information for debugging
+        const errorResponse = {
+            error: 'Failed to initialize user profile',
+            message: error.message,
+            code: error.code || 'UNKNOWN_ERROR'
+        };
+        
+        // Include Supabase error details if available
+        if (error.code) {
+            errorResponse.supabaseCode = error.code;
+        }
+        if (error.details) {
+            errorResponse.details = error.details;
+        }
+        if (error.hint) {
+            errorResponse.hint = error.hint;
+        }
+        
+        console.error('❌ Sending error response:', errorResponse);
+        res.status(500).json(errorResponse);
     }
 });
 app.get('/api/bible/daily', async (req, res) => {

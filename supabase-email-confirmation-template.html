@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email - One Hope</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Arial, sans-serif !important;}
+    </style>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <!-- Main Container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
+                    <!-- Logo Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 40px 20px 40px;">
+                            <div style="background-color: #00A0DF; border-radius: 16px 16px 0 0; padding: 30px 20px; margin: -40px -40px 20px -40px;">
+                                <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                                    One Hope Church
+                                </h1>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            <!-- Greeting -->
+                            <h2 style="margin: 0 0 16px 0; color: #1A1A1A; font-size: 24px; font-weight: 700; line-height: 1.3;">
+                                Confirm Your Email Address
+                            </h2>
+                            
+                            <p style="margin: 0 0 24px 0; color: #6B7280; font-size: 16px; line-height: 1.6;">
+                                Thank you for signing up for the One Hope App! To complete your account setup, please confirm your email address by clicking the button below.
+                            </p>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 24px 0;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #00A0DF; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 999px; font-size: 16px; font-weight: 600; letter-spacing: 0.3px;">
+                                            Confirm Email Address
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Alternative Link -->
+                            <p style="margin: 0 0 32px 0; color: #6B7280; font-size: 14px; line-height: 1.6;">
+                                Or copy and paste this link into your browser:<br>
+                                <a href="{{ .ConfirmationURL }}" style="color: #00A0DF; text-decoration: underline; word-break: break-all;">{{ .ConfirmationURL }}</a>
+                            </p>
+                            
+                            <!-- Divider -->
+                            <div style="border-top: 1px solid #E5E7EB; margin: 32px 0;"></div>
+                            
+                            <!-- Help Text -->
+                            <p style="margin: 0; color: #6B7280; font-size: 14px; line-height: 1.6;">
+                                If you didn't create an account with One Hope, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 32px 40px; background-color: #F8FAFC; border-radius: 0 0 16px 16px; text-align: center;">
+                            <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">
+                                One Hope Church
+                            </p>
+                            <p style="margin: 0; color: #94A3B8; font-size: 12px;">
+                                This is an automated email. Please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <!-- Spacer -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="padding: 20px 0;">
+                            <p style="margin: 0; color: #94A3B8; font-size: 12px; text-align: center;">
+                                Need help? Contact us at <a href="mailto:info@onehopechurch.com" style="color: #00A0DF; text-decoration: none;">info@onehopechurch.com</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+

@@ -556,7 +556,8 @@ async function supabaseEmailSignUp() {
         showNotification(error.message || 'Sign up failed', 'error');
         return;
     }
-    showNotification('Account created. You are signed in.', 'success');
+    
+    // Initialize profile even if email confirmation is required
     try {
         await fetch('/api/auth/profile/init', {
             method: 'POST',
@@ -564,6 +565,19 @@ async function supabaseEmailSignUp() {
             body: JSON.stringify({ supabase_user_id: data.user.id, email })
         });
     } catch {}
+    
+    // Check if email confirmation is required (session will be null)
+    if (!data.session) {
+        showNotification('Account created! Please check your email to confirm your account before signing in.', 'success');
+        // Clear the form
+        const emailInput = document.getElementById('auth-email');
+        const passwordInput = document.getElementById('auth-password');
+        if (emailInput) emailInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        return;
+    }
+    
+    showNotification('Account created. You are signed in.', 'success');
     await afterSupabaseAuth(data.user);
 }
 

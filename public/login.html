@@ -81,7 +81,16 @@
       // Pass tokens in URL for all environments (staging and production)
       // Tokens are encrypted via HTTPS and cleared immediately on the receiving page
       if (token) {
-        const url = new URL(returnUrl);
+        // Handle relative URLs (like '/') by using window.location.origin as base
+        let url;
+        try {
+          // Try to create URL - if it's absolute, this will work
+          url = new URL(returnUrl);
+        } catch (e) {
+          // If it's a relative URL, use window.location.origin as base
+          url = new URL(returnUrl, window.location.origin);
+        }
+        
         url.searchParams.set('auth_token', token);
         if (user) {
           url.searchParams.set('auth_user', user);
@@ -96,21 +105,58 @@
         return url.toString();
       }
       
-      return returnUrl;
+      // If no token, return the original URL (handle relative URLs)
+      try {
+        return new URL(returnUrl, window.location.origin).toString();
+      } catch (e) {
+        return returnUrl;
+      }
     }
     async function init() {
       try {
         const r = await fetch('/api/config');
+        if (!r.ok) {
+          console.error('❌ Failed to fetch config:', r.status, r.statusText);
+          setMsg('Failed to load configuration. Please refresh the page.', 'error');
+          return;
+        }
         const cfg = await r.json();
-        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return setMsg('Missing Supabase config', 'error');
+        console.log('🔧 Config loaded:', { 
+          hasUrl: !!cfg.supabaseUrl, 
+          hasKey: !!cfg.supabaseAnonKey,
+          urlLength: cfg.supabaseUrl?.length || 0,
+          keyLength: cfg.supabaseAnonKey?.length || 0
+        });
+        
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) {
+          console.error('❌ Missing Supabase config:', cfg);
+          setMsg('Missing Supabase configuration. Please check server settings.', 'error');
+          return;
+        }
+        
         sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-            // Hide splash and show form
-    const splash = document.getElementById('splash');
-    const login = document.getElementById('login');
-    if (splash) splash.classList.remove('active');
-    if (login) login.classList.add('active');
+        console.log('✅ Supabase client initialized');
+        
+        // Test Supabase connection
+        try {
+          const { error: testError } = await sb.auth.getSession();
+          if (testError && testError.message && !testError.message.includes('session')) {
+            console.warn('⚠️ Supabase connection test:', testError.message);
+          } else {
+            console.log('✅ Supabase connection verified');
+          }
+        } catch (testErr) {
+          console.warn('⚠️ Supabase connection test failed:', testErr);
+        }
+        
+        // Hide splash and show form
+        const splash = document.getElementById('splash');
+        const login = document.getElementById('login');
+        if (splash) splash.classList.remove('active');
+        if (login) login.classList.add('active');
       } catch (e) {
-        setMsg('Failed to init auth', 'error');
+        console.error('❌ Init error:', e);
+        setMsg('Failed to init auth: ' + (e.message || 'Unknown error'), 'error');
       }
     }
     function togglePw(){
@@ -143,7 +189,26 @@
       }
     }
     async function profileInit(userId, email){
-      try { await fetch('/api/auth/profile/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({supabase_user_id:userId,email})}); } catch {}
+      try { 
+        const response = await fetch('/api/auth/profile/init',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({supabase_user_id:userId,email})
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to initialize profile' }));
+          console.error('❌ Profile init failed:', errorData);
+          // Use the detailed error message from the server if available
+          const errorMessage = errorData.message || errorData.error || 'Failed to initialize profile';
+          const error = new Error(errorMessage);
+          error.details = errorData;
+          throw error;
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('❌ Profile init error:', error);
+        throw error; // Re-throw so caller can handle it
+      }
     }
     function setPlaceholderToken(user, planningCenterId=null, name=null, avatarUrl=null){
       try {
@@ -395,20 +460,59 @@
       
       try {
         setMsg('Creating account...', 'info');
-        const { data, error } = await sb.auth.signUp({ email, password });
+        
+        // Verify Supabase client is initialized
+        if (!sb) {
+          setMsg('Authentication not initialized. Please refresh the page.', 'error');
+          return;
+        }
+        
+        let signupResult;
+        try {
+          signupResult = await sb.auth.signUp({ email, password });
+        } catch (networkError) {
+          console.error('❌ Network error during signup:', networkError);
+          setMsg('Network error: Unable to connect to authentication service. Please check your internet connection and try again.', 'error');
+          return;
+        }
+        
+        const { data, error } = signupResult || {};
+        
         if (error) {
-          setMsg(error.message,'error');
+          console.error('❌ Supabase signup error:', error);
+          setMsg(error.message || 'Failed to create account', 'error');
+          return;
+        }
+        
+        if (!data || !data.user) {
+          console.error('❌ No user data returned from signup');
+          setMsg('Account creation failed: No user data returned', 'error');
           return;
         }
         
         setMsg('Setting up profile...', 'info');
-        await profileInit(data.user.id, email);
+        try {
+          await profileInit(data.user.id, email);
+        } catch (profileError) {
+          console.error('Profile init error:', profileError);
+          const errorMsg = profileError.message || 'Database error saving new user';
+          // Still allow signup to continue even if profile init fails
+          // The profile can be initialized later when they sign in
+          setMsg(`Account created but profile setup failed: ${errorMsg}. You can sign in to complete setup.`, 'warning');
+        }
+        
+        // Check if email confirmation is required (session will be null)
+        if (!data.session) {
+          setMsg('Account created! Please check your email to confirm your account before signing in.', 'success');
+          // Clear the form
+          document.getElementById('email').value = '';
+          document.getElementById('password').value = '';
+          return;
+        }
         
         // Store Supabase session tokens for cross-app authentication
-        if (data.session) {
-          localStorage.setItem('sb_access_token', data.session.access_token);
-          localStorage.setItem('sb_refresh_token', data.session.refresh_token);
-        }
+        localStorage.setItem('sb_access_token', data.session.access_token);
+        localStorage.setItem('sb_refresh_token', data.session.refresh_token);
         
         setMsg('Account created. Checking Planning Center...', 'success');
         // Seed placeholder token and check profile for existing PC link (e.g., imported users)
