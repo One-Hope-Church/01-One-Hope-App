@@ -845,12 +845,32 @@
 
             <div class="content">
                 <div class="profile-card">
-                    <div class="profile-avatar">
+                    <div class="profile-avatar" id="profile-avatar-container" style="position: relative;">
                         <img id="profile-avatar-img" alt="Avatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;display:none;" />
                         <i class="fas fa-user" id="profile-avatar-fallback"></i>
+                        <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)" />
+                        <button id="edit-avatar-btn" class="edit-avatar-btn" onclick="document.getElementById('avatar-upload-input').click()" style="display: none;">
+                            <i class="fas fa-camera"></i>
+                        </button>
                     </div>
                     <h3 id="profile-name">Your Name</h3>
                     <p id="profile-email">your@email.com</p>
+                    <div id="profile-edit-section" style="display: none; margin-top: 20px;">
+                        <div style="margin-bottom: 16px;">
+                            <label for="profile-first-name" style="display: block; margin-bottom: 8px; color: #6B7280; font-size: 14px; font-weight: 500;">First Name</label>
+                            <input type="text" id="profile-first-name" placeholder="First Name" style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 16px; font-family: inherit;" />
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label for="profile-last-name" style="display: block; margin-bottom: 8px; color: #6B7280; font-size: 14px; font-weight: 500;">Last Name</label>
+                            <input type="text" id="profile-last-name" placeholder="Last Name" style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 16px; font-family: inherit;" />
+                        </div>
+                        <button class="btn-primary" onclick="saveProfileEdits()" style="width: 100%; margin-bottom: 8px;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button class="btn-secondary" onclick="cancelProfileEdits()" style="width: 100%;">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
 
                 <div class="stats-grid">
@@ -868,11 +888,17 @@
                     <button class="btn-primary" id="link-pc-button" onclick="initiatePlanningCenterLink()">
                         <i class="fas fa-link"></i> Link Planning Center Account
                     </button>
+                    <button class="btn-secondary" id="edit-profile-btn" onclick="toggleProfileEdit()" style="display: none;">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
                     <button class="btn-secondary" onclick="openExternalLink('small-group')">
                         <i class="fas fa-users"></i> Find a Small Group
                     </button>
                     <button class="btn-secondary" onclick="openExternalLink('give')">
                         <i class="fas fa-heart"></i> Give
+                    </button>
+                    <button class="btn-secondary" onclick="window.open('https://profile.overflow.co/', '_blank')">
+                        <i class="fas fa-wallet"></i> Manage My Giving
                     </button>
                     <button class="btn-danger" onclick="signOut()">
                         <i class="fas fa-sign-out-alt"></i> Sign Out

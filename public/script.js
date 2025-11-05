@@ -827,6 +827,28 @@ async function loadUserProfileIntoUI(supabaseUserId) {
             if (profileAvatarImg) profileAvatarImg.style.display = 'none';
             if (profileAvatarFallback) profileAvatarFallback.style.display = '';
         }
+        
+        // Update edit button visibility based on Planning Center linking
+        // Check if user has Planning Center linked
+        const hasPlanningCenter = !!(data?.planning_center_id);
+        
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const editAvatarBtn = document.getElementById('edit-avatar-btn');
+        
+        if (hasPlanningCenter) {
+            // Hide edit buttons if Planning Center is linked
+            if (editProfileBtn) editProfileBtn.style.display = 'none';
+            if (editAvatarBtn) editAvatarBtn.style.display = 'none';
+        } else {
+            // Show edit buttons if Planning Center is not linked
+            if (editProfileBtn) editProfileBtn.style.display = 'block';
+            if (editAvatarBtn) editAvatarBtn.style.display = 'block';
+        }
+        
+        // Update Planning Center link button
+        if (typeof updatePlanningCenterLinkButton === 'function') {
+            updatePlanningCenterLinkButton();
+        }
     } catch {}
 }
 
@@ -1129,20 +1151,174 @@ function updateUserInfo() {
 // Update Planning Center link button visibility and text
 function updatePlanningCenterLinkButton() {
     const linkButton = document.getElementById('link-pc-button');
-    if (!linkButton) return;
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const editAvatarBtn = document.getElementById('edit-avatar-btn');
     
     if (currentUser && currentUser.planning_center_id) {
-        // User is already linked
-        linkButton.innerHTML = '<i class="fas fa-check"></i> Planning Center Linked';
-        linkButton.className = 'btn-success';
-        linkButton.disabled = true;
-        linkButton.onclick = null;
+        // User is already linked - hide edit buttons
+        if (linkButton) {
+            linkButton.innerHTML = '<i class="fas fa-check"></i> Planning Center Linked';
+            linkButton.className = 'btn-success';
+            linkButton.disabled = true;
+            linkButton.onclick = null;
+        }
+        if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (editAvatarBtn) editAvatarBtn.style.display = 'none';
     } else {
-        // User is not linked
-        linkButton.innerHTML = '<i class="fas fa-link"></i> Link Planning Center Account';
-        linkButton.className = 'btn-primary';
-        linkButton.disabled = false;
-        linkButton.onclick = initiatePlanningCenterLink;
+        // User is not linked - show edit buttons
+        if (linkButton) {
+            linkButton.innerHTML = '<i class="fas fa-link"></i> Link Planning Center Account';
+            linkButton.className = 'btn-primary';
+            linkButton.disabled = false;
+            linkButton.onclick = initiatePlanningCenterLink;
+        }
+        if (editProfileBtn) editProfileBtn.style.display = 'block';
+        if (editAvatarBtn) editAvatarBtn.style.display = 'block';
+    }
+}
+
+// Toggle profile edit mode
+function toggleProfileEdit() {
+    const editSection = document.getElementById('profile-edit-section');
+    if (!editSection) return;
+    
+    const isEditing = editSection.style.display !== 'none';
+    
+    if (isEditing) {
+        // Cancel editing
+        cancelProfileEdits();
+    } else {
+        // Start editing
+        const currentName = document.getElementById('profile-name')?.textContent || '';
+        const nameParts = currentName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        document.getElementById('profile-first-name').value = firstName;
+        document.getElementById('profile-last-name').value = lastName;
+        editSection.style.display = 'block';
+    }
+}
+
+// Cancel profile edits
+function cancelProfileEdits() {
+    const editSection = document.getElementById('profile-edit-section');
+    if (editSection) editSection.style.display = 'none';
+    const firstNameInput = document.getElementById('profile-first-name');
+    const lastNameInput = document.getElementById('profile-last-name');
+    if (firstNameInput) firstNameInput.value = '';
+    if (lastNameInput) lastNameInput.value = '';
+    uploadedAvatarBase64 = null; // Reset uploaded avatar
+}
+
+// Handle avatar upload
+let uploadedAvatarBase64 = null;
+
+function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please select an image file', 'error');
+        return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image size must be less than 5MB', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        uploadedAvatarBase64 = base64;
+        
+        // Update preview
+        const avatarImg = document.getElementById('profile-avatar-img');
+        const avatarFallback = document.getElementById('profile-avatar-fallback');
+        if (avatarImg) {
+            avatarImg.src = base64;
+            avatarImg.style.display = 'block';
+        }
+        if (avatarFallback) avatarFallback.style.display = 'none';
+        
+        showNotification('Avatar updated. Click "Save Changes" to save.', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Save profile edits
+async function saveProfileEdits() {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in first', 'error');
+        return;
+    }
+    
+    const firstName = document.getElementById('profile-first-name')?.value?.trim() || '';
+    const lastName = document.getElementById('profile-last-name')?.value?.trim() || '';
+    
+    if (!firstName && !lastName) {
+        showNotification('Please enter at least a first name', 'error');
+        return;
+    }
+    
+    const fullName = `${firstName} ${lastName}`.trim();
+    
+    try {
+        showNotification('Saving profile...', 'info');
+        
+        const response = await fetch('/api/user/profile/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('onehope_token')}`
+            },
+            body: JSON.stringify({
+                name: fullName,
+                avatar_url: uploadedAvatarBase64 || null
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to update profile' }));
+            throw new Error(errorData.error || 'Failed to update profile');
+        }
+        
+        const result = await response.json();
+        
+        // Update currentUser
+        if (result.data) {
+            currentUser.name = result.data.name || currentUser.name;
+            currentUser.avatar_url = result.data.avatar_url || currentUser.avatar_url;
+            localStorage.setItem('onehope_user', JSON.stringify(currentUser));
+            
+            // Update token
+            try {
+                const tokenBase64 = localStorage.getItem('onehope_token');
+                if (tokenBase64) {
+                    const tokenPayload = JSON.parse(atob(tokenBase64));
+                    tokenPayload.name = result.data.name || tokenPayload.name;
+                    tokenPayload.avatar_url = result.data.avatar_url || tokenPayload.avatar_url;
+                    localStorage.setItem('onehope_token', btoa(JSON.stringify(tokenPayload)));
+                }
+            } catch (e) {
+                console.warn('Could not update token:', e);
+            }
+        }
+        
+        // Update UI
+        await loadUserProfileIntoUI(currentUser.id);
+        updateUserInfo();
+        cancelProfileEdits();
+        uploadedAvatarBase64 = null; // Reset uploaded avatar
+        
+        showNotification('Profile updated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showNotification(error.message || 'Failed to update profile', 'error');
     }
 }
 
@@ -3964,7 +4140,7 @@ function updateStreakUI() {
         const streakSpan = streakContainer.querySelector('span');
         if (streakSpan) {
             streakSpan.innerHTML = `
-                <button class="btn-primary start-streak-btn" onclick="showAppScreen('bibleScreen')" style="display: block; margin: 0 auto; padding: 8px 16px; font-size: 14px; border-radius: 20px; text-align: center;">
+                <button class="btn-primary start-streak-btn" onclick="showAppScreen('bibleScreen')">
                     Click Here to Start Your Streak of Reading The Bible
                 </button>
             `;

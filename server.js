@@ -259,6 +259,79 @@ app.get('/api/user/profile', async (req, res) => {
     }
 });
 
+// Update user profile (name and avatar)
+app.post('/api/user/profile/update', async (req, res) => {
+    try {
+        // Get user from token
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const token = authHeader.substring(7);
+        let appUser;
+        try {
+            appUser = JSON.parse(Buffer.from(token, 'base64').toString());
+        } catch (error) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+
+        const { name, avatar_url } = req.body || {};
+
+        if (!name && !avatar_url) {
+            return res.status(400).json({ error: 'At least name or avatar_url must be provided' });
+        }
+
+        // Get Supabase user ID
+        const supabaseUserId = appUser.supabase_id || appUser.id;
+        if (!supabaseUserId) {
+            return res.status(401).json({ error: 'User ID not found' });
+        }
+
+        // Check if user has Planning Center linked - if so, don't allow manual updates
+        let existingUser = null;
+        try {
+            existingUser = await db.getUserById(supabaseUserId);
+        } catch {}
+
+        if (existingUser && existingUser.planning_center_id) {
+            return res.status(403).json({ 
+                error: 'Cannot update profile manually. Profile is linked to Planning Center.',
+                linked: true 
+            });
+        }
+
+        // Update user profile
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (avatar_url) {
+            // If avatar_url is a base64 data URL, we can store it directly
+            // For production, you might want to upload to Supabase Storage instead
+            updateData.avatar_url = avatar_url;
+        }
+
+        const updatedUser = await db.upsertUserWithAuthId(supabaseUserId, {
+            id: null,
+            email: existingUser?.planning_center_email || appUser.email || null,
+            name: updateData.name || existingUser?.name || null,
+            avatar_url: updateData.avatar_url || existingUser?.avatar_url || null,
+            phone: existingUser?.phone || null
+        });
+
+        res.json({
+            success: true,
+            data: {
+                id: updatedUser.id,
+                name: updatedUser.name || null,
+                avatar_url: updatedUser.avatar_url || null
+            }
+        });
+    } catch (error) {
+        console.error('❌ /api/user/profile/update error:', error);
+        res.status(500).json({ error: 'Failed to update user profile' });
+    }
+});
+
 // Public config endpoint for frontend to initialize Supabase client
 app.get('/api/config', (req, res) => {
     res.json({
