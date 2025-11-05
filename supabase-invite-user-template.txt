@@ -1,0 +1,31 @@
+You're Invited to One Hope Church! 🎉
+
+You've been invited to join the One Hope Church community! We're excited to have you with us.
+
+Click the link below to accept your invitation and create your account. You'll be able to:
+
+📖 Read the Bible Daily
+   Track your reading progress and build a daily habit
+
+📝 Take Notes on Messages
+   Save your thoughts and insights from our messages
+
+🎯 Track Your Next Steps
+   Discover and complete your spiritual growth journey
+
+Accept your invitation:
+{{ .ConfirmationURL }}&redirect_to=https://steps.onehopechurch.com/set-password
+
+⏰ This invitation will expire in 24 hours.
+
+If you didn't request this invitation, you can safely ignore this email.
+
+---
+
+One Hope Church
+We exist to help those who are far from God find a life-giving relationship with Jesus.
+
+This is an automated email. Please do not reply directly to this message.
+If you have questions, contact us at info@onehopechurch.com
+
+© 2024 One Hope Church. All rights reserved.

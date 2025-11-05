@@ -1,0 +1,25 @@
+Sign In to Your One Hope Church Account 🔐
+
+You've requested a magic link to sign in to your One Hope Church account. Click the link below to securely access your account—no password needed!
+
+This link will sign you in automatically and take you to your dashboard.
+
+🔒 Secure Sign-In
+This magic link is unique to you and can only be used once. It will expire in 1 hour for your security.
+
+Sign in to your account:
+{{ .ConfirmationURL }}
+
+⏰ This link will expire in 1 hour.
+
+If you didn't request this sign-in link, you can safely ignore this email. Your account remains secure.
+
+---
+
+One Hope Church
+We exist to help those who are far from God find a life-giving relationship with Jesus.
+
+This is an automated email. Please do not reply directly to this message.
+If you have questions, contact us at info@onehopechurch.com
+
+© 2024 One Hope Church. All rights reserved.

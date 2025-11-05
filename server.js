@@ -83,6 +83,11 @@ app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
+// Set password page for email invites
+app.get('/set-password', (req, res) => {
+    res.sendFile(__dirname + '/public/set-password.html');
+});
+
 // Debug route for CSS
 app.get('/styles.css', (req, res) => {
     console.log('🎨 CSS file requested!');
