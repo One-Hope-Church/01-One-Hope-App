@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (error) {
         console.log('Auth error:', error);
         showNotification('Authentication failed. Please try again.', 'error');
-        setTimeout(() => showScreen('loginScreen'), 3000);
+        showScreen('loginScreen');
     } else if (code) {
         console.log('Found OAuth code, handling callback');
         // Handle Planning Center OAuth callback
@@ -209,24 +209,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 showScreen('loginScreen');
             }
         } else {
-            console.log('No stored token, setting up normal flow');
-        // Auto-navigate from splash screen after 3 seconds
-        setTimeout(() => {
-            console.log('Timeout reached, navigating to:', currentUser ? 'mainApp' : 'loginScreen');
-            if (currentUser) {
-                showScreen('mainApp');
-                // Check for route in URL hash after showing main app
-                const route = getRouteFromHash();
-                if (route && navigateToRoute(route)) {
-                    // Route navigation handled
-                } else {
-                    // Default to home if no route specified
-                    showAppScreen('homeScreen');
-                }
-            } else {
-                showScreen('loginScreen');
+            console.log('No stored token, redirecting to login page');
+            // Redirect to login page immediately (no splash screen delay)
+            // Early redirect script in HTML should handle this, but ensure it happens
+            if (typeof window !== 'undefined' && !localStorage.getItem('onehope_token')) {
+                const hash = window.location.hash;
+                const returnUrl = window.location.pathname + (hash || '');
+                window.location.replace('/login?return=' + encodeURIComponent(returnUrl));
             }
-        }, 3000);
         }
     }
 
