@@ -41,6 +41,33 @@
     <!-- Early redirect if not authenticated -->
     <script>
       try {
+        // First check if we have tokens in URL (from production site redirect)
+        var urlParams = new URLSearchParams(window.location.search);
+        var authToken = urlParams.get('auth_token');
+        var authUser = urlParams.get('auth_user');
+        var sbAccessToken = urlParams.get('sb_access_token');
+        var sbRefreshToken = urlParams.get('sb_refresh_token');
+        
+        // If tokens are in URL, store them in localStorage
+        if (authToken) {
+          localStorage.setItem('onehope_token', authToken);
+          if (authUser) {
+            localStorage.setItem('onehope_user', authUser);
+          }
+          if (sbAccessToken) {
+            localStorage.setItem('sb_access_token', sbAccessToken);
+          }
+          if (sbRefreshToken) {
+            localStorage.setItem('sb_refresh_token', sbRefreshToken);
+          }
+          
+          // Clean up URL (remove tokens from URL for security)
+          var hash = window.location.hash;
+          var cleanPath = window.location.pathname + (hash || '');
+          window.history.replaceState({}, '', cleanPath);
+        }
+        
+        // Now check if we have tokens in localStorage (either from URL or previously stored)
         var hasToken = !!localStorage.getItem('onehope_token');
         if (!hasToken) { 
           // Preserve hash when redirecting to login

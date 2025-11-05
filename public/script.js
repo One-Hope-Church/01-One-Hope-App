@@ -96,11 +96,38 @@ document.addEventListener('DOMContentLoaded', function() {
     const auth = urlParams.get('auth');
     const error = urlParams.get('error');
     const token = urlParams.get('token');
+    const authToken = urlParams.get('auth_token'); // From production site redirect
+    const authUser = urlParams.get('auth_user');
+    const sbAccessToken = urlParams.get('sb_access_token');
+    const sbRefreshToken = urlParams.get('sb_refresh_token');
     
-    console.log('URL params:', { code, auth, error, token, currentUser });
+    console.log('URL params:', { code, auth, error, token, authToken, currentUser });
     
+    // Check for tokens from production site redirect (auth_token in URL)
+    if (authToken) {
+        console.log('🔍 Found auth tokens from production site redirect');
+        // Store tokens in localStorage
+        localStorage.setItem('onehope_token', authToken);
+        if (authUser) {
+            localStorage.setItem('onehope_user', authUser);
+        }
+        if (sbAccessToken) {
+            localStorage.setItem('sb_access_token', sbAccessToken);
+        }
+        if (sbRefreshToken) {
+            localStorage.setItem('sb_refresh_token', sbRefreshToken);
+        }
+        
+        // Clean up URL (remove tokens from URL for security)
+        const hash = window.location.hash;
+        const cleanPath = window.location.pathname + (hash || '');
+        window.history.replaceState({}, '', cleanPath);
+        
+        // Process the token and log in
+        processAuthToken(authToken);
+    }
     // Check for auth success/error
-    if (auth === 'success' && token) {
+    else if (auth === 'success' && token) {
         console.log('Auth successful with token, processing authentication');
         processAuthToken(token);
     } else if (auth === 'success') {
@@ -231,6 +258,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup hash-based routing
     console.log('Setting up hash-based routing');
     window.addEventListener('hashchange', handleHashChange);
+    
+    // Setup logout listener for cross-app logout synchronization
+    setupLogoutListener();
     
     // Initialize homepage next step (will be called after user data loads)
     console.log('Initializing homepage next step');
@@ -2223,7 +2253,34 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-function signOut() {
+async function signOut() {
+    // Sign out from Supabase first (this invalidates the session server-side)
+    // This allows the other app to detect the logout via session check
+    if (!supabaseClient) {
+        await initSupabaseClient();
+    }
+    
+    if (supabaseClient) {
+        const sbAccessToken = localStorage.getItem('sb_access_token');
+        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
+        
+        if (sbAccessToken && sbRefreshToken) {
+            try {
+                // Set session first so we can sign out
+                await supabaseClient.auth.setSession({
+                    access_token: sbAccessToken,
+                    refresh_token: sbRefreshToken
+                });
+                
+                // Sign out from Supabase (invalidates session)
+                await supabaseClient.auth.signOut();
+            } catch (error) {
+                console.warn('Error signing out from Supabase:', error);
+                // Continue with logout even if Supabase sign out fails
+            }
+        }
+    }
+    
     // Call the sign-out API endpoint
     fetch(`${API_BASE}/api/signout`, {
         method: 'GET',
@@ -2236,9 +2293,38 @@ function signOut() {
         // Clear local storage
         localStorage.removeItem('onehope_token');
         localStorage.removeItem('onehope_user');
+        localStorage.removeItem('sb_access_token');
+        localStorage.removeItem('sb_refresh_token');
         localStorage.removeItem('userProgress');
         localStorage.removeItem('bibleCache');
         localStorage.removeItem('dailyReadings');
+        
+        // Set logout flag in sessionStorage (for cross-tab detection)
+        try {
+            sessionStorage.setItem('onehope_logout', Date.now().toString());
+        } catch (error) {
+            console.warn('Could not set logout flag:', error);
+        }
+        
+        // Broadcast logout event to other tabs/windows (same origin)
+        window.dispatchEvent(new CustomEvent('onehope-logout'));
+        
+        // Broadcast logout to One Hope Production site (cross-origin)
+        try {
+            const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const productionUrl = isLocalDev 
+                ? 'http://localhost:3000'
+                : 'https://onehopechurch.com';
+            
+            // Send postMessage to notify production site
+            window.postMessage({
+                type: 'ONEHOPE_LOGOUT',
+                source: 'one-hope-app',
+                timestamp: Date.now()
+            }, '*');
+        } catch (error) {
+            console.warn('Could not broadcast logout:', error);
+        }
         
         // Reset app state
         currentUser = null;
@@ -2258,6 +2344,101 @@ function signOut() {
         // Even if API call fails, clear local data and go to login
         localStorage.removeItem('onehope_token');
         localStorage.removeItem('onehope_user');
+        localStorage.removeItem('sb_access_token');
+        localStorage.removeItem('sb_refresh_token');
+        localStorage.removeItem('userProgress');
+        localStorage.removeItem('bibleCache');
+        localStorage.removeItem('dailyReadings');
+        
+        // Set logout flag
+        try {
+            sessionStorage.setItem('onehope_logout', Date.now().toString());
+        } catch (error) {
+            console.warn('Could not set logout flag:', error);
+        }
+        
+        // Broadcast logout event
+        window.dispatchEvent(new CustomEvent('onehope-logout'));
+        
+        try {
+            const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const productionUrl = isLocalDev 
+                ? 'http://localhost:3000'
+                : 'https://onehopechurch.com';
+            
+            window.postMessage({
+                type: 'ONEHOPE_LOGOUT',
+                source: 'one-hope-app',
+                timestamp: Date.now()
+            }, '*');
+        } catch (error) {
+            console.warn('Could not broadcast logout:', error);
+        }
+        
+        currentUser = null;
+        userProgress = {};
+        currentBibleData = null;
+        dailyReadings = null;
+        
+        window.location.replace('/login');
+    });
+}
+
+// Setup logout listener for cross-app logout synchronization
+function setupLogoutListener() {
+    // Listen for postMessage from One Hope Production site
+    // Only accept messages from trusted origins
+    window.addEventListener('message', (event) => {
+        // Check if message is a logout event
+        if (event.data && event.data.type === 'ONEHOPE_LOGOUT' && event.data.source === 'onehope-production') {
+            // Verify it's from One Hope Production (strict origin check)
+            const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const allowedOrigins = isLocalDev
+                ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+                : ['https://onehopechurch.com'];
+            
+            // Strict origin verification - only accept from exact allowed origins
+            const originMatch = allowedOrigins.some(origin => {
+                try {
+                    const originUrl = new URL(origin);
+                    const eventOriginUrl = new URL(event.origin);
+                    return originUrl.hostname === eventOriginUrl.hostname && 
+                           originUrl.port === eventOriginUrl.port &&
+                           originUrl.protocol === eventOriginUrl.protocol;
+                } catch (e) {
+                    return false;
+                }
+            });
+            
+            // Only process if origin matches and we currently have a token (are logged in)
+            if (originMatch && localStorage.getItem('onehope_token')) {
+                // Clear localStorage
+                localStorage.removeItem('onehope_token');
+                localStorage.removeItem('onehope_user');
+                localStorage.removeItem('sb_access_token');
+                localStorage.removeItem('sb_refresh_token');
+                localStorage.removeItem('userProgress');
+                localStorage.removeItem('bibleCache');
+                localStorage.removeItem('dailyReadings');
+                
+                // Reset app state
+                currentUser = null;
+                userProgress = {};
+                currentBibleData = null;
+                dailyReadings = null;
+                
+                // Redirect to login
+                window.location.replace('/login');
+            }
+        }
+    });
+    
+    // Listen for logout events from same origin (other tabs)
+    window.addEventListener('onehope-logout', () => {
+        localStorage.removeItem('onehope_token');
+        localStorage.removeItem('onehope_user');
+        localStorage.removeItem('sb_access_token');
+        localStorage.removeItem('sb_refresh_token');
         localStorage.removeItem('userProgress');
         localStorage.removeItem('bibleCache');
         localStorage.removeItem('dailyReadings');
@@ -2269,6 +2450,92 @@ function signOut() {
         
         window.location.replace('/login');
     });
+    
+    // Listen for storage changes (same origin, other tabs)
+    // Only trigger if token was explicitly removed (not just changed)
+    window.addEventListener('storage', (event) => {
+        // Only act if token was removed (had a value before, now null)
+        if (event.key === 'onehope_token' && event.oldValue && !event.newValue) {
+            // Token was removed in another tab - this is a logout
+            localStorage.removeItem('onehope_token');
+            localStorage.removeItem('onehope_user');
+            localStorage.removeItem('sb_access_token');
+            localStorage.removeItem('sb_refresh_token');
+            localStorage.removeItem('userProgress');
+            localStorage.removeItem('bibleCache');
+            localStorage.removeItem('dailyReadings');
+            
+            currentUser = null;
+            userProgress = {};
+            currentBibleData = null;
+            dailyReadings = null;
+            
+            window.location.replace('/login');
+        }
+        
+        // Check for logout flag in sessionStorage (only if it's being set, not removed)
+        if (event.key === 'onehope_logout' && event.newValue) {
+            // Logout was triggered in another tab
+            sessionStorage.removeItem('onehope_logout');
+            localStorage.removeItem('onehope_token');
+            localStorage.removeItem('onehope_user');
+            localStorage.removeItem('sb_access_token');
+            localStorage.removeItem('sb_refresh_token');
+            localStorage.removeItem('userProgress');
+            localStorage.removeItem('bibleCache');
+            localStorage.removeItem('dailyReadings');
+            
+            currentUser = null;
+            userProgress = {};
+            currentBibleData = null;
+            dailyReadings = null;
+            
+            window.location.replace('/login');
+        }
+    });
+    
+    // Check periodically for logout flag (cross-tab detection)
+    // Only check if we currently have a token (to avoid false positives during login)
+    // Disabled Supabase session check for now - it was causing false positives
+    // Cross-app logout will be detected via postMessage or when user tries to use authenticated features
+    let logoutCheckInterval = setInterval(() => {
+        try {
+            const currentToken = localStorage.getItem('onehope_token');
+            // Only check for logout flag if we have a token (are logged in)
+            if (currentToken) {
+                // Check for logout flag in sessionStorage (same-origin tabs)
+                const logoutFlag = sessionStorage.getItem('onehope_logout');
+                if (logoutFlag) {
+                    // Logout was triggered in another tab
+                    sessionStorage.removeItem('onehope_logout');
+                    localStorage.removeItem('onehope_token');
+                    localStorage.removeItem('onehope_user');
+                    localStorage.removeItem('sb_access_token');
+                    localStorage.removeItem('sb_refresh_token');
+                    localStorage.removeItem('userProgress');
+                    localStorage.removeItem('bibleCache');
+                    localStorage.removeItem('dailyReadings');
+                    
+                    currentUser = null;
+                    userProgress = {};
+                    currentBibleData = null;
+                    dailyReadings = null;
+                    
+                    clearInterval(logoutCheckInterval);
+                    window.location.replace('/login');
+                    return;
+                }
+                
+                // Note: Supabase session check disabled to prevent false positives
+                // Cross-app logout detection will happen via:
+                // 1. postMessage events (if apps are in iframes or same browsing context)
+                // 2. Storage events (for same-origin tabs)
+                // 3. User action (when trying to use authenticated features)
+            }
+        } catch (error) {
+            // Silent error - sessionStorage might not be available
+        }
+    }, 10000); // Check every 10 seconds (less aggressive, only for same-origin logout flags)
 }
 
 // Add CSS animations for notifications
