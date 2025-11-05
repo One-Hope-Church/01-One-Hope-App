@@ -886,8 +886,9 @@ app.get('/api/user/streak', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Get user's streak data
-        const streakData = await db.getUserStreak(supabaseUser.id);
+        // Get and update user's streak data (check if streak needs to be reset)
+        // This recalculates the streak every time the user visits/checks their streak
+        const streakData = await db.updateUserStreak(supabaseUser.id, false);
         
         res.json({ success: true, data: streakData });
     } catch (error) {

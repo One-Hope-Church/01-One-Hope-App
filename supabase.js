@@ -325,12 +325,31 @@ const db = {
                 lastReadingDate = today;
             } else {
                 // User didn't complete today's reading
-                if (currentProgress.last_reading_date === yesterdayDate) {
-                    // They read yesterday but not today, reset streak
+                // Check if last reading was more than 1 day ago
+                if (!lastReadingDate) {
+                    // Never read before, streak is 0
                     newStreak = 0;
                 } else {
-                    // Keep current streak
-                    newStreak = currentProgress.current_streak || 0;
+                    // Parse dates properly (they're in YYYY-MM-DD format)
+                    const lastReading = new Date(lastReadingDate + 'T00:00:00');
+                    const todayDate = new Date(today + 'T00:00:00');
+                    
+                    // Calculate days difference (handles timezone correctly)
+                    const daysSinceLastReading = Math.floor((todayDate - lastReading) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysSinceLastReading > 1) {
+                        // More than 1 day since last reading (2+ days ago), reset streak to 0
+                        newStreak = 0;
+                    } else if (lastReadingDate === yesterdayDate) {
+                        // They read yesterday but not today - streak is still active, keep it
+                        newStreak = currentProgress.current_streak || 0;
+                    } else if (lastReadingDate === today) {
+                        // They read today but haven't completed it yet, keep current streak
+                        newStreak = currentProgress.current_streak || 0;
+                    } else {
+                        // Last reading was less than 1 day ago, keep current streak
+                        newStreak = currentProgress.current_streak || 0;
+                    }
                 }
             }
 

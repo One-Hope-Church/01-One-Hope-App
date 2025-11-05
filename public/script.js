@@ -1691,14 +1691,30 @@ function updateDailyCompletion() {
     // Update home page
     if (progressFillHome) progressFillHome.style.width = `${percentage}%`;
     if (completionTextHome) completionTextHome.textContent = `${completedCount} of ${totalSections} sections completed`;
-    if (markAllBtnHome) markAllBtnHome.disabled = completedCount < totalSections;
+    // Button should be enabled when there are incomplete sections, disabled only when all complete
+    if (markAllBtnHome) {
+        markAllBtnHome.disabled = completedCount >= totalSections;
+        // Restore button styling if re-enabled
+        if (completedCount < totalSections) {
+            markAllBtnHome.classList.remove('btn-secondary');
+            markAllBtnHome.classList.add('btn-primary');
+            markAllBtnHome.innerHTML = '<i class="fas fa-check-double"></i> Mark All Complete';
+        }
+    }
     
     // Update Bible page
     if (progressFillBible) progressFillBible.style.width = `${percentage}%`;
     if (completionTextBible) completionTextBible.textContent = `${completedCount} of ${totalSections} sections completed`;
+    // Button should be enabled when there are incomplete sections, disabled only when all complete
     if (markAllBtnBible) {
-        markAllBtnBible.disabled = completedCount < totalSections;
-        console.log(`Mark All Button - Completed: ${completedCount}, Total: ${totalSections}, Disabled: ${completedCount < totalSections}`);
+        markAllBtnBible.disabled = completedCount >= totalSections;
+        // Restore button styling if re-enabled
+        if (completedCount < totalSections) {
+            markAllBtnBible.classList.remove('btn-secondary');
+            markAllBtnBible.classList.add('btn-primary');
+            markAllBtnBible.innerHTML = '<i class="fas fa-check-double"></i> Mark All Complete';
+        }
+        console.log(`Mark All Button - Completed: ${completedCount}, Total: ${totalSections}, Disabled: ${completedCount >= totalSections}`);
     }
     
     // Update steps completed count in profile
@@ -1707,66 +1723,103 @@ function updateDailyCompletion() {
 
 async function markAllComplete() {
     console.log('markAllComplete function called');
-    const today = getChicagoDate();
     
-    // Check if already completed today
-    if (userProgress.bibleReadings.includes(today)) {
-        showNotification('Already completed today!', 'info');
-        return;
+    // Map section names for marking
+    const sectionMap = {
+        'devotional': 'devotional',
+        'old-testament': 'oldTestament',
+        'new-testament': 'newTestament',
+        'psalms': 'psalms',
+        'proverbs': 'proverbs'
+    };
+    
+    // Mark each section individually (will skip already completed ones)
+    const sections = ['devotional', 'old-testament', 'new-testament', 'psalms', 'proverbs'];
+    let newlyCompleted = 0;
+    
+    for (const section of sections) {
+        const mappedSection = sectionMap[section];
+        
+        // Only mark if not already completed
+        if (!dailyReadings[mappedSection]) {
+            // Mark as complete in local state first
+            dailyReadings[mappedSection] = true;
+            
+            // Update UI immediately for this section
+            const homeButton = document.getElementById(`${section}-btn`);
+            const statusElement = document.getElementById(`${section}-status`);
+            
+            if (homeButton) {
+                homeButton.innerHTML = '<i class="fas fa-check"></i> Completed';
+                homeButton.classList.remove('saving');
+                homeButton.classList.add('completed');
+                homeButton.disabled = true;
+            }
+            
+            if (statusElement) {
+                statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                statusElement.classList.remove('saving');
+                statusElement.classList.add('completed');
+            }
+            
+            // Update section styling
+            const homeSection = homeButton ? homeButton.closest('.reading-section') : null;
+            const bibleSection = statusElement ? statusElement.closest('.reading-section') : null;
+            
+            [homeSection, bibleSection].forEach(sec => {
+                if (sec) {
+                    sec.classList.add('completed');
+                }
+            });
+            
+            newlyCompleted++;
+        }
     }
     
-    // Mark all daily readings as complete
-    Object.keys(dailyReadings).forEach(section => {
-        dailyReadings[section] = true;
-    });
+    // Save all reading statuses to database
+    const currentDate = getChicagoDate();
+    await saveDailyReadingStatus(currentDate);
     
-    // Save reading status to database
-    const completionDate = getChicagoDate();
-    await saveDailyReadingStatus(completionDate);
+    // Check if all sections are now complete
+    const allComplete = Object.values(dailyReadings).every(completed => completed);
     
-    // Complete daily reading in streak tracking
-    await completeDailyReading();
-    
-    // Add to completed readings
-    userProgress.bibleReadings.push(today);
-    userProgress.streak += 1;
+    // Only complete daily reading in streak tracking if all sections are now complete
+    // and we haven't already completed today
+    if (allComplete && !userProgress.bibleReadings.includes(currentDate)) {
+        await completeDailyReading();
+        userProgress.bibleReadings.push(currentDate);
+        userProgress.streak += 1;
+    }
     
     // Update UI
     updateProgressUI();
     updateDailyCompletion();
     
     // Show success message
-    showNotification('Excellent! Daily reading complete!', 'success');
-    
-    // Update mark all buttons on both pages
-    const markAllBtnHome = document.getElementById('mark-all-btn');
-    const markAllBtnBible = document.getElementById('mark-all-btn-bible');
-    
-    [markAllBtnHome, markAllBtnBible].forEach(btn => {
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
-            btn.disabled = true;
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-secondary');
+    if (newlyCompleted > 0) {
+        if (allComplete) {
+            showNotification('Excellent! Daily reading complete!', 'success');
+        } else {
+            showNotification(`${newlyCompleted} section(s) marked as complete!`, 'success');
         }
-    });
+    } else {
+        showNotification('All sections already completed!', 'info');
+    }
     
-    // Update all individual section status indicators
-    const sections = ['devotional', 'old-testament', 'new-testament', 'psalms', 'proverbs'];
-    sections.forEach(section => {
-        // Update status indicators on Bible page
-        const statusElement = document.getElementById(`${section}-status`);
-        if (statusElement) {
-            statusElement.innerHTML = '<i class="fas fa-check"></i>';
-            statusElement.classList.add('completed');
-        }
+    // Update mark all buttons on both pages if all complete
+    if (allComplete) {
+        const markAllBtnHome = document.getElementById('mark-all-btn');
+        const markAllBtnBible = document.getElementById('mark-all-btn-bible');
         
-        // Update section styling
-        const sectionElement = statusElement ? statusElement.closest('.reading-section') : null;
-        if (sectionElement) {
-            sectionElement.classList.add('completed');
-        }
-    });
+        [markAllBtnHome, markAllBtnBible].forEach(btn => {
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-check-double"></i> All Complete!';
+                btn.disabled = true;
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            }
+        });
+    }
 }
 
 // Legacy function for backward compatibility
