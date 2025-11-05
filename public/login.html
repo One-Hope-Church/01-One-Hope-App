@@ -68,18 +68,19 @@
       return urlParams.get('return') || '/';
     }
     
-    // Build redirect URL with auth token (for cross-origin localhost testing)
+    // Build redirect URL with auth token
+    // Uses URL parameters for all environments (staging and production)
+    // Security: Tokens are encrypted in transit via HTTPS and cleared immediately from URL
+    // Note: For maximum security in production, consider implementing a server-side token exchange
     function buildRedirectUrl(returnUrl) {
       const token = localStorage.getItem('onehope_token');
       const user = localStorage.getItem('onehope_user');
       const sbAccessToken = localStorage.getItem('sb_access_token');
       const sbRefreshToken = localStorage.getItem('sb_refresh_token');
       
-      // Only pass token in URL for localhost (local testing)
-      // This allows cross-origin localStorage sharing for local dev
-      const isLocalhost = returnUrl.includes('localhost') || returnUrl.includes('127.0.0.1');
-      
-      if (isLocalhost && token) {
+      // Pass tokens in URL for all environments (staging and production)
+      // Tokens are encrypted via HTTPS and cleared immediately on the receiving page
+      if (token) {
         const url = new URL(returnUrl);
         url.searchParams.set('auth_token', token);
         if (user) {
