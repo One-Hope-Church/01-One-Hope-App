@@ -18,6 +18,18 @@ let assessmentState = {
 // API Configuration
 const API_BASE = window.location.origin;
 
+function getRememberPreference() {
+    if (typeof window === 'undefined') return true;
+    try {
+        const stored = localStorage.getItem('remember_me_preference');
+        if (stored === 'false') return false;
+        if (stored === 'true') return true;
+    } catch (error) {
+        console.warn('⚠️ Unable to read remember preference:', error);
+    }
+    return true;
+}
+
 // Streak tracking variables
 let userStreak = 0;
 let totalReadings = 0;
@@ -642,15 +654,18 @@ async function afterSupabaseAuth(user) {
 
 function setAppAuthToken(profile) {
     try {
+        const rememberPreference = getRememberPreference();
         const tokenPayload = {
             planning_center_id: profile.planning_center_id,
             name: profile.name || null,
             email: profile.email || null,
             avatar_url: profile.avatar_url || null,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            remember_me: rememberPreference
         };
         const token = btoa(JSON.stringify(tokenPayload));
         localStorage.setItem('onehope_token', token);
+        localStorage.setItem('remember_me_preference', rememberPreference ? 'true' : 'false');
     } catch {}
 }
 
@@ -3106,6 +3121,14 @@ function openExternalLink(type) {
     let message = '';
     
     switch(type) {
+        case 'salvation':
+            url = 'https://onehopechurch.com';
+            message = 'Opening One Hope Church overview...';
+            break;
+        case 'baptism-info':
+            url = 'https://onehopechurch.com/connect/baptism';
+            message = 'Opening Baptism information...';
+            break;
         case 'small-group':
             url = 'https://onehopechurch.com/connect/directory';
             message = 'Opening Small Groups page...';
@@ -3113,6 +3136,10 @@ function openExternalLink(type) {
         case 'give':
             url = 'https://donate.overflow.co/onehopechurch';
             message = 'Opening Give page...';
+            break;
+        case 'give-info':
+            url = 'https://onehopechurch.com/give';
+            message = 'Opening Giving information...';
             break;
         case 'watch-message':
             url = 'https://onehopechurch.com/media';
@@ -3125,6 +3152,14 @@ function openExternalLink(type) {
         case 'connect':
             url = 'https://onehopechurch.com/connect';
             message = 'Opening Connect page...';
+            break;
+        case 'visit':
+            url = 'https://onehopechurch.com/visit';
+            message = 'Opening Visit page...';
+            break;
+        case 'prayer':
+            url = 'https://onehopechurch.com/prayer';
+            message = 'Opening Prayer resources...';
             break;
         case 'give-go':
             url = 'https://onehopechurch.com/give-go';
