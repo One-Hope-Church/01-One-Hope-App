@@ -2085,13 +2085,10 @@ function updateStepItemsVisualState() {
             }
             
             if (actionsContainer) {
-                let statusDiv = actionsContainer.querySelector('.step-status');
-                if (!statusDiv) {
-                    statusDiv = document.createElement('div');
-                    statusDiv.className = 'step-status';
-                    actionsContainer.appendChild(statusDiv);
+                const statusDiv = actionsContainer.querySelector('.step-status');
+                if (statusDiv) {
+                    statusDiv.remove();
                 }
-                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
             }
         } else {
             if (completeButton) {
@@ -2106,9 +2103,11 @@ function updateStepItemsVisualState() {
                 stepItem.classList.add('active');
             }
             
-            const statusDiv = actionsContainer ? actionsContainer.querySelector('.step-status') : null;
-            if (statusDiv) {
-                statusDiv.remove();
+            if (actionsContainer) {
+                const statusDiv = actionsContainer.querySelector('.step-status');
+                if (statusDiv) {
+                    statusDiv.remove();
+                }
             }
         }
     });
