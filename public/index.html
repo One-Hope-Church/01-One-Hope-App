@@ -655,7 +655,7 @@
                         Start
                     </h3>
                     <div class="steps-list">
-                        <div class="step-item completed">
+                        <div class="step-item completed" data-step-id="faith">
                             <div class="step-icon">
                                 <i class="fas fa-heart"></i>
                             </div>
@@ -663,7 +663,7 @@
                                 <h4>1. Make Jesus Lord of Your Life</h4>
                                 <p>Accept Jesus Christ as your Lord and Savior.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('salvation')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('salvation')">
                                         Learn more
                                     </button>
                                     <div class="step-status">
@@ -674,7 +674,7 @@
                             </div>
                         </div>
 
-                        <div class="step-item active">
+                        <div class="step-item active" data-step-id="baptism">
                             <div class="step-icon">
                                 <i class="fas fa-water"></i>
                             </div>
@@ -682,17 +682,17 @@
                                 <h4>2. Get Water Baptized</h4>
                                 <p>Publicly declare your faith through baptism.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('baptism-info')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('baptism-info')">
                                         Learn more
                                     </button>
-                                    <button class="btn-primary" onclick="completeStep('baptism')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('baptism', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="attendance">
                             <div class="step-icon">
                                 <i class="fas fa-church"></i>
                             </div>
@@ -700,17 +700,17 @@
                                 <h4>3. Attend Sunday Services Regularly</h4>
                                 <p>Join us weekly for worship and teaching.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('visit')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('visit')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('attendance')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('attendance', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="bible-prayer">
                             <div class="step-icon">
                                 <i class="fas fa-book-open"></i>
                             </div>
@@ -718,11 +718,11 @@
                                 <h4>4. Start Daily Bible Reading & Prayer</h4>
                                 <p>Develop a daily spiritual discipline.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('prayer')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('prayer')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('bible-prayer')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('bible-prayer', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
@@ -737,7 +737,7 @@
                         Grow
                     </h3>
                     <div class="steps-list">
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="giving">
                             <div class="step-icon">
                                 <i class="fas fa-heart"></i>
                             </div>
@@ -745,17 +745,17 @@
                                 <h4>5. Give Consistently and Generously</h4>
                                 <p>Support the ministry through regular giving.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('give-info')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('give-info')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('giving')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('giving', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="small-group">
                             <div class="step-icon">
                                 <i class="fas fa-users"></i>
                             </div>
@@ -763,17 +763,17 @@
                                 <h4>6. Join a Small Group</h4>
                                 <p>Connect with other believers in community.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('connect')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('connect')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('small-group')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('small-group', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="serve-team">
                             <div class="step-icon">
                                 <i class="fas fa-hands-helping"></i>
                             </div>
@@ -781,11 +781,11 @@
                                 <h4>7. Serve on the Serve Team</h4>
                                 <p>Use your gifts to serve others.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('connect')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('connect')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('serve-team')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('serve-team', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
@@ -800,7 +800,7 @@
                         Lead & Multiply
                     </h3>
                     <div class="steps-list">
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="invite-pray">
                             <div class="step-icon">
                                 <i class="fas fa-pray"></i>
                             </div>
@@ -808,17 +808,17 @@
                                 <h4>8. Invite & Pray for People Far from God</h4>
                                 <p>Reach out to those who need Jesus.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('visit')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('visit')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('invite-pray')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('invite-pray', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="share-story">
                             <div class="step-icon">
                                 <i class="fas fa-comment"></i>
                             </div>
@@ -826,17 +826,17 @@
                                 <h4>9. Share Your Story</h4>
                                 <p>Tell others about what God has done in your life.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('connect')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('connect')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('share-story')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('share-story', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="lead-group">
                             <div class="step-icon">
                                 <i class="fas fa-crown"></i>
                             </div>
@@ -844,17 +844,17 @@
                                 <h4>10. Lead a Small Group or Serve Team Area</h4>
                                 <p>Take on leadership responsibilities.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('connect')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('connect')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('lead-group')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('lead-group', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="step-item">
+                        <div class="step-item" data-step-id="live-mission">
                             <div class="step-icon">
                                 <i class="fas fa-compass"></i>
                             </div>
@@ -862,11 +862,11 @@
                                 <h4>11. Live on Mission Daily</h4>
                                 <p>Make a difference in your daily life.</p>
                                 <div class="step-actions">
-                                    <button class="btn-link" onclick="openExternalLink('connect')">
+                                    <button class="btn-secondary btn-link" data-action="learn" onclick="openExternalLink('connect')">
                                         Learn more
                                     </button>
-                                    <button class="btn-secondary" onclick="completeStep('live-mission')">
-                                        Mark as Completed
+                                    <button class="btn-primary" data-action="complete" onclick="completeStep('live-mission', this)">
+                                        Mark as completed
                                     </button>
                                 </div>
                             </div>

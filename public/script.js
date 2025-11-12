@@ -2048,66 +2048,67 @@ function updateStepItemsVisualState() {
         'serve-team',
         'invite-pray',
         'share-story',
-        'leadership',
-        'mission-living'
+        'lead-group',
+        'live-mission'
     ];
     
-    // Get all step items
-    const stepItems = document.querySelectorAll('.step-item');
+    const activeIndex = stepProgression.findIndex(stepId => !userProgress.completedSteps.includes(stepId));
+    const activeStepId = activeIndex === -1 ? null : stepProgression[activeIndex];
     
-    // Update each step item based on completion status
-    stepItems.forEach((stepItem, index) => {
-        if (index < stepProgression.length) {
-            const stepId = stepProgression[index];
-            const isCompleted = userProgress.completedSteps.includes(stepId);
+    const stepItems = document.querySelectorAll('.step-item[data-step-id]');
+    
+    stepItems.forEach((stepItem) => {
+        const stepId = stepItem.dataset.stepId;
+        const isCompleted = userProgress.completedSteps.includes(stepId);
+        const isActiveStep = !isCompleted && stepId === activeStepId;
+        
+        const actionsContainer = stepItem.querySelector('.step-actions');
+        const learnButton = stepItem.querySelector('[data-action="learn"]');
+        const completeButton = stepItem.querySelector('[data-action="complete"]');
+        
+        stepItem.classList.remove('completed', 'active');
+        
+        if (learnButton) {
+            learnButton.classList.add('btn-secondary', 'btn-link');
+            learnButton.disabled = false;
+        }
+        
+        if (isCompleted) {
+            stepItem.classList.add('completed');
             
-            // Remove all existing classes
-            stepItem.classList.remove('completed', 'active');
+            if (completeButton) {
+                completeButton.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                completeButton.classList.remove('btn-primary');
+                completeButton.classList.add('btn-secondary', 'completed-button');
+                completeButton.disabled = true;
+                completeButton.setAttribute('aria-disabled', 'true');
+            }
             
-            if (isCompleted) {
-                // Mark as completed
-                stepItem.classList.add('completed');
-                
-                // Update the button to show completed state
-                const button = stepItem.querySelector('button');
-                if (button) {
-                    button.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
-                    button.classList.remove('btn-primary', 'btn-secondary');
-                    button.classList.add('btn-secondary');
-                    button.disabled = true;
-                }
-                
-                // Add or update status indicator
-                let statusDiv = stepItem.querySelector('.step-status');
+            if (actionsContainer) {
+                let statusDiv = actionsContainer.querySelector('.step-status');
                 if (!statusDiv) {
                     statusDiv = document.createElement('div');
                     statusDiv.className = 'step-status';
-                    stepItem.querySelector('.step-content').appendChild(statusDiv);
+                    actionsContainer.appendChild(statusDiv);
                 }
                 statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
-                
-            } else {
-                // Check if this is the next step to complete
-                const isNextStep = !stepProgression.slice(0, index).some(prevStepId => 
-                    userProgress.completedSteps.includes(prevStepId)
-                );
-                
-                if (isNextStep) {
-                    stepItem.classList.add('active');
-                    
-                    // Update button to primary style
-                    const button = stepItem.querySelector('button');
-                    if (button) {
-                        button.classList.remove('btn-secondary');
-                        button.classList.add('btn-primary');
-                    }
-                }
-                
-                // Remove status indicator if it exists
-                const statusDiv = stepItem.querySelector('.step-status');
-                if (statusDiv) {
-                    statusDiv.remove();
-                }
+            }
+        } else {
+            if (completeButton) {
+                completeButton.innerHTML = 'Mark as completed';
+                completeButton.disabled = false;
+                completeButton.removeAttribute('aria-disabled');
+                completeButton.classList.remove('btn-secondary', 'completed-button');
+                completeButton.classList.add('btn-primary');
+            }
+            
+            if (isActiveStep) {
+                stepItem.classList.add('active');
+            }
+            
+            const statusDiv = actionsContainer ? actionsContainer.querySelector('.step-status') : null;
+            if (statusDiv) {
+                statusDiv.remove();
             }
         }
     });
@@ -2280,10 +2281,18 @@ function updateHomepageNextStep() {
 }
 
 // Next Steps Functions
-async function completeStep(stepId) {
+async function completeStep(stepId, buttonEl) {
     if (userProgress.completedSteps.includes(stepId)) {
+        updateProgressUI();
         showNotification('Step already completed!', 'info');
         return;
+    }
+
+    const completeButton = buttonEl || document.querySelector(`[data-step-id="${stepId}"] [data-action="complete"]`);
+
+    if (completeButton) {
+        completeButton.disabled = true;
+        completeButton.classList.add('loading');
     }
     
     try {
@@ -2308,43 +2317,35 @@ async function completeStep(stepId) {
         });
 
         if (response.ok) {
-    // Add to completed steps
-    userProgress.completedSteps.push(stepId);
-    
-    // Update UI
-    updateProgressUI();
-    
-    // Update step item
-    const stepItem = document.querySelector(`[onclick="completeStep('${stepId}')"]`).closest('.step-item');
-    if (stepItem) {
-        stepItem.classList.remove('active');
-        stepItem.classList.add('completed');
-        
-        const button = stepItem.querySelector('button');
-        button.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-secondary');
-        button.disabled = true;
-        
-        // Add status indicator
-        const stepContent = stepItem.querySelector('.step-content');
-        const statusDiv = document.createElement('div');
-        statusDiv.className = 'step-status';
-        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Completed</span>';
-        stepContent.appendChild(statusDiv);
-    }
-    
-    // Update steps completed count
-    updateStepsCompletedCount();
-    
+            // Add to completed steps
+            userProgress.completedSteps.push(stepId);
+            
+            // Update UI
+            updateProgressUI();
+            
+            // Update steps completed count
+            updateStepsCompletedCount();
+            
             showNotification('Step completed and saved!', 'success');
         } else {
             console.error('❌ Failed to save step completion');
+            if (completeButton) {
+                completeButton.disabled = false;
+                completeButton.classList.remove('loading');
+            }
             showNotification('Failed to save step completion. Please try again.', 'error');
         }
     } catch (error) {
         console.error('❌ Error completing step:', error);
+        if (completeButton) {
+            completeButton.disabled = false;
+            completeButton.classList.remove('loading');
+        }
         showNotification('Failed to save step completion. Please try again.', 'error');
+    } finally {
+        if (completeButton) {
+            completeButton.classList.remove('loading');
+        }
     }
 }
 
