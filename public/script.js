@@ -3122,11 +3122,11 @@ function openExternalLink(type) {
     
     switch(type) {
         case 'salvation':
-            url = 'https://onehopechurch.com';
-            message = 'Opening One Hope Church overview...';
+            url = 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus';
+            message = 'Opening Make Jesus Lord of Your Life...';
             break;
         case 'baptism-info':
-            url = 'https://onehopechurch.com/connect/baptism';
+            url = 'https://staging.onehopechurch.com/connect/baptism';
             message = 'Opening Baptism information...';
             break;
         case 'small-group':
@@ -3135,26 +3135,26 @@ function openExternalLink(type) {
             break;
         case 'give':
             url = 'https://donate.overflow.co/onehopechurch';
-            message = 'Opening Give page...';
+            message = 'Opening Giving page...';
             break;
         case 'give-info':
-            url = 'https://onehopechurch.com/give';
-            message = 'Opening Giving information...';
+            url = 'https://staging.onehopechurch.com/giving';
+            message = 'Opening Giving Page...';
             break;
         case 'watch-message':
-            url = 'https://onehopechurch.com/media';
+            url = 'https://staging.onehopechurch.com/media';
             message = 'Opening Messages page...';
             break;
         case 'next-step':
-            url = 'https://onehopechurch.com/next-steps';
+            url = 'https://staging.onehopechurch.com/connect';
             message = 'Opening Next Steps page...';
             break;
         case 'connect':
-            url = 'https://onehopechurch.com/connect';
+            url = 'https://staging.onehopechurch.com/connect';
             message = 'Opening Connect page...';
             break;
         case 'visit':
-            url = 'https://onehopechurch.com/visit';
+            url = 'https://staging.onehopechurch.com/visit';
             message = 'Opening Visit page...';
             break;
         case 'prayer':
@@ -3162,15 +3162,15 @@ function openExternalLink(type) {
             message = 'Opening Prayer resources...';
             break;
         case 'give-go':
-            url = 'https://onehopechurch.com/give-go';
+            url = 'https://staging.onehopechurch.com/giving';
             message = 'Opening Give & Go resources...';
             break;
         case 'lead':
-            url = 'https://onehopechurch.com/lead';
+            url = 'https://staging.onehopechurch.com/connect';
             message = 'Opening Leadership opportunities...';
             break;
         default:
-            url = 'https://onehopechurch.com';
+            url = 'https://staging.onehopechurch.com';
             message = 'Opening One Hope Church website...';
     }
     
