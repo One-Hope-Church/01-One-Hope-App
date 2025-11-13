@@ -3161,6 +3161,10 @@ function openExternalLink(type) {
             url = 'https://onehopechurch.com/prayer';
             message = 'Opening Prayer resources...';
             break;
+        case 'share-testimony':
+            url = 'https://staging.onehopechurch.com/blog/how-to-share-your-testimony';
+            message = 'Opening testimony resources...';
+            break;
         case 'give-go':
             url = 'https://staging.onehopechurch.com/giving';
             message = 'Opening Give & Go resources...';
