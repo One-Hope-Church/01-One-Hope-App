@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const axios = require('axios');
 
 // Helper function to get Chicago timezone date
 function getChicagoDate() {
@@ -202,6 +203,31 @@ const db = {
         } catch (error) {
             console.error('❌ Database error:', error);
             return null;
+        }
+    },
+
+    async authUserExists(email) {
+        if (!email) {
+            return false;
+        }
+        try {
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const response = await axios.get(`${supabaseUrl}/auth/v1/admin/users`, {
+                headers: {
+                    apikey: supabaseServiceKey,
+                    Authorization: `Bearer ${supabaseServiceKey}`
+                },
+                params: {
+                    email: normalizedEmail
+                }
+            });
+
+            const users = response.data?.users || [];
+            const found = users.some((user) => String(user.email || '').toLowerCase() === normalizedEmail);
+            return found;
+        } catch (error) {
+            console.error('❌ authUserExists error:', error);
+            throw error;
         }
     },
 

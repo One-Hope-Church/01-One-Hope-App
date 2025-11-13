@@ -43,6 +43,12 @@
               <button type="button" class="input-suffix" aria-label="Show password" onclick="togglePw()"><i class="fas fa-eye"></i></button>
             </div>
           </div>
+          <div class="remember-row">
+            <label class="remember-label" for="rememberMeToggle">
+              <input id="rememberMeToggle" type="checkbox" />
+              <span>Keep me signed in</span>
+            </label>
+          </div>
           <div id="msg" class="helper-text" role="status" aria-live="polite"></div>
           <div class="form-actions">
             <button id="btn-in" class="btn-primary" type="button"><i class="fas fa-sign-in-alt"></i> Sign In</button>
@@ -62,6 +68,63 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
     let sb = null;
+    let rememberMe = true;
+    let failedSignInAttempts = 0;
+
+    function loadRememberPreference() {
+      if (typeof window === 'undefined') return true;
+      try {
+        const storedPref = localStorage.getItem('remember_me_preference');
+        if (storedPref === 'false') return false;
+        if (storedPref === 'true') return true;
+      } catch (error) {
+        console.warn('⚠️ Unable to read remember preference:', error);
+      }
+      return true;
+    }
+
+    function persistRememberPreference(value) {
+      if (typeof window === 'undefined') return;
+      try {
+        localStorage.setItem('remember_me_preference', value ? 'true' : 'false');
+      } catch (error) {
+        console.warn('⚠️ Unable to save remember preference:', error);
+      }
+    }
+
+    async function checkEmailExists(email) {
+      try {
+        const response = await fetch('/api/auth/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        if (!response.ok) {
+          console.warn('⚠️ Unable to verify email existence:', response.status);
+          return null;
+        }
+
+        const data = await response.json();
+        return !!data.exists;
+      } catch (error) {
+        console.error('❌ checkEmailExists error:', error);
+        return null;
+      }
+    }
+
+    function setupRememberMeToggle() {
+      rememberMe = loadRememberPreference();
+      const toggle = document.getElementById('rememberMeToggle');
+      if (toggle) {
+        toggle.checked = rememberMe;
+        toggle.addEventListener('change', (event) => {
+          rememberMe = !!event.target.checked;
+          persistRememberPreference(rememberMe);
+        });
+      }
+    }
+
     // Get return URL from query parameter
     function getReturnUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -102,6 +165,7 @@
         if (sbRefreshToken) {
           url.searchParams.set('sb_refresh_token', sbRefreshToken);
         }
+        url.searchParams.set('remember', rememberMe ? 'true' : 'false');
         return url.toString();
       }
       
@@ -212,9 +276,18 @@
     }
     function setPlaceholderToken(user, planningCenterId=null, name=null, avatarUrl=null){
       try {
-        const payload = { supabase_id: user.id, name: name || user.email, email: user.email, planning_center_id: planningCenterId, avatar_url: avatarUrl, timestamp: Date.now() };
+        const payload = { 
+          supabase_id: user.id, 
+          name: name || user.email, 
+          email: user.email, 
+          planning_center_id: planningCenterId, 
+          avatar_url: avatarUrl, 
+          timestamp: Date.now(),
+          remember_me: rememberMe
+        };
         localStorage.setItem('onehope_token', btoa(JSON.stringify(payload)));
         localStorage.setItem('onehope_user', JSON.stringify({ id: user.id, name: user.email, email: user.email }));
+        persistRememberPreference(rememberMe);
       } catch {}
     }
 
@@ -226,10 +299,12 @@
           name: profile.name || supabaseUser.email,
           email: profile.email || supabaseUser.email,
           avatar_url: profile.avatar_url || null,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          remember_me: rememberMe
         };
         localStorage.setItem('onehope_token', btoa(JSON.stringify(payload)));
         localStorage.setItem('onehope_user', JSON.stringify({ id: supabaseUser.id, name: payload.name, email: payload.email, avatar_url: payload.avatar_url }));
+        persistRememberPreference(rememberMe);
       } catch {}
     }
 
@@ -375,15 +450,35 @@
         setMsg('Signing in...', 'info');
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) {
-          // Check if this is a "user not found" error
-          if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid login credentials')) {
-            setMsg('Account not found. Please create an account first.', 'warning');
-                      // Highlight the create account button
-          const btnUp = document.getElementById('btn-up');
-          if (btnUp) btnUp.classList.add('highlight');
-          return;
+          const createAccountBtn = document.getElementById('btn-up');
+          if (createAccountBtn) createAccountBtn.classList.remove('highlight');
+
+          const isInvalidCredentials = error.message && error.message.toLowerCase().includes('invalid login credentials');
+          if (isInvalidCredentials) {
+            const emailExists = await checkEmailExists(email);
+
+            if (emailExists === false) {
+              setMsg('We couldn’t find an account with that email. Please create an account first.', 'warning');
+              if (createAccountBtn) createAccountBtn.classList.add('highlight');
+              failedSignInAttempts = 0;
+              return;
+            }
+
+            if (emailExists === true) {
+              failedSignInAttempts += 1;
+              const passwordField = document.getElementById('password');
+              if (passwordField) passwordField.focus();
+
+              if (failedSignInAttempts >= 3) {
+                setMsg('Incorrect password. Need help? Click "Forgot password?" to reset it.', 'warning');
+              } else {
+                setMsg('Incorrect password. Please try again.', 'error');
+              }
+              return;
+            }
           }
-          setMsg(error.message,'error');
+
+          setMsg(error.message || 'Sign in failed. Please try again.', 'error');
           return;
         }
         
@@ -426,6 +521,7 @@
         } catch {}
         
                 // For existing users signing in, skip Planning Center linking and go straight to app
+        failedSignInAttempts = 0;
         setMsg('Sign in successful! Redirecting...', 'success');
         // Remove highlight from create account button
         const btnUp = document.getElementById('btn-up');
@@ -572,11 +668,25 @@
     }
     async function forgot(){
       const email = document.getElementById('email').value.trim();
-      if (!email) return setMsg('Enter your email first.','warning');
+      if (!email) {
+        setMsg('Enter your email first.', 'warning');
+        return;
+      }
       if (!sb) await init();
-      const { error } = await sb.auth.resetPasswordForEmail(email,{ redirectTo: location.origin });
-      if (error) return setMsg(error.message,'error');
-      setMsg('Password reset email sent.','success');
+
+      try {
+        setMsg('Sending password reset email...', 'info');
+        const redirectTo = `${window.location.origin}/set-password?return=${encodeURIComponent(getReturnUrl())}`;
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) {
+          setMsg(error.message || 'Unable to send reset email. Please try again.', 'error');
+          return;
+        }
+        setMsg('If an account exists for that email, we just sent you a reset link.', 'success');
+      } catch (error) {
+        console.error('❌ Forgot password error:', error);
+        setMsg('Unable to send reset email. Please try again later.', 'error');
+      }
     }
     document.getElementById('btn-in').onclick = signIn;
     document.getElementById('btn-up').onclick = signUp;
@@ -586,8 +696,10 @@
     document.getElementById('email').addEventListener('input', function() {
       const btnUp = document.getElementById('btn-up');
       if (btnUp) btnUp.classList.remove('highlight');
+      failedSignInAttempts = 0;
     });
     
+    setupRememberMeToggle();
     init();
   </script>
 </body>

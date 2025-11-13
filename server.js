@@ -837,13 +837,30 @@ app.post('/api/auth/pc/refresh', async (req, res) => {
 });
 
 // Initialize minimal user profile in our database after Supabase signup/signin
+app.post('/api/auth/check-email', async (req, res) => {
+    try {
+        const email = (req.body?.email || '').trim().toLowerCase();
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const exists = await db.authUserExists(email);
+        res.json({ exists });
+    } catch (error) {
+        console.error('❌ /api/auth/check-email error:', error);
+        res.status(500).json({ error: 'Failed to check email' });
+    }
+});
+
 app.post('/api/auth/profile/init', async (req, res) => {
     try {
-        console.log('📝 Profile init request received:', { body: req.body });
-        const { supabase_user_id, email, name } = req.body || {};
-        if (!supabase_user_id || !email) {
-            console.error('❌ Missing required fields:', { supabase_user_id: !!supabase_user_id, email: !!email });
-            return res.status(400).json({ error: 'supabase_user_id and email are required' });
+        const { supabase_user_id, email } = req.body;
+
+        if (!supabase_user_id) {
+            return res.status(400).json({ error: 'supabase_user_id is required' });
+        }
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
         }
 
         // Check if user already exists and has Planning Center data
