@@ -3154,7 +3154,7 @@ function openExternalLink(type) {
             message = 'Opening Connect page...';
             break;
         case 'visit':
-            url = 'https://staging.onehopechurch.com/visit';
+            url = 'https://onehopechurch.com/visit';
             message = 'Opening Visit page...';
             break;
         case 'prayer':
@@ -3162,12 +3162,16 @@ function openExternalLink(type) {
             message = 'Opening Prayer resources...';
             break;
         case 'give-go':
-            url = 'https://staging.onehopechurch.com/giving';
+            url = 'https://onehopechurch.com/give-go';
             message = 'Opening Give & Go resources...';
             break;
         case 'lead':
             url = 'https://staging.onehopechurch.com/connect';
             message = 'Opening Leadership opportunities...';
+            break;
+        case 'share-testimony':
+            url = 'https://staging.onehopechurch.com/blog/how-to-share-your-testimony';
+            message = 'Opening testimony resources...';
             break;
         default:
             url = 'https://staging.onehopechurch.com';
