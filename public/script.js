@@ -104,12 +104,55 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check for auth parameters
     const urlParams = new URLSearchParams(window.location.search);
+    const authTokenParam = urlParams.get('auth_token');
+    const authUserParam = urlParams.get('auth_user');
+    const sbAccessTokenParam = urlParams.get('sb_access_token');
+    const sbRefreshTokenParam = urlParams.get('sb_refresh_token');
+    const rememberParam = urlParams.get('remember');
     const code = urlParams.get('code');
     const auth = urlParams.get('auth');
     const error = urlParams.get('error');
     const token = urlParams.get('token');
     
     console.log('URL params:', { code, auth, error, token, currentUser });
+    
+    // Handle cross-app login parameters
+    if (authTokenParam) {
+        try {
+            const decodedToken = authTokenParam;
+            localStorage.setItem('onehope_token', decodedToken);
+
+            if (authUserParam) {
+                try {
+                    const parsedUser = JSON.parse(authUserParam);
+                    localStorage.setItem('onehope_user', JSON.stringify(parsedUser));
+                    currentUser = parsedUser;
+                } catch (userParseError) {
+                    console.warn('⚠️ Unable to parse auth_user payload:', userParseError);
+                }
+            }
+
+            if (sbAccessTokenParam) {
+                localStorage.setItem('sb_access_token', sbAccessTokenParam);
+            }
+            if (sbRefreshTokenParam) {
+                localStorage.setItem('sb_refresh_token', sbRefreshTokenParam);
+            }
+            if (rememberParam !== null) {
+                const shouldRemember = rememberParam === 'true';
+                persistRememberPreference(shouldRemember);
+                if (currentUser) {
+                    currentUser.remember_me = shouldRemember;
+                }
+            }
+
+            // Clean sensitive query parameters from the URL
+            const hash = window.location.hash || '';
+            window.history.replaceState({}, document.title, window.location.pathname + hash);
+        } catch (crossAuthError) {
+            console.error('❌ Error processing cross-app auth parameters:', crossAuthError);
+        }
+    }
     
     // Check for auth success/error
     if (auth === 'success' && token) {
