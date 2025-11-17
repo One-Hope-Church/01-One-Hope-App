@@ -854,7 +854,7 @@ app.post('/api/auth/check-email', async (req, res) => {
 
 app.post('/api/auth/profile/init', async (req, res) => {
     try {
-        const { supabase_user_id, email } = req.body;
+        const { supabase_user_id, email, name } = req.body;
 
         if (!supabase_user_id) {
             return res.status(400).json({ error: 'supabase_user_id is required' });
@@ -879,7 +879,7 @@ app.post('/api/auth/profile/init', async (req, res) => {
         }
 
         // Derive a friendly display name from email if none provided
-        let derivedName = name;
+        let derivedName = name || null;
         if (!derivedName) {
             try {
                 const local = String(email).split('@')[0] || '';
