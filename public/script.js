@@ -2233,7 +2233,7 @@ function updateHomepageNextStep() {
         return;
     }
     
-    // Define the step progression
+    // Define the step progression (using frontend step IDs)
     const stepProgression = [
         { id: 'assessment', title: 'Take Next Steps Assessment', description: 'Complete a quick assessment to personalize your spiritual growth journey', icon: 'fas fa-clipboard-list', link: '#' },
         { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross', link: 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus' },
@@ -2245,8 +2245,8 @@ function updateHomepageNextStep() {
         { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping', link: 'https://staging.onehopechurch.com/connect' },
         { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray', link: 'https://staging.onehopechurch.com/visit' },
         { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'leadership', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'mission-living', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass', link: 'https://staging.onehopechurch.com/connect' }
+        { id: 'lead-group', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown', link: 'https://staging.onehopechurch.com/connect' },
+        { id: 'live-mission', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass', link: 'https://staging.onehopechurch.com/connect' }
     ];
     
     // Find the next incomplete step
@@ -4083,6 +4083,15 @@ async function fetchUserStreak() {
     }
 }
 
+// Map database step IDs to frontend step IDs
+function mapDatabaseStepIdToFrontend(stepId) {
+    const stepIdMap = {
+        'leadership': 'lead-group',
+        'mission-living': 'live-mission'
+    };
+    return stepIdMap[stepId] || stepId;
+}
+
 async function fetchUserSteps() {
     try {
         console.log('🎯 Fetching user steps data...');
@@ -4105,10 +4114,10 @@ async function fetchUserSteps() {
             const result = await response.json();
             userSteps = result.data || [];
             
-            // Update userProgress with completed steps
+            // Update userProgress with completed steps, mapping database IDs to frontend IDs
             userProgress.completedSteps = userSteps
                 .filter(step => step.completed)
-                .map(step => step.step_id);
+                .map(step => mapDatabaseStepIdToFrontend(step.step_id));
             
             console.log('✅ User steps loaded:', userSteps);
             console.log('✅ Completed steps:', userProgress.completedSteps);

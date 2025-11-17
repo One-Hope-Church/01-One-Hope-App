@@ -1389,6 +1389,15 @@ app.post('/api/user/steps/assessment', async (req, res) => {
     }
 });
 
+// Map frontend step IDs to database step IDs
+function mapFrontendStepIdToDatabase(stepId) {
+    const stepIdMap = {
+        'lead-group': 'leadership',
+        'live-mission': 'mission-living'
+    };
+    return stepIdMap[stepId] || stepId;
+}
+
 app.post('/api/user/steps/complete', async (req, res) => {
     try {
         // Get user from session or token
@@ -1419,8 +1428,12 @@ app.post('/api/user/steps/complete', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Map frontend step ID to database step ID
+        const databaseStepId = mapFrontendStepIdToDatabase(stepId);
+        console.log(`🔄 Mapping step ID: ${stepId} -> ${databaseStepId}`);
+
         // Mark step as completed
-        const updatedStep = await db.upsertUserStep(supabaseUser.id, stepId, true, notes);
+        const updatedStep = await db.upsertUserStep(supabaseUser.id, databaseStepId, true, notes);
         
         res.json({ success: true, data: updatedStep });
     } catch (error) {
