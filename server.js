@@ -1559,10 +1559,11 @@ function mapAssessmentToSteps(answers) {
             console.log('✅ Marking serve-team step as completed');
         }
         
-        // Mark invite-pray step if user invites and prays regularly (4+ times per month)
-        if (step.stepId === 'invite-pray' && parseInt(answers.invite_pray) >= 4) {
+        // Mark invite-pray step if user invites and prays regularly (Often or Always)
+        if (step.stepId === 'invite-pray' && parseInt(answers.invite_pray) >= 3) {
             completed = true;
-            notes = `Invites and prays ${answers.invite_pray} times per month`;
+            const frequency = answers.invite_pray === '3' ? 'Often' : answers.invite_pray === '4' ? 'Always' : answers.invite_pray;
+            notes = `Invites and prays: ${frequency}`;
             console.log('✅ Marking invite-pray step as completed');
         }
         
@@ -1580,10 +1581,11 @@ function mapAssessmentToSteps(answers) {
             console.log('✅ Marking leadership step as completed');
         }
         
-        // Mark mission-living step if user lives on mission (4+ times per week)
-        if (step.stepId === 'mission-living' && parseInt(answers.mission_living) >= 4) {
+        // Mark mission-living step if user lives on mission (Often or Always)
+        if (step.stepId === 'mission-living' && parseInt(answers.mission_living) >= 3) {
             completed = true;
-            notes = `Lives on mission ${answers.mission_living} times per week`;
+            const frequency = answers.mission_living === '3' ? 'Often' : answers.mission_living === '4' ? 'Always' : answers.mission_living;
+            notes = `Lives on mission: ${frequency}`;
             console.log('✅ Marking mission-living step as completed');
         }
         
