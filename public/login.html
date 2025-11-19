@@ -267,24 +267,20 @@
       const sbAccessToken = localStorage.getItem('sb_access_token');
       const sbRefreshToken = localStorage.getItem('sb_refresh_token');
       
-      // Pass tokens in URL for all environments (staging and production)
-      // Tokens are encrypted via HTTPS and cleared immediately on the receiving page
-      if (token) {
-        // Handle relative URLs (like '/') by using window.location.origin as base
-        let url;
-        try {
-          // Try to create URL - if it's absolute, this will work
-          url = new URL(returnUrl);
-        } catch (e) {
-          // If it's a relative URL, use window.location.origin as base
-          url = new URL(returnUrl, window.location.origin);
-        }
-        
+      let url;
+      try {
+        url = new URL(returnUrl, window.location.origin);
+      } catch (e) {
+        url = new URL('/', window.location.origin);
+      }
+
+      const isSameOrigin = url.origin === window.location.origin;
+      
+      if (token && !isSameOrigin) {
         url.searchParams.set('auth_token', token);
         if (user) {
           url.searchParams.set('auth_user', user);
         }
-        // Also pass Supabase tokens for authentication
         if (sbAccessToken) {
           url.searchParams.set('sb_access_token', sbAccessToken);
         }
@@ -292,15 +288,9 @@
           url.searchParams.set('sb_refresh_token', sbRefreshToken);
         }
         url.searchParams.set('remember', rememberMe ? 'true' : 'false');
-        return url.toString();
       }
       
-      // If no token, return the original URL (handle relative URLs)
-      try {
-        return new URL(returnUrl, window.location.origin).toString();
-      } catch (e) {
-        return returnUrl;
-      }
+      return url.toString();
     }
     async function init() {
       try {
