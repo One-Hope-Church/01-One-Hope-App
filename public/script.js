@@ -535,6 +535,129 @@ async function initSupabaseClient() {
 }
 initSupabaseClient();
 
+let lastSupabaseSessionRefresh = 0;
+
+function persistSupabaseSessionTokens(session) {
+    if (!session) return;
+    try {
+        if (session.access_token) {
+            localStorage.setItem('sb_access_token', session.access_token);
+        }
+        if (session.refresh_token) {
+            localStorage.setItem('sb_refresh_token', session.refresh_token);
+        }
+    } catch (error) {
+        console.warn('Unable to persist Supabase tokens:', error);
+    }
+}
+
+async function restoreSupabaseSessionFromStorage() {
+    if (!supabaseClient) await initSupabaseClient();
+    if (!supabaseClient) return false;
+    
+    try {
+        const accessToken = localStorage.getItem('sb_access_token');
+        const refreshToken = localStorage.getItem('sb_refresh_token');
+        if (!accessToken || !refreshToken) {
+            return false;
+        }
+        
+        const { data, error } = await supabaseClient.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+        });
+        
+        if (error) {
+            console.warn('Unable to restore Supabase session:', error);
+            return false;
+        }
+        
+        if (data?.session) {
+            persistSupabaseSessionTokens(data.session);
+            lastSupabaseSessionRefresh = Date.now();
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error restoring Supabase session:', error);
+        return false;
+    }
+}
+
+async function refreshSupabaseSession() {
+    if (!supabaseClient) await initSupabaseClient();
+    if (!supabaseClient) return false;
+    
+    try {
+        const refreshToken = localStorage.getItem('sb_refresh_token');
+        if (!refreshToken) {
+            return false;
+        }
+        
+        const { data, error } = await supabaseClient.auth.refreshSession({
+            refresh_token: refreshToken
+        });
+        
+        if (error) {
+            console.error('Unable to refresh Supabase session:', error);
+            return false;
+        }
+        
+        if (data?.session) {
+            persistSupabaseSessionTokens(data.session);
+            lastSupabaseSessionRefresh = Date.now();
+            return true;
+        }
+    } catch (error) {
+        console.error('Error refreshing Supabase session:', error);
+    }
+    
+    return false;
+}
+
+async function prepareSupabaseSession() {
+    if (!supabaseClient) await initSupabaseClient();
+    if (!supabaseClient) return false;
+    
+    try {
+        let { data } = await supabaseClient.auth.getSession();
+        let session = data?.session;
+        
+        if (!session) {
+            const restored = await restoreSupabaseSessionFromStorage();
+            if (!restored) {
+                return false;
+            }
+            ({ data } = await supabaseClient.auth.getSession());
+            session = data?.session;
+        }
+        
+        if (!session) {
+            return false;
+        }
+        
+        persistSupabaseSessionTokens(session);
+        
+        const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
+        const refreshThreshold = Date.now() + 2 * 60 * 1000; // refresh 2 minutes before expiration
+        
+        if (expiresAtMs && expiresAtMs <= refreshThreshold) {
+            // Avoid hammering refresh if we just refreshed
+            if (Date.now() - lastSupabaseSessionRefresh > 30 * 1000) {
+                const refreshed = await refreshSupabaseSession();
+                if (!refreshed) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error preparing Supabase session:', error);
+        return false;
+    }
+}
+
 function togglePasswordVisibility(inputId, buttonEl) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -3435,15 +3558,9 @@ async function fetchAllMessageNotes() {
             throw new Error('Supabase client not initialized');
         }
         
-        // Set auth session
-        const sbAccessToken = localStorage.getItem('sb_access_token');
-        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
-        
-        if (sbAccessToken && sbRefreshToken) {
-            await supabaseClient.auth.setSession({
-                access_token: sbAccessToken,
-                refresh_token: sbRefreshToken
-            });
+        const sessionReady = await prepareSupabaseSession();
+        if (!sessionReady) {
+            throw new Error('Supabase session not available');
         }
         
         // Get current user
@@ -3622,15 +3739,9 @@ async function openNoteEditor(messageId, urlPath) {
             throw new Error('Supabase client not initialized');
         }
         
-        // Set auth session
-        const sbAccessToken = localStorage.getItem('sb_access_token');
-        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
-        
-        if (sbAccessToken && sbRefreshToken) {
-            await supabaseClient.auth.setSession({
-                access_token: sbAccessToken,
-                refresh_token: sbRefreshToken
-            });
+        const sessionReady = await prepareSupabaseSession();
+        if (!sessionReady) {
+            throw new Error('Supabase session not available');
         }
         
         // Get current user
@@ -3781,15 +3892,9 @@ async function saveEditedNote(isAutoSave = false) {
             throw new Error('Supabase client not initialized');
         }
         
-        // Set auth session
-        const sbAccessToken = localStorage.getItem('sb_access_token');
-        const sbRefreshToken = localStorage.getItem('sb_refresh_token');
-        
-        if (sbAccessToken && sbRefreshToken) {
-            await supabaseClient.auth.setSession({
-                access_token: sbAccessToken,
-                refresh_token: sbRefreshToken
-            });
+        const sessionReady = await prepareSupabaseSession();
+        if (!sessionReady) {
+            throw new Error('Supabase session not available');
         }
         
         // Get current user
