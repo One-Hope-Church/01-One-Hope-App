@@ -44,21 +44,22 @@ let noteSaveTimeout = null;
 
 // URL Routing System
 const routeMap = {
-    'home': 'homeScreen',
+    'profile': 'homeScreen',
+    'home': 'homeScreen', // Backward compatibility for existing hashes
     'bible': 'bibleScreen',
     'next-steps': 'nextStepsScreen',
     'events': 'eventsScreen',
     'notes': 'notesScreen',
-    'profile': 'profileScreen'
+    'account': 'accountScreen'
 };
 
 const screenToRoute = {
-    'homeScreen': 'home',
+    'homeScreen': 'profile',
     'bibleScreen': 'bible',
     'nextStepsScreen': 'next-steps',
     'eventsScreen': 'events',
     'notesScreen': 'notes',
-    'profileScreen': 'profile'
+    'accountScreen': 'account'
 };
 
 // Get current route from hash
@@ -508,8 +509,7 @@ function updateNavigation(activeScreenId) {
         'bibleScreen': 1,
         'nextStepsScreen': 2,
         // 'eventsScreen': 3, // Temporarily hidden
-        'notesScreen': 3, // Adjusted after hiding events
-        'profileScreen': 4 // Adjusted after hiding events
+        'notesScreen': 3 // Adjusted after hiding events
     };
     
     const navItems = document.querySelectorAll('.nav-item');
@@ -1151,9 +1151,9 @@ function updateUserInfo() {
     }
     
     // Update profile info
-    const profileName = document.querySelector('#profileScreen .profile-card h3');
-    const profileEmail = document.querySelector('#profileScreen .profile-card p');
-    const profileAvatar = document.querySelector('#profileScreen .profile-avatar');
+    const profileName = document.querySelector('#accountScreen .profile-card h3');
+    const profileEmail = document.querySelector('#accountScreen .profile-card p');
+    const profileAvatar = document.querySelector('#accountScreen .profile-avatar');
     
     console.log('🔍 Profile elements found:', { profileName: !!profileName, profileEmail: !!profileEmail, profileAvatar: !!profileAvatar });
     console.log('📧 Email value:', currentUser.email);
@@ -2584,7 +2584,7 @@ function handleSwipe(direction) {
     const currentScreen = document.querySelector('.app-screen.active');
     if (!currentScreen) return;
     
-    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', /* 'eventsScreen', */ 'profileScreen']; // Events temporarily hidden
+    const screens = ['homeScreen', 'bibleScreen', 'nextStepsScreen', /* 'eventsScreen', */ 'notesScreen']; // Events temporarily hidden
     const currentIndex = screens.indexOf(currentScreen.id);
     
     if (direction === 'left' && currentIndex < screens.length - 1) {
@@ -3215,6 +3215,10 @@ function openExternalLink(type) {
         case 'lead':
             url = 'https://staging.onehopechurch.com/connect';
             message = 'Opening Leadership opportunities...';
+            break;
+        case 'staging-home':
+            url = 'https://staging.onehopechurch.com';
+            message = 'Opening One Hope Church home page...';
             break;
         default:
             url = 'https://staging.onehopechurch.com';
