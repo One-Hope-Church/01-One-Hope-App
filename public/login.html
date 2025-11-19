@@ -28,35 +28,66 @@
       </div>
       <div class="auth-form">
         <form id="login-form" onsubmit="return false;">
-          <div class="input-group input-with-icon">
-            <label for="email">Email</label>
-            <div class="input-wrapper">
-              <i class="fas fa-envelope input-icon-left" aria-hidden="true"></i>
-              <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+          <div id="email-step" class="auth-step active">
+            <div class="input-group input-with-icon">
+              <label for="email">Email</label>
+              <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon-left" aria-hidden="true"></i>
+                <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+              </div>
+            </div>
+            <div class="form-actions" style="margin-top: 1.5rem;">
+              <button id="btn-email-continue" class="btn-primary" type="button">
+                <i class="fas fa-arrow-right"></i> Continue
+              </button>
             </div>
           </div>
-          <div class="input-group input-with-icon">
-            <label for="password">Password</label>
-            <div class="input-wrapper">
-              <i class="fas fa-lock input-icon-left" aria-hidden="true"></i>
-              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
-              <button type="button" class="input-suffix" aria-label="Show password" onclick="togglePw()"><i class="fas fa-eye"></i></button>
+
+          <div id="password-step" class="auth-step" style="display: none;">
+            <div class="step-summary" style="margin-bottom: 1rem; color: #4B5563; font-size: 0.95rem;">
+              <span>Signing in as <strong id="login-email-display"></strong></span>
+              <button type="button" id="change-email-password" style="border:none;background:none;color:#2563EB;font-weight:500;margin-left:8px;cursor:pointer;padding:0;">Change</button>
+            </div>
+            <div class="input-group input-with-icon">
+              <label for="password">Password</label>
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon-left" aria-hidden="true"></i>
+                <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+                <button type="button" class="input-suffix" aria-label="Show password" onclick="togglePw()"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>
+            <div class="remember-row">
+              <label class="remember-label" for="rememberMeToggle">
+                <input id="rememberMeToggle" type="checkbox" />
+                <span>Keep me signed in</span>
+              </label>
+            </div>
+            <div class="form-actions">
+              <button id="btn-in" class="btn-primary" type="button">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+              </button>
+            </div>
+            <div class="auth-links" style="margin-top: 0.75rem;">
+              <a href="#" id="btn-forgot">Forgot password?</a>
             </div>
           </div>
-          <div class="remember-row">
-            <label class="remember-label" for="rememberMeToggle">
-              <input id="rememberMeToggle" type="checkbox" />
-              <span>Keep me signed in</span>
-            </label>
+
+          <div id="signup-step" class="auth-step" style="display: none;">
+            <div class="step-summary" style="margin-bottom: 1rem; color: #4B5563; font-size: 0.95rem;">
+              <span>No account found for <strong id="signup-email-display"></strong></span>
+              <button type="button" id="change-email-signup" style="border:none;background:none;color:#2563EB;font-weight:500;margin-left:8px;cursor:pointer;padding:0;">Use a different email</button>
+            </div>
+            <p style="color:#6B7280;font-size:0.95rem;margin-bottom:1.25rem;">
+              We’ll email you a secure magic link to verify your address. Once you confirm, you’ll pick a password and finish creating your account.
+            </p>
+            <div class="form-actions">
+              <button id="btn-up" class="btn-secondary" type="button">
+                <i class="fas fa-paper-plane"></i> Send Magic Link
+              </button>
+            </div>
           </div>
+
           <div id="msg" class="helper-text" role="status" aria-live="polite"></div>
-          <div class="form-actions">
-            <button id="btn-in" class="btn-primary" type="button"><i class="fas fa-sign-in-alt"></i> Sign In</button>
-            <button id="btn-up" class="btn-secondary" type="button"><i class="fas fa-user-plus"></i> Create Account</button>
-          </div>
-          <div class="auth-links" style="margin-top: 0.75rem;">
-            <a href="#" id="btn-forgot">Forgot password?</a>
-          </div>
         </form>
       </div>
       <div class="auth-links">
@@ -70,6 +101,11 @@
     let sb = null;
     let rememberMe = true;
     let failedSignInAttempts = 0;
+    const authFlowState = {
+      step: 'email',
+      email: '',
+      emailExists: null
+    };
 
     function loadRememberPreference() {
       if (typeof window === 'undefined') return true;
@@ -90,6 +126,55 @@
       } catch (error) {
         console.warn('⚠️ Unable to save remember preference:', error);
       }
+    }
+
+    function updateEmailDisplays(email) {
+      const loginEmailDisplay = document.getElementById('login-email-display');
+      const signupEmailDisplay = document.getElementById('signup-email-display');
+      if (loginEmailDisplay) loginEmailDisplay.textContent = email || '';
+      if (signupEmailDisplay) signupEmailDisplay.textContent = email || '';
+    }
+
+    function setAuthStep(step) {
+      authFlowState.step = step;
+      const emailStep = document.getElementById('email-step');
+      const passwordStep = document.getElementById('password-step');
+      const signupStep = document.getElementById('signup-step');
+      
+      if (emailStep) emailStep.style.display = step === 'email' ? 'block' : 'none';
+      if (passwordStep) passwordStep.style.display = step === 'password' ? 'block' : 'none';
+      if (signupStep) signupStep.style.display = step === 'signup' ? 'block' : 'none';
+
+      if (step === 'password') {
+        failedSignInAttempts = 0;
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) {
+          passwordInput.value = '';
+          setTimeout(() => passwordInput.focus(), 50);
+        }
+        setMsg('Enter your password to sign in.', 'info');
+      } else if (step === 'signup') {
+        setMsg('Let’s send you a magic link to finish creating your account.', 'info');
+      } else {
+        setMsg('Enter your email to continue.', 'info');
+        const emailInput = document.getElementById('email');
+        if (emailInput) {
+          emailInput.focus();
+          emailInput.select();
+        }
+      }
+    }
+
+    function goToEmailStep(preserveValue = true) {
+      const emailInput = document.getElementById('email');
+      if (emailInput) {
+        emailInput.value = preserveValue ? (authFlowState.email || '') : '';
+      }
+      if (!preserveValue) {
+        authFlowState.email = '';
+        authFlowState.emailExists = null;
+      }
+      setAuthStep('email');
     }
 
     async function checkEmailExists(email) {
@@ -122,6 +207,47 @@
           rememberMe = !!event.target.checked;
           persistRememberPreference(rememberMe);
         });
+      }
+    }
+
+    async function handleEmailSubmit() {
+      const emailInput = document.getElementById('email');
+      const continueBtn = document.getElementById('btn-email-continue');
+      if (!emailInput) return;
+
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email) {
+        setMsg('Please enter your email to continue.', 'warning');
+        emailInput.focus();
+        return;
+      }
+
+      authFlowState.email = email;
+      updateEmailDisplays(email);
+
+      setMsg('Checking your email...', 'info');
+      if (continueBtn) {
+        continueBtn.disabled = true;
+        continueBtn.classList.add('loading');
+      }
+
+      try {
+        const exists = await checkEmailExists(email);
+        authFlowState.emailExists = exists;
+
+        if (exists === true) {
+          setAuthStep('password');
+        } else if (exists === false) {
+          setAuthStep('signup');
+        } else {
+          setMsg('Unable to verify your email right now. Please try again.', 'error');
+          setAuthStep('email');
+        }
+      } finally {
+        if (continueBtn) {
+          continueBtn.disabled = false;
+          continueBtn.classList.remove('loading');
+        }
       }
     }
 
@@ -433,49 +559,56 @@
       }
     }
     async function signIn(){
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      if (!email || !password) return setMsg('Email and password required','warning');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const btnIn = document.getElementById('btn-in');
+
+      const email = (authFlowState.email || emailInput?.value.trim().toLowerCase()) || '';
+      if (!email) {
+        setMsg('Please enter your email to continue.', 'warning');
+        goToEmailStep(false);
+        return;
+      }
+
+      authFlowState.email = email;
+      updateEmailDisplays(email);
+
+      if (authFlowState.step !== 'password' || authFlowState.emailExists !== true) {
+        await handleEmailSubmit();
+        if (authFlowState.emailExists !== true) {
+          return;
+        }
+      }
+
+      const password = passwordInput ? passwordInput.value : '';
+      if (!password) {
+        setMsg('Please enter your password to sign in.', 'warning');
+        passwordInput?.focus();
+        return;
+      }
+
       if (!sb) await init();
       
-      // Disable buttons and show loading
-      const btnIn = document.getElementById('btn-in');
-      const btnUp = document.getElementById('btn-up');
-      btnIn.disabled = true;
-      btnUp.disabled = true;
-      btnIn.classList.add('loading');
-      btnUp.classList.add('loading');
+      if (btnIn) {
+        btnIn.disabled = true;
+        btnIn.classList.add('loading');
+      }
       
       try {
         setMsg('Signing in...', 'info');
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) {
-          const createAccountBtn = document.getElementById('btn-up');
-          if (createAccountBtn) createAccountBtn.classList.remove('highlight');
-
           const isInvalidCredentials = error.message && error.message.toLowerCase().includes('invalid login credentials');
           if (isInvalidCredentials) {
-            const emailExists = await checkEmailExists(email);
+            failedSignInAttempts += 1;
+            passwordInput?.focus();
 
-            if (emailExists === false) {
-              setMsg('We couldn’t find an account with that email. Please create an account first.', 'warning');
-              if (createAccountBtn) createAccountBtn.classList.add('highlight');
-              failedSignInAttempts = 0;
-              return;
+            if (failedSignInAttempts >= 3) {
+              setMsg('Incorrect password. Need help? Click "Forgot password?" to reset it.', 'warning');
+            } else {
+              setMsg('Incorrect password. Please try again.', 'error');
             }
-
-            if (emailExists === true) {
-              failedSignInAttempts += 1;
-              const passwordField = document.getElementById('password');
-              if (passwordField) passwordField.focus();
-
-              if (failedSignInAttempts >= 3) {
-                setMsg('Incorrect password. Need help? Click "Forgot password?" to reset it.', 'warning');
-              } else {
-                setMsg('Incorrect password. Please try again.', 'error');
-              }
-              return;
-            }
+            return;
           }
 
           setMsg(error.message || 'Sign in failed. Please try again.', 'error');
@@ -485,16 +618,13 @@
         setMsg('Setting up profile...', 'info');
         await profileInit(data.user.id, email);
         
-        // Store Supabase session tokens for cross-app authentication
         if (data.session) {
           localStorage.setItem('sb_access_token', data.session.access_token);
           localStorage.setItem('sb_refresh_token', data.session.refresh_token);
         }
         
-        // Seed placeholder token so backend profile endpoint can auth
         setPlaceholderToken(data.user);
         
-        // Check if already linked in DB and seed full token if so
         try {
           const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('onehope_token')}` };
           const r = await fetch('/api/user/profile',{ headers, credentials:'include' });
@@ -502,7 +632,6 @@
             const prof = (await r.json()).data;
             if (prof && prof.planning_center_id) {
               setMsg('Refreshing Planning Center data...', 'info');
-              // Pull latest PC data before redirect
               try { 
                 await fetch('/api/auth/pc/refresh',{ 
                   method:'POST', 
@@ -520,12 +649,8 @@
           }
         } catch {}
         
-                // For existing users signing in, skip Planning Center linking and go straight to app
         failedSignInAttempts = 0;
         setMsg('Sign in successful! Redirecting...', 'success');
-        // Remove highlight from create account button
-        const btnUp = document.getElementById('btn-up');
-        if (btnUp) btnUp.classList.remove('highlight');
         const returnUrl = getReturnUrl();
         const redirectUrl = buildRedirectUrl(returnUrl);
         setTimeout(() => {
@@ -533,145 +658,87 @@
           location.href = redirectUrl;
         }, 1000);
       } finally {
-        // Re-enable buttons
-        btnIn.disabled = false;
-        btnUp.disabled = false;
-        btnIn.classList.remove('loading');
-        btnUp.classList.remove('loading');
+        if (btnIn) {
+          btnIn.disabled = false;
+          btnIn.classList.remove('loading');
+        }
       }
     }
     async function signUp(){
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      if (!email || !password) return setMsg('Email and password required','warning');
-      if (!sb) await init();
-      
-      // Disable buttons and show loading
-      const btnIn = document.getElementById('btn-in');
+      const emailInput = document.getElementById('email');
       const btnUp = document.getElementById('btn-up');
-      btnIn.disabled = true;
-      btnUp.disabled = true;
-      btnIn.classList.add('loading');
-      btnUp.classList.add('loading');
+      const email = (authFlowState.email || emailInput?.value.trim().toLowerCase()) || '';
+
+      if (!email) {
+        setMsg('Please enter your email first.', 'warning');
+        goToEmailStep(false);
+        return;
+      }
+
+      if (authFlowState.emailExists === true) {
+        setMsg('Looks like you already have an account. Enter your password to sign in.', 'info');
+        setAuthStep('password');
+        return;
+      }
+
+      authFlowState.email = email;
+      authFlowState.emailExists = false;
+      updateEmailDisplays(email);
+      setAuthStep('signup');
+
+      if (!sb) await init();
+      if (!sb) {
+        setMsg('Authentication not initialized. Please refresh the page.', 'error');
+        return;
+      }
+      
+      if (btnUp) {
+        btnUp.disabled = true;
+        btnUp.classList.add('loading');
+      }
       
       try {
-        setMsg('Creating account...', 'info');
-        
-        // Verify Supabase client is initialized
-        if (!sb) {
-          setMsg('Authentication not initialized. Please refresh the page.', 'error');
-          return;
-        }
-        
-        let signupResult;
-        try {
-          signupResult = await sb.auth.signUp({ email, password });
-        } catch (networkError) {
-          console.error('❌ Network error during signup:', networkError);
-          setMsg('Network error: Unable to connect to authentication service. Please check your internet connection and try again.', 'error');
-          return;
-        }
-        
-        const { data, error } = signupResult || {};
-        
-        if (error) {
-          console.error('❌ Supabase signup error:', error);
-          setMsg(error.message || 'Failed to create account', 'error');
-          return;
-        }
-        
-        if (!data || !data.user) {
-          console.error('❌ No user data returned from signup');
-          setMsg('Account creation failed: No user data returned', 'error');
-          return;
-        }
-        
-        setMsg('Setting up profile...', 'info');
-        try {
-          await profileInit(data.user.id, email);
-        } catch (profileError) {
-          console.error('Profile init error:', profileError);
-          const errorMsg = profileError.message || 'Database error saving new user';
-          // Still allow signup to continue even if profile init fails
-          // The profile can be initialized later when they sign in
-          setMsg(`Account created but profile setup failed: ${errorMsg}. You can sign in to complete setup.`, 'warning');
-        }
-        
-        // Check if email confirmation is required (session will be null)
-        if (!data.session) {
-          setMsg('Account created! Please check your email to confirm your account before signing in.', 'success');
-          // Clear the form
-          document.getElementById('email').value = '';
-          document.getElementById('password').value = '';
-          return;
-        }
-        
-        // Store Supabase session tokens for cross-app authentication
-        localStorage.setItem('sb_access_token', data.session.access_token);
-        localStorage.setItem('sb_refresh_token', data.session.refresh_token);
-        
-        setMsg('Account created. Checking Planning Center...', 'success');
-        // Seed placeholder token and check profile for existing PC link (e.g., imported users)
-        setPlaceholderToken(data.user);
-        
-        try {
-          const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('onehope_token')}` };
-          const r = await fetch('/api/user/profile',{ headers, credentials:'include' });
-          if (r.ok) {
-            const prof = (await r.json()).data;
-            if (prof && prof.planning_center_id) {
-              setMsg('Refreshing Planning Center data...', 'info');
-              try { 
-                await fetch('/api/auth/pc/refresh',{ 
-                  method:'POST', 
-                  headers:{'Content-Type':'application/json'}, 
-                  body: JSON.stringify({ supabase_user_id: prof.id, planning_center_id: prof.planning_center_id })
-                }); 
-              } catch {}
-              setAppAuthToken({ planning_center_id: prof.planning_center_id, name: prof.name, email: prof.email, avatar_url: prof.avatar_url }, { id: prof.id });
-              setMsg('Account linked successfully! Redirecting...', 'success');
-              const returnUrl = getReturnUrl();
-              const redirectUrl = buildRedirectUrl(returnUrl);
-              setTimeout(() => location.href = redirectUrl, 1000);
-              return;
-            }
+        setMsg('Sending your magic link...', 'info');
+        const redirectTo = `${window.location.origin}/set-password?return=${encodeURIComponent(getReturnUrl())}&mode=signup`;
+        const { error } = await sb.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+            emailRedirectTo: redirectTo
           }
-        } catch {}
-        
-        setMsg('Checking Planning Center...', 'info');
-        const linked = await linkPlanningCenterIfNeeded(email, data.user);
-        
-        if (linked) {
-          // Success message already shown by linkPlanningCenterIfNeeded, just redirect
-          // Remove highlight from create account button
-          const btnUp = document.getElementById('btn-up');
-          if (btnUp) btnUp.classList.remove('highlight');
-          const returnUrl = getReturnUrl();
-          const redirectUrl = buildRedirectUrl(returnUrl);
-          setTimeout(() => location.href = redirectUrl, 1000);
-        } else {
-          setMsg('No Planning Center account found. Redirecting...', 'info');
-          // Remove highlight from create account button
-          const btnUp = document.getElementById('btn-up');
-          if (btnUp) btnUp.classList.remove('highlight');
-          const returnUrl = getReturnUrl();
-          const redirectUrl = buildRedirectUrl(returnUrl);
-          setTimeout(() => location.href = redirectUrl, 1000);
+        });
+
+        if (error) {
+          console.error('❌ Magic link error:', error);
+          if (error.status === 429 || (error.message && error.message.toLowerCase().includes('rate limit'))) {
+            setMsg('Too many signup attempts. Please wait a few minutes before trying again, or contact us at info@onehopechurch.com for help.', 'error');
+            return;
+          }
+          setMsg(error.message || 'Unable to send magic link. Please try again.', 'error');
+          return;
         }
+
+        setMsg('Check your email for a verification link. After you confirm, you’ll be asked to set a password.', 'success');
+      } catch (networkError) {
+        console.error('❌ Network error during magic link signup:', networkError);
+        setMsg('Network error: Unable to reach our authentication service. Please try again.', 'error');
       } finally {
-        // Re-enable buttons
-        btnIn.disabled = false;
-        btnUp.disabled = false;
-        btnIn.classList.remove('loading');
-        btnUp.classList.remove('loading');
+        if (btnUp) {
+          btnUp.disabled = false;
+          btnUp.classList.remove('loading');
+        }
       }
     }
     async function forgot(){
-      const email = document.getElementById('email').value.trim();
+      const emailInput = document.getElementById('email');
+      const email = (authFlowState.email || emailInput?.value.trim().toLowerCase()) || '';
       if (!email) {
         setMsg('Enter your email first.', 'warning');
+        goToEmailStep(false);
         return;
       }
+      authFlowState.email = email;
+      updateEmailDisplays(email);
       if (!sb) await init();
 
       try {
@@ -679,26 +746,53 @@
         const redirectTo = `${window.location.origin}/set-password?return=${encodeURIComponent(getReturnUrl())}`;
         const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) {
+          // Check for rate limit errors specifically
+          if (error.status === 429 || (error.message && error.message.toLowerCase().includes('rate limit'))) {
+            setMsg('Too many password reset requests. Please wait 15-30 minutes before trying again, or contact us at info@onehopechurch.com for assistance.', 'error');
+            return;
+          }
           setMsg(error.message || 'Unable to send reset email. Please try again.', 'error');
           return;
         }
         setMsg('If an account exists for that email, we just sent you a reset link.', 'success');
       } catch (error) {
         console.error('❌ Forgot password error:', error);
+        // Check for rate limit errors in catch block too
+        if (error.status === 429 || (error.message && error.message.toLowerCase().includes('rate limit'))) {
+          setMsg('Too many password reset requests. Please wait 15-30 minutes before trying again, or contact us at info@onehopechurch.com for assistance.', 'error');
+          return;
+        }
         setMsg('Unable to send reset email. Please try again later.', 'error');
       }
     }
-    document.getElementById('btn-in').onclick = signIn;
-    document.getElementById('btn-up').onclick = signUp;
-    document.getElementById('btn-forgot').onclick = function(e){ e.preventDefault(); forgot(); };
-    
-    // Remove highlight when user types in email field
-    document.getElementById('email').addEventListener('input', function() {
-      const btnUp = document.getElementById('btn-up');
-      if (btnUp) btnUp.classList.remove('highlight');
-      failedSignInAttempts = 0;
-    });
-    
+    const continueBtn = document.getElementById('btn-email-continue');
+    if (continueBtn) continueBtn.onclick = handleEmailSubmit;
+    const btnIn = document.getElementById('btn-in');
+    if (btnIn) btnIn.onclick = signIn;
+    const btnUp = document.getElementById('btn-up');
+    if (btnUp) btnUp.onclick = signUp;
+    const btnForgot = document.getElementById('btn-forgot');
+    if (btnForgot) btnForgot.onclick = function(e){ e.preventDefault(); forgot(); };
+    const changeEmailPassword = document.getElementById('change-email-password');
+    if (changeEmailPassword) changeEmailPassword.onclick = function(){ goToEmailStep(true); };
+    const changeEmailSignup = document.getElementById('change-email-signup');
+    if (changeEmailSignup) changeEmailSignup.onclick = function(){ goToEmailStep(true); };
+
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+      emailInput.addEventListener('input', function() {
+        authFlowState.emailExists = null;
+        authFlowState.email = emailInput.value.trim().toLowerCase();
+        failedSignInAttempts = 0;
+      });
+      emailInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          handleEmailSubmit();
+        }
+      });
+    }
+
     setupRememberMeToggle();
     init();
   </script>
