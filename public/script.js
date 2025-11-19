@@ -2248,6 +2248,7 @@ function updateStepItemsVisualState() {
                 completeButton.classList.add('btn-secondary', 'completed-button');
                 completeButton.disabled = true;
                 completeButton.setAttribute('aria-disabled', 'true');
+                completeButton.onclick = null;
             }
             
             if (actionsContainer) {
@@ -2263,6 +2264,7 @@ function updateStepItemsVisualState() {
                 completeButton.removeAttribute('aria-disabled');
                 completeButton.classList.remove('btn-secondary', 'completed-button');
                 completeButton.classList.add('btn-primary');
+                completeButton.onclick = () => completeStep(stepId, completeButton);
             }
             
             if (isActiveStep) {
