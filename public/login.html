@@ -689,7 +689,10 @@
       
       try {
         setMsg('Sending your magic link...', 'info');
-        const redirectTo = `${window.location.origin}/set-password?return=${encodeURIComponent(getReturnUrl())}&mode=signup`;
+        const redirectTo = `${window.location.origin}/set-password?return=${encodeURIComponent(getReturnUrl())}&mode=signup&email=${encodeURIComponent(email)}`;
+        try {
+          localStorage.setItem('pending_signup_email', email);
+        } catch {}
         const { error } = await sb.auth.signInWithOtp({
           email,
           options: {
