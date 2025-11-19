@@ -1422,8 +1422,19 @@ app.post('/api/user/steps/complete', async (req, res) => {
             return res.status(400).json({ error: 'Missing step ID' });
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        // Get user's Supabase ID (Planning Center users first, fallback to Supabase auth ID)
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch (error) {
+            console.error('❌ Error resolving Supabase user for step completion:', error);
+        }
+
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -1461,8 +1472,19 @@ app.delete('/api/user/steps/clear', async (req, res) => {
             }
         }
 
-        // Get user's Supabase ID
-        const supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id || user.id);
+        // Get user's Supabase ID (Planning Center first, then Supabase auth ID)
+        let supabaseUser = null;
+        try {
+            if (user.planning_center_id) {
+                supabaseUser = await db.getUserByPlanningCenterId(user.planning_center_id);
+            }
+            if (!supabaseUser && (user.supabase_id || user.id)) {
+                supabaseUser = await db.getUserById(user.supabase_id || user.id);
+            }
+        } catch (error) {
+            console.error('❌ Error resolving Supabase user for step clearing:', error);
+        }
+
         if (!supabaseUser) {
             return res.status(404).json({ error: 'User not found' });
         }
