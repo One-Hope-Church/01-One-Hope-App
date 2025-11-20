@@ -12,6 +12,7 @@ const { db } = require('./supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3001; // Default to 3001 for local dev (onehope-production uses 3000)
+app.locals.userSessions = app.locals.userSessions || {};
 
 // Middleware
 app.use(cors());
@@ -37,6 +38,32 @@ app.use(session({
 const PLANNING_CENTER_API_TOKEN = process.env.PLANNING_CENTER_API_TOKEN;
 const PLANNING_CENTER_APP_SECRET = process.env.PLANNING_CENTER_APP_SECRET;
 const PLANNING_CENTER_BASE_URL = 'https://api.planningcenteronline.com';
+
+// Step definitions (frontend + backend mapping) for reporting/assessment
+const STEP_PROGRESSION = [
+    { dbId: 'assessment', displayId: 'assessment', label: 'Take Next Steps Assessment' },
+    { dbId: 'faith', displayId: 'faith', label: 'Make Jesus Lord' },
+    { dbId: 'baptism', displayId: 'baptism', label: 'Get Baptized' },
+    { dbId: 'attendance', displayId: 'attendance', label: 'Attend Regularly' },
+    { dbId: 'bible-prayer', displayId: 'bible-prayer', label: 'Daily Bible & Prayer' },
+    { dbId: 'giving', displayId: 'giving', label: 'Give Consistently' },
+    { dbId: 'small-group', displayId: 'small-group', label: 'Join a Small Group' },
+    { dbId: 'serve-team', displayId: 'serve-team', label: 'Serve on Team' },
+    { dbId: 'invite-pray', displayId: 'invite-pray', label: 'Invite & Pray' },
+    { dbId: 'share-story', displayId: 'share-story', label: 'Share Your Story' },
+    { dbId: 'leadership', displayId: 'lead-group', label: 'Lead a Small Group or Serve Team Area' },
+    { dbId: 'mission-living', displayId: 'live-mission', label: 'Live on Mission Daily' }
+];
+
+const STEP_DB_ORDER = STEP_PROGRESSION.map(step => step.dbId);
+const STEP_LABEL_BY_DB = STEP_PROGRESSION.reduce((acc, step) => {
+    acc[step.dbId] = step.label;
+    return acc;
+}, {});
+const STEP_DISPLAY_BY_DB = STEP_PROGRESSION.reduce((acc, step) => {
+    acc[step.dbId] = step.displayId;
+    return acc;
+}, {});
 
 // Debug token values (first few characters only)
 console.log('🔧 Token Debug (first 10 chars):');
@@ -66,6 +93,75 @@ function buildPlanningCenterAuthHeaderOptions() {
     return options;
 }
 
+function decodeTokenPayload(token) {
+    try {
+        return JSON.parse(Buffer.from(token, 'base64').toString());
+    } catch (error) {
+        return null;
+    }
+}
+
+function getAppRequestUser(req) {
+    if (req.session.user) {
+        return req.session.user;
+    }
+
+    const userSessions = req.app.locals.userSessions || {};
+    const backupUser = userSessions[req.sessionID];
+    if (backupUser) {
+        req.session.user = backupUser;
+        return backupUser;
+    }
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        return decodeTokenPayload(token);
+    }
+
+    return null;
+}
+
+async function resolveSupabaseUserFromRequest(req) {
+    const appUser = getAppRequestUser(req);
+    if (!appUser) return null;
+
+    let supabaseUser = null;
+    try {
+        if (appUser.planning_center_id) {
+            supabaseUser = await db.getUserByPlanningCenterId(appUser.planning_center_id);
+        }
+        if (!supabaseUser && (appUser.supabase_id || appUser.id)) {
+            supabaseUser = await db.getUserById(appUser.supabase_id || appUser.id);
+        }
+    } catch (error) {
+        console.error('❌ Error resolving Supabase user from request:', error);
+        throw error;
+    }
+
+    return supabaseUser;
+}
+
+async function requireAdmin(req, res, next) {
+    try {
+        const supabaseUser = await resolveSupabaseUserFromRequest(req);
+
+        if (!supabaseUser) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        if (!supabaseUser.is_admin) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        req.supabaseUser = supabaseUser;
+        next();
+    } catch (error) {
+        console.error('❌ Admin guard error:', error);
+        res.status(500).json({ error: 'Failed to verify admin privileges' });
+    }
+}
+
 // Debug Planning Center configuration (Personal Access Token only)
 console.log('🔧 Planning Center Configuration Debug:');
 console.log('🔧 App ID (PAT):', process.env.PLANNING_CENTER_API_TOKEN ? 'Present' : 'Missing');
@@ -76,6 +172,11 @@ console.log('🔧 Vercel URL:', process.env.VERCEL_URL);
 // Serve the main app
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
+});
+
+// Serve admin dashboard
+app.get('/admin', (req, res) => {
+    res.sendFile(__dirname + '/public/admin.html');
 });
 
 // Serve dedicated login page
@@ -334,6 +435,29 @@ app.post('/api/user/profile/update', async (req, res) => {
     } catch (error) {
         console.error('❌ /api/user/profile/update error:', error);
         res.status(500).json({ error: 'Failed to update user profile' });
+    }
+});
+
+// Admin status check (used by frontend to gate reporting UI)
+app.get('/api/admin/status', async (req, res) => {
+    try {
+        const supabaseUser = await resolveSupabaseUserFromRequest(req);
+        if (!supabaseUser) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        res.json({
+            success: true,
+            is_admin: !!supabaseUser.is_admin,
+            user: {
+                id: supabaseUser.id,
+                name: supabaseUser.name || null,
+                email: supabaseUser.planning_center_email || null
+            }
+        });
+    } catch (error) {
+        console.error('❌ /api/admin/status error:', error);
+        res.status(500).json({ error: 'Failed to resolve admin status' });
     }
 });
 
@@ -1496,6 +1620,174 @@ app.delete('/api/user/steps/clear', async (req, res) => {
     } catch (error) {
         console.error('❌ Error clearing user steps:', error);
         res.status(500).json({ error: 'Failed to clear user steps' });
+    }
+});
+
+// Admin Reporting Endpoints
+app.get('/api/admin/reports/accounts', requireAdmin, async (req, res) => {
+    try {
+        const users = await db.listAllUsersBasic();
+        res.json({
+            success: true,
+            generatedAt: new Date().toISOString(),
+            total: users.length,
+            data: users
+        });
+    } catch (error) {
+        console.error('❌ Error fetching account report:', error);
+        res.status(500).json({ error: 'Failed to fetch account report' });
+    }
+});
+
+app.get('/api/admin/reports/streaks', requireAdmin, async (req, res) => {
+    try {
+        const [users, progressRows] = await Promise.all([
+            db.listAllUsersBasic(),
+            db.listAllUserProgress()
+        ]);
+
+        const progressMap = new Map(progressRows.map(row => [row.user_id, row]));
+
+        const rows = users.map(user => {
+            const progress = progressMap.get(user.id) || null;
+            return {
+                user_id: user.id,
+                name: user.name || user.planning_center_email || null,
+                email: user.planning_center_email || null,
+                current_streak: progress?.current_streak || 0,
+                total_readings: progress?.total_readings || 0,
+                last_reading_date: progress?.last_reading_date || null,
+                updated_at: progress?.updated_at || null
+            };
+        }).sort((a, b) => b.current_streak - a.current_streak);
+
+        res.json({
+            success: true,
+            generatedAt: new Date().toISOString(),
+            totalUsers: users.length,
+            rows
+        });
+    } catch (error) {
+        console.error('❌ Error fetching streak report:', error);
+        res.status(500).json({ error: 'Failed to fetch streak report' });
+    }
+});
+
+app.get('/api/admin/reports/steps', requireAdmin, async (req, res) => {
+    try {
+        const [users, stepRows] = await Promise.all([
+            db.listAllUsersBasic(),
+            db.listAllUserSteps()
+        ]);
+
+        const userMap = new Map(users.map(user => [user.id, user]));
+        const stepsByUser = new Map();
+
+        stepRows.forEach(row => {
+            if (!stepsByUser.has(row.user_id)) {
+                stepsByUser.set(row.user_id, []);
+            }
+            stepsByUser.get(row.user_id).push(row);
+        });
+
+        const bucketMap = STEP_PROGRESSION.reduce((acc, step) => {
+            acc[step.displayId] = {
+                stepId: step.displayId,
+                dbStepId: step.dbId,
+                label: step.label,
+                users: []
+            };
+            return acc;
+        }, {
+            completed: {
+                stepId: 'completed',
+                dbStepId: null,
+                label: 'All Steps Completed',
+                users: []
+            }
+        });
+
+        const userSummaries = users.map(user => {
+            const stepRecords = stepsByUser.get(user.id) || [];
+            const completedSet = new Set(
+                stepRecords
+                    .filter(record => record.completed)
+                    .map(record => record.step_id)
+            );
+
+            const completedDbIdsOrdered = STEP_DB_ORDER.filter(stepId => completedSet.has(stepId));
+            const completedDisplayIds = completedDbIdsOrdered.map(id => STEP_DISPLAY_BY_DB[id] || id);
+
+            let currentDbStep = null;
+            for (const stepId of STEP_DB_ORDER) {
+                if (!completedSet.has(stepId)) {
+                    currentDbStep = stepId;
+                    break;
+                }
+            }
+
+            const lastCompletedRecord = stepRecords
+                .filter(record => record.completed && record.completed_date)
+                .sort((a, b) => new Date(b.completed_date) - new Date(a.completed_date))[0];
+
+            const summary = {
+                user_id: user.id,
+                name: user.name || user.planning_center_email || null,
+                email: user.planning_center_email || null,
+                current_step_db_id: currentDbStep,
+                current_step: currentDbStep ? (STEP_DISPLAY_BY_DB[currentDbStep] || currentDbStep) : null,
+                current_step_label: currentDbStep ? (STEP_LABEL_BY_DB[currentDbStep] || currentDbStep) : 'All Steps Completed',
+                completed_steps_db_ids: completedDbIdsOrdered,
+                completed_steps: completedDisplayIds,
+                completed_count: completedDisplayIds.length,
+                last_completed_date: lastCompletedRecord?.completed_date || null
+            };
+
+            if (summary.current_step && bucketMap[summary.current_step]) {
+                bucketMap[summary.current_step].users.push(summary);
+            } else {
+                bucketMap.completed.users.push(summary);
+            }
+
+            return summary;
+        });
+
+        Object.values(bucketMap).forEach(bucket => {
+            bucket.userCount = bucket.users.length;
+            bucket.users.sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+        });
+
+        const flatSteps = stepRows.map(row => {
+            const user = userMap.get(row.user_id) || {};
+            return {
+                user_id: row.user_id,
+                name: user.name || user.planning_center_email || null,
+                email: user.planning_center_email || null,
+                step_id: row.step_id,
+                step_display_id: STEP_DISPLAY_BY_DB[row.step_id] || row.step_id,
+                step_label: STEP_LABEL_BY_DB[row.step_id] || row.step_id,
+                completed: !!row.completed,
+                completed_date: row.completed_date || null,
+                notes: row.notes || null,
+                updated_at: row.updated_at || null
+            };
+        });
+
+        res.json({
+            success: true,
+            generatedAt: new Date().toISOString(),
+            totalUsers: users.length,
+            buckets: Object.values(bucketMap),
+            users: userSummaries,
+            flatSteps
+        });
+    } catch (error) {
+        console.error('❌ Error fetching steps report:', error);
+        res.status(500).json({ error: 'Failed to fetch steps report' });
     }
 });
 

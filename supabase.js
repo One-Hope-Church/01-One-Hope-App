@@ -601,6 +601,64 @@ const db = {
             console.error('❌ Database error:', error);
             throw error;
         }
+    },
+
+    // Admin reporting helpers
+    async listAllUsersBasic() {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, planning_center_email, name, phone, created_at, last_login, is_admin')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('❌ Error fetching users for reporting:', error);
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    async listAllUserSteps() {
+        try {
+            const { data, error } = await supabase
+                .from('user_steps')
+                .select('user_id, step_id, completed, completed_date, notes, updated_at')
+                .order('user_id', { ascending: true });
+
+            if (error) {
+                console.error('❌ Error fetching user steps for reporting:', error);
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
+    },
+
+    async listAllUserProgress() {
+        try {
+            const { data, error } = await supabase
+                .from('user_progress')
+                .select('user_id, current_streak, total_readings, last_reading_date, updated_at')
+                .order('current_streak', { ascending: false });
+
+            if (error) {
+                console.error('❌ Error fetching user progress for reporting:', error);
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
     }
 };
 

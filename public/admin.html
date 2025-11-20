@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>One Hope Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        .admin-header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        .admin-header button {
+            margin-left: auto;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 20px 70px rgba(15, 23, 42, 0.45);
+        }
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+        }
+        .card .stat {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        section {
+            margin-bottom: 40px;
+        }
+        section h2 {
+            margin-bottom: 16px;
+        }
+        .table-wrapper {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            color: #e2e8f0;
+        }
+        th {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: #4c6ef5;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.09);
+            color: #fff;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+            font-size: 13px;
+        }
+        .step-buckets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .step-bucket {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .step-bucket h4 {
+            margin: 0 0 4px;
+            font-size: 15px;
+        }
+        .step-bucket small {
+            color: #94a3b8;
+        }
+        .step-bucket strong {
+            font-size: 32px;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5f5;
+        }
+        .status-badge.success {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+        .status-badge.danger {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: #94a3b8;
+        }
+        .hidden {
+            display: none !important;
+        }
+        @media (max-width: 600px) {
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .admin-header button {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p id="admin-user-label" style="color:#94a3b8;margin:4px 0 0;">Loading admin status...</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button id="refresh-btn" class="btn btn-secondary">Refresh Data</button>
+                <button id="back-to-app-btn" class="btn btn-primary" onclick="window.location.href='/'">Return to App</button>
+            </div>
+        </div>
+
+        <div id="not-admin-state" class="empty-state hidden">
+            <h2>Access Restricted</h2>
+            <p>You must be marked as an admin to view reports. Please contact a site administrator if you need access.</p>
+            <button class="btn btn-primary" onclick="window.location.href='/login'">Go to Login</button>
+        </div>
+
+        <div id="admin-content" class="hidden">
+            <section>
+                <div class="card-grid" id="summary-cards"></div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <h2>Assessment Steps Overview</h2>
+                    <div>
+                        <button id="download-steps-csv" class="btn btn-secondary">Download All Steps CSV</button>
+                    </div>
+                </div>
+                <div class="step-buckets" id="step-buckets"></div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <h2>Current Step by Person</h2>
+                    <button id="download-people-steps-csv" class="btn btn-secondary">Download People CSV</button>
+                </div>
+                <div class="table-wrapper" id="people-table-wrapper">
+                    <table id="people-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Current Step</th>
+                                <th>Completed Steps</th>
+                                <th>Last Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <h2>Bible Reading Streaks</h2>
+                    <button id="download-streaks-csv" class="btn btn-secondary">Download Streaks CSV</button>
+                </div>
+                <div class="table-wrapper" id="streak-table-wrapper">
+                    <table id="streak-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Current Streak</th>
+                                <th>Total Readings</th>
+                                <th>Last Reading Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <h2>Account Directory</h2>
+                    <button id="download-accounts-csv" class="btn btn-secondary">Download Accounts CSV</button>
+                </div>
+                <div class="table-wrapper" id="accounts-table-wrapper">
+                    <table id="accounts-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Created</th>
+                                <th>Last Login</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+    <script src="/admin.js" defer></script>
+</body>
+</html>
+
