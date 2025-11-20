@@ -1,3 +1,4 @@
+// Admin dashboard script for One Hope reporting
 const API_BASE = '';
 
 const selectors = {
