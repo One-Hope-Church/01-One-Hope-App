@@ -17,6 +17,7 @@ let assessmentState = {
 
 // API Configuration
 const API_BASE = window.location.origin;
+const MINISTRY_CONNECT_FORM_URL = 'https://onehopenola.churchcenter.com/people/forms/1099352';
 
 function getRememberPreference() {
     if (typeof window === 'undefined') return true;
@@ -2200,6 +2201,7 @@ function updateProgressUI() {
     
     // Update step items visual state
     updateStepItemsVisualState();
+    updateMinistryConnectBanner();
 }
 
 function updateStepItemsVisualState() {
@@ -2279,6 +2281,28 @@ function updateStepItemsVisualState() {
             }
         }
     });
+}
+
+function updateMinistryConnectBanner() {
+    const banner = document.getElementById('ministryConnectBanner');
+    if (!banner) return;
+
+    const stepProgression = [
+        'faith',
+        'baptism',
+        'attendance',
+        'bible-prayer',
+        'giving',
+        'small-group',
+        'serve-team',
+        'invite-pray',
+        'share-story',
+        'lead-group',
+        'live-mission'
+    ];
+
+    const allStepsComplete = stepProgression.every(stepId => userProgress.completedSteps.includes(stepId));
+    banner.style.display = allStepsComplete ? 'flex' : 'none';
 }
 
 function updateStepsCompletedCount() {
@@ -2387,9 +2411,12 @@ function updateHomepageNextStep() {
     // If all steps are completed, show a completion message
     if (!nextStep) {
         nextStep = {
-            title: 'All Steps Complete! 🎉',
-            description: 'Congratulations! You\'ve completed all the spiritual growth steps. Keep growing in your faith!',
-            icon: 'fas fa-trophy',
+            id: 'ministry-connect',
+            title: 'Connect with a Ministry Leader',
+            description: 'You’ve completed every step. Let a ministry leader help you plan what’s next.',
+            icon: 'fas fa-user-friends',
+            link: MINISTRY_CONNECT_FORM_URL,
+            ctaText: 'Connect with a Leader',
             allComplete: true
         };
         console.log('🏆 All steps completed!');
@@ -2416,34 +2443,34 @@ function updateHomepageNextStep() {
         console.log('✅ Updated description to:', nextStep.description);
     }
     
-    // Handle button differently for completed vs incomplete steps
+    const hasActionLink = typeof nextStep.link === 'string' && nextStep.link.length > 0;
+    const shouldDisableButton = nextStep.allComplete && !hasActionLink;
+
+    // Handle button state
     if (stepButton) {
-        if (nextStep.allComplete) {
-            // All steps completed - show celebration message, no link
-            stepButton.textContent = '🎉 All Complete!';
+        if (shouldDisableButton) {
+            stepButton.textContent = nextStep.ctaText || '🎉 All Complete!';
             stepButton.classList.remove('btn-primary');
             stepButton.classList.add('btn-secondary', 'disabled');
             stepButton.disabled = true;
             stepButton.onclick = null; // Remove click handler
             console.log('✅ Updated button for completed state');
         } else {
-            // Normal step - show action button
-            stepButton.textContent = 'View Next Step';
+            stepButton.textContent = nextStep.ctaText || 'View Next Step';
             stepButton.classList.remove('btn-secondary', 'disabled');
             stepButton.classList.add('btn-primary');
             stepButton.disabled = false;
-            console.log('✅ Updated button text to: View Next Step');
+            console.log('✅ Updated button text to:', stepButton.textContent);
         }
     }
     
-    // Store the current step's link for the button (only if not all complete)
-    if (!nextStep.allComplete) {
-        nextStepContainer.dataset.currentStepLink = nextStep.link || '#';
-        console.log('✅ Updated step link to:', nextStep.link || '#');
+    // Store the current step's link for the button when available
+    if (hasActionLink) {
+        nextStepContainer.dataset.currentStepLink = nextStep.link;
+        console.log('✅ Updated step link to:', nextStep.link);
     } else {
-        // Remove the link data attribute for completed state
         delete nextStepContainer.dataset.currentStepLink;
-        console.log('✅ Removed step link for completed state');
+        console.log('✅ Removed step link - no action available');
     }
 }
 
@@ -2521,12 +2548,7 @@ function openCurrentStepLink() {
     const nextStepContainer = document.getElementById('homepage-next-step');
     if (!nextStepContainer) return;
     
-    // Check if all steps are completed
     const stepTitle = nextStepContainer.querySelector('.step-content h4');
-    if (stepTitle && stepTitle.textContent.includes('All Steps Complete')) {
-        showNotification('🎉 Congratulations! All steps completed!', 'success');
-        return;
-    }
     
     if (nextStepContainer.dataset.currentStepLink) {
         const link = nextStepContainer.dataset.currentStepLink;
@@ -2543,7 +2565,13 @@ function openCurrentStepLink() {
         } else {
             showNotification('Link not available for this step', 'info');
         }
+    } else {
+        showNotification('Link not available for this step', 'info');
     }
+}
+
+function openMinistryConnectForm() {
+    window.location.href = MINISTRY_CONNECT_FORM_URL;
 }
 
 // Navigation Setup
