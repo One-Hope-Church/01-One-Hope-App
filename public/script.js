@@ -18,6 +18,19 @@ let assessmentState = {
 // API Configuration
 const API_BASE = window.location.origin;
 const MINISTRY_CONNECT_FORM_URL = 'https://onehopenola.churchcenter.com/people/forms/1099352';
+const PRIMARY_STEP_IDS = [
+    'faith',
+    'baptism',
+    'attendance',
+    'bible-prayer',
+    'giving',
+    'small-group',
+    'serve-team',
+    'invite-pray',
+    'share-story',
+    'lead-group',
+    'live-mission'
+];
 
 function getRememberPreference() {
     if (typeof window === 'undefined') return true;
@@ -2202,23 +2215,12 @@ function updateProgressUI() {
     // Update step items visual state
     updateStepItemsVisualState();
     updateMinistryConnectBanner();
+    updateMinistryConnectStepVisibility();
 }
 
 function updateStepItemsVisualState() {
     // Define the step progression to match the HTML order
-    const stepProgression = [
-        'faith',
-        'baptism', 
-        'attendance',
-        'bible-prayer',
-        'giving',
-        'small-group',
-        'serve-team',
-        'invite-pray',
-        'share-story',
-        'lead-group',
-        'live-mission'
-    ];
+    const stepProgression = [...PRIMARY_STEP_IDS];
     
     const activeIndex = stepProgression.findIndex(stepId => !userProgress.completedSteps.includes(stepId));
     const activeStepId = activeIndex === -1 ? null : stepProgression[activeIndex];
@@ -2287,22 +2289,16 @@ function updateMinistryConnectBanner() {
     const banner = document.getElementById('ministryConnectBanner');
     if (!banner) return;
 
-    const stepProgression = [
-        'faith',
-        'baptism',
-        'attendance',
-        'bible-prayer',
-        'giving',
-        'small-group',
-        'serve-team',
-        'invite-pray',
-        'share-story',
-        'lead-group',
-        'live-mission'
-    ];
-
-    const allStepsComplete = stepProgression.every(stepId => userProgress.completedSteps.includes(stepId));
+    const allStepsComplete = PRIMARY_STEP_IDS.every(stepId => userProgress.completedSteps.includes(stepId));
     banner.style.display = allStepsComplete ? 'flex' : 'none';
+}
+
+function updateMinistryConnectStepVisibility() {
+    const ministryStep = document.querySelector('[data-step-id="ministry-connect"]');
+    if (!ministryStep) return;
+
+    const allStepsComplete = PRIMARY_STEP_IDS.every(stepId => userProgress.completedSteps.includes(stepId));
+    ministryStep.style.display = allStepsComplete ? '' : 'none';
 }
 
 function updateStepsCompletedCount() {
@@ -2414,7 +2410,7 @@ function updateHomepageNextStep() {
             id: 'ministry-connect',
             title: 'Connect with a Ministry Leader',
             description: 'You’ve completed every step. Let a ministry leader help you plan what’s next.',
-            icon: 'fas fa-user-friends',
+            icon: 'fas fa-trophy',
             link: MINISTRY_CONNECT_FORM_URL,
             ctaText: 'Connect with a Leader',
             allComplete: true
