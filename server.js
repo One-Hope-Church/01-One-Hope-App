@@ -179,6 +179,11 @@ app.get('/admin', (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
+// Serve admin dashboard script explicitly (for Vercel routing)
+app.get('/admin.js', (req, res) => {
+    res.sendFile(__dirname + '/public/admin.js');
+});
+
 // Serve dedicated login page
 app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
