@@ -2298,7 +2298,7 @@ function updateMinistryConnectStepVisibility() {
     if (!ministryStep) return;
 
     const allStepsComplete = PRIMARY_STEP_IDS.every(stepId => userProgress.completedSteps.includes(stepId));
-    ministryStep.style.display = allStepsComplete ? '' : 'none';
+    ministryStep.style.display = allStepsComplete ? 'block' : 'none';
 }
 
 function updateStepsCompletedCount() {
