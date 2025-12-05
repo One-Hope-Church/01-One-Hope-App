@@ -3310,74 +3310,56 @@ function skipAssessment() {
 // External Link Functions
 function openExternalLink(type) {
     let url = '';
-    let message = '';
     
     switch(type) {
         case 'salvation':
             url = 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus';
-            message = 'Opening Make Jesus Lord of Your Life...';
             break;
         case 'baptism-info':
             url = 'https://staging.onehopechurch.com/connect/baptism';
-            message = 'Opening Baptism information...';
             break;
         case 'small-group':
             url = 'https://onehopechurch.com/connect/directory';
-            message = 'Opening Small Groups page...';
             break;
         case 'give':
             url = 'https://donate.overflow.co/onehopechurch';
-            message = 'Opening Giving page...';
             break;
         case 'give-info':
             url = 'https://staging.onehopechurch.com/giving';
-            message = 'Opening Giving Page...';
             break;
         case 'watch-message':
             url = 'https://staging.onehopechurch.com/media';
-            message = 'Opening Messages page...';
             break;
         case 'next-step':
             url = 'https://staging.onehopechurch.com/connect';
-            message = 'Opening Next Steps page...';
             break;
         case 'connect':
             url = 'https://staging.onehopechurch.com/connect';
-            message = 'Opening Connect page...';
             break;
         case 'visit':
             url = 'https://staging.onehopechurch.com/visit';
-            message = 'Opening Visit page...';
             break;
         case 'prayer':
             url = 'https://onehopechurch.com/prayer';
-            message = 'Opening Prayer resources...';
             break;
         case 'share-testimony':
             url = 'https://staging.onehopechurch.com/blog/how-to-share-your-testimony';
-            message = 'Opening testimony resources...';
             break;
         case 'give-go':
             url = 'https://staging.onehopechurch.com/giving';
-            message = 'Opening Give & Go resources...';
             break;
         case 'lead':
             url = 'https://staging.onehopechurch.com/connect';
-            message = 'Opening Leadership opportunities...';
             break;
         case 'staging-home':
             url = 'https://staging.onehopechurch.com';
-            message = 'Opening One Hope Church home page...';
             break;
         default:
             url = 'https://staging.onehopechurch.com';
-            message = 'Opening One Hope Church website...';
     }
     
-    showNotification(message, 'info');
-    setTimeout(() => {
-        window.location.href = url;
-    }, 1000);
+    // Direct redirect without notification or delay
+    window.location.href = url;
 }
 
 // Events Functions
