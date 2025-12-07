@@ -1799,20 +1799,18 @@ function convertVerseToPassageId(verse) {
     
     // First check for chapter range format (e.g., "2 John 1-13", "3 John 1-15")
     // Pattern needs to handle numbered books like "1 John", "2 John", "3 John"
+    // Note: Bible API doesn't support chapter ranges, so we convert to verse range
+    // "3 John 1-15" means "chapter 1, verses 1-15" -> "3 John 1:1-15"
     const chapterRangeMatch = verse.match(/^(\d*\s*[A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+)-(\d+)$/);
     if (chapterRangeMatch) {
         const bookName = chapterRangeMatch[1].trim();
         const startChapter = chapterRangeMatch[2];
-        const endChapter = chapterRangeMatch[3];
+        const endVerse = chapterRangeMatch[3]; // This is actually the last verse number
         
-        const bookId = bookMap[bookName];
-        if (!bookId) {
-            console.log(`Unknown book in chapter range: ${bookName}`);
-            return null;
-        }
-        
-        // Bible API format for chapter range: "2JN.1-2JN.13" or "3JN.1-3JN.15"
-        return `${bookId}.${startChapter}-${bookId}.${endChapter}`;
+        // Convert chapter range to verse range: "3 John 1-15" -> "3 John 1:1-15"
+        // This means "chapter 1, verses 1 through 15"
+        verse = `${bookName} ${startChapter}:1-${endVerse}`;
+        // Fall through to verse range parsing below
     }
     
     // Parse the verse reference (e.g., "1 Corinthians 2:6-3:4")
