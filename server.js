@@ -1401,19 +1401,21 @@ function convertVerseToPassageId(verse) {
         '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV'
     };
     
-    // First check for chapter range format (e.g., "2 John 1-13")
-    const chapterRangeMatch = verse.match(/^(\w+(?:\s+\w+)?)\s+(\d+)-(\d+)$/);
+    // First check for chapter range format (e.g., "2 John 1-13", "3 John 1-15")
+    // Pattern needs to handle numbered books like "1 John", "2 John", "3 John"
+    const chapterRangeMatch = verse.match(/^(\d*\s*[A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+)-(\d+)$/);
     if (chapterRangeMatch) {
-        const bookName = chapterRangeMatch[1];
+        const bookName = chapterRangeMatch[1].trim();
         const startChapter = chapterRangeMatch[2];
         const endChapter = chapterRangeMatch[3];
         
         const bookCode = bookMap[bookName];
         if (!bookCode) {
+            console.log(`Unknown book in chapter range: ${bookName}`);
             return '';
         }
         
-        // Bible API format for chapter range: "2JN.1-2JN.13"
+        // Bible API format for chapter range: "2JN.1-2JN.13" or "3JN.1-3JN.15"
         return `${bookCode}.${startChapter}-${bookCode}.${endChapter}`;
     }
     
