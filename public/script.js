@@ -1757,6 +1757,20 @@ async function fetchBibleVerse(verse) {
 
 // Convert verse reference to passage ID format
 function convertVerseToPassageId(verse) {
+    if (!verse) return null;
+    
+    // Normalize verse reference to fix API formatting issues (same as production site)
+    verse = verse
+        .replace("1 ", "1")
+        .replace("2 ", "2")
+        .replace("1John ", "1 John ")
+        .replace("2John ", "2 John 1:")
+        .replace("3John:", "3 John 1:")
+        .replace("3 John", "3 John 1:")
+        .replace("Song of Solomon", "Song of Songs")
+        .replace("Philemon", "Philemon 1:")
+        .replace("Philippians", "Php");
+    
     // Map of book names to their IDs
     const bookMap = {
         'Genesis': 'GEN', 'Exodus': 'EXO', 'Leviticus': 'LEV', 'Numbers': 'NUM', 'Deuteronomy': 'DEU',
@@ -2984,7 +2998,19 @@ async function loadScriptureContent(section) {
     // Only try to fetch if we have a valid verse reference
     let verseData = null;
     if (verseReference && verseReference.trim()) {
-        verseData = await fetchBibleVerse(verseReference);
+        // Normalize verse reference to fix API formatting issues (same as production site)
+        const normalizedVerse = verseReference
+            .replace("1 ", "1")
+            .replace("2 ", "2")
+            .replace("1John ", "1 John ")
+            .replace("2John ", "2 John 1:")
+            .replace("3John:", "3 John 1:")
+            .replace("3 John", "3 John 1:")
+            .replace("Song of Solomon", "Song of Songs")
+            .replace("Philemon", "Philemon 1:")
+            .replace("Philippians", "Php");
+        
+        verseData = await fetchBibleVerse(normalizedVerse);
     }
     
     if (verseData?.data) {
