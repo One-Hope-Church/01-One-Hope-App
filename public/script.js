@@ -3023,16 +3023,21 @@ async function loadScriptureContent(section) {
     let verseData = null;
     if (verseReference && verseReference.trim()) {
         // Normalize verse reference to fix API formatting issues (same as production site)
-        const normalizedVerse = verseReference
+        // First fix book names without spaces - keep 1 John and 2 John as they were
+        let normalizedVerse = verseReference
             .replace("1 ", "1")
             .replace("2 ", "2")
             .replace("1John ", "1 John ")
             .replace("2John ", "2 John 1:")
-            .replace("3John:", "3 John 1:")
-            .replace("3 John", "3 John 1:")
+            // Fix 3John with regex to handle chapter ranges properly (e.g., "3John 1-15" -> "3 John 1-15")
+            .replace(/3John(\s|:)/g, "3 John$1")  // "3John 1-15" -> "3 John 1-15", "3John:" -> "3 John:"
             .replace("Song of Solomon", "Song of Songs")
             .replace("Philemon", "Philemon 1:")
             .replace("Philippians", "Php");
+        
+        // Then handle 3 John specifically - only add chapter number if it's just "3 John" followed by a single number (no colon, no dash)
+        // This handles "3 John 14" -> "3 John 1:14", but leaves "3 John 1-15" alone
+        normalizedVerse = normalizedVerse.replace(/^3 John\s+(\d+)$/, "3 John 1:$1");  // "3 John 14" -> "3 John 1:14" (only if no colon/dash)
         
         verseData = await fetchBibleVerse(normalizedVerse);
     }
