@@ -1760,16 +1760,23 @@ function convertVerseToPassageId(verse) {
     if (!verse) return null;
     
     // Normalize verse reference to fix API formatting issues (same as production site)
+    // First, fix book names without spaces (e.g., "2John" -> "2 John")
     verse = verse
-        .replace("1 ", "1")
-        .replace("2 ", "2")
-        .replace("1John", "1 John ")
-        .replace("2John", "2 John 1:")
-        .replace("3John", "3 John 1:")
-        .replace("3John", "3 John 1:")
+        .replace("1John", "1 John")
+        .replace("2John", "2 John")
+        .replace("3John", "3 John")
         .replace("Song of Solomon", "Song of Songs")
-        .replace("Philemon", "Philemon 1:")
         .replace("Philippians", "Php");
+    
+    // Then handle specific cases that need chapter numbers added
+    // Only add chapter numbers if it's a verse format (has colon) or single chapter reference
+    if (verse.includes(':') || /^\d*\s*[A-Za-z]+\s+\d+$/.test(verse)) {
+        // This is a verse format or single chapter, add chapter if missing for specific books
+        verse = verse
+            .replace(/^2 John\s+(\d+)$/, "2 John 1:$1")  // "2 John 13" -> "2 John 1:13"
+            .replace(/^3 John\s+(\d+)$/, "3 John 1:$1")  // "3 John 14" -> "3 John 1:14"
+            .replace(/^Philemon\s+(\d+)$/, "Philemon 1:$1"); // "Philemon 25" -> "Philemon 1:25"
+    }
     
     // Map of book names to their IDs
     const bookMap = {
@@ -1789,6 +1796,23 @@ function convertVerseToPassageId(verse) {
         'Philemon': 'PHM', 'Hebrews': 'HEB', 'James': 'JAS', '1 Peter': '1PE', '2 Peter': '2PE',
         '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV'
     };
+    
+    // First check for chapter range format (e.g., "2 John 1-13")
+    const chapterRangeMatch = verse.match(/^(\d*\s*[A-Za-z]+)\s+(\d+)-(\d+)$/);
+    if (chapterRangeMatch) {
+        const bookName = chapterRangeMatch[1].trim();
+        const startChapter = chapterRangeMatch[2];
+        const endChapter = chapterRangeMatch[3];
+        
+        const bookId = bookMap[bookName];
+        if (!bookId) {
+            console.log(`Unknown book: ${bookName}`);
+            return null;
+        }
+        
+        // Bible API format for chapter range: "2JN.1-2JN.13"
+        return `${bookId}.${startChapter}-${bookId}.${endChapter}`;
+    }
     
     // Parse the verse reference (e.g., "1 Corinthians 2:6-3:4")
     const match = verse.match(/^(\d*\s*[A-Za-z]+)\s+(\d+):(\d+)(?:-(\d+):?(\d+)?)?$/);
