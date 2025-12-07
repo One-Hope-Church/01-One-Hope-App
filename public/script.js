@@ -1576,9 +1576,21 @@ async function initiatePlanningCenterLink() {
 // Get date in Chicago timezone (Central Time)
 function getChicagoDate() {
     const now = new Date();
-    // Chicago is UTC-6 (CST) or UTC-5 (CDT)
-    const chicagoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
-    return chicagoTime.toISOString().split('T')[0];
+    // Use Intl.DateTimeFormat to get date components directly in Chicago timezone
+    // This avoids timezone conversion issues with toLocaleString
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    
+    const parts = formatter.formatToParts(now);
+    const year = parts.find(p => p.type === 'year').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const day = parts.find(p => p.type === 'day').value;
+    
+    return `${year}-${month}-${day}`;
 }
 
 // Bible Reading Functions
