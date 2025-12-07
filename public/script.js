@@ -1763,10 +1763,10 @@ function convertVerseToPassageId(verse) {
     verse = verse
         .replace("1 ", "1")
         .replace("2 ", "2")
-        .replace("1John ", "1 John ")
-        .replace("2John ", "2 John 1:")
-        .replace("3John:", "3 John 1:")
-        .replace("3 John", "3 John 1:")
+        .replace("1John", "1 John ")
+        .replace("2John", "2 John 1:")
+        .replace("3John", "3 John 1:")
+        .replace("3John", "3 John 1:")
         .replace("Song of Solomon", "Song of Songs")
         .replace("Philemon", "Philemon 1:")
         .replace("Philippians", "Php");
