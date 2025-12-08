@@ -251,6 +251,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Load user data then show app
                 Promise.all([fetchUserStreak(), fetchUserSteps()])
                     .then(() => {
+                        // Refresh Supabase session on page load to ensure it's valid
+                        prepareSupabaseSession().catch(err => {
+                            console.warn('Could not refresh Supabase session on load:', err);
+                        });
+                        
                         showScreen('mainApp');
                         // Check for route in URL hash after showing main app
                         const route = getRouteFromHash();
@@ -262,6 +267,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     })
                     .catch(() => {
+                        // Refresh Supabase session on page load even if data fetch fails
+                        prepareSupabaseSession().catch(err => {
+                            console.warn('Could not refresh Supabase session on load:', err);
+                        });
+                        
                         showScreen('mainApp');
                         // Check for route in URL hash after showing main app
                         const route = getRouteFromHash();
