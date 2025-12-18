@@ -2440,17 +2440,17 @@ function updateHomepageNextStep() {
     // Define the step progression (using frontend step IDs)
     const stepProgression = [
         { id: 'assessment', title: 'Start My Grow Plan', description: 'Complete a quick questionnaire to personalize your spiritual growth journey', icon: 'fas fa-clipboard-list', link: '#' },
-        { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross', link: 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus' },
-        { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water', link: 'https://staging.onehopechurch.com/connect/baptism' },
+        { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross', link: 'https://onehopechurch.com/blog/begin-a-relationship-with-jesus' },
+        { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water', link: 'https://onehopechurch.com/connect/baptism' },
         { id: 'attendance', title: 'Attend Regularly', description: 'Make Sunday church a weekly rhythm', icon: 'fas fa-church', link: 'https://onehopechurch.com/visit' },
-        { id: 'bible-prayer', title: 'Daily Bible & Prayer', description: 'Build a habit of Bible reading and prayer', icon: 'fas fa-book-open', link: 'https://staging.onehopechurch.com/prayer' },
-        { id: 'giving', title: 'Give Consistently', description: 'Learn to give generously and consistently', icon: 'fas fa-heart', link: 'https://staging.onehopechurch.com/giving' },
-        { id: 'small-group', title: 'Join a Small Group', description: 'Find people to grow with', icon: 'fas fa-users', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray', link: 'https://staging.onehopechurch.com/visit' },
-        { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'lead-group', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown', link: 'https://staging.onehopechurch.com/connect' },
-        { id: 'live-mission', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass', link: 'https://staging.onehopechurch.com/connect' }
+        { id: 'bible-prayer', title: 'Daily Bible & Prayer', description: 'Build a habit of Bible reading and prayer', icon: 'fas fa-book-open', link: 'https://onehopechurch.com/prayer' },
+        { id: 'giving', title: 'Give Consistently', description: 'Learn to give generously and consistently', icon: 'fas fa-heart', link: 'https://onehopechurch.com/giving' },
+        { id: 'small-group', title: 'Join a Small Group', description: 'Find people to grow with', icon: 'fas fa-users', link: 'https://onehopechurch.com/connect' },
+        { id: 'serve-team', title: 'Serve on Team', description: 'Make a difference and meet new friends', icon: 'fas fa-hands-helping', link: 'https://onehopechurch.com/connect' },
+        { id: 'invite-pray', title: 'Invite & Pray', description: 'Pray for and invite people far from God', icon: 'fas fa-pray', link: 'https://onehopechurch.com/visit' },
+        { id: 'share-story', title: 'Share Your Story', description: 'Share your faith story with others', icon: 'fas fa-comment', link: 'https://onehopechurch.com/connect' },
+        { id: 'lead-group', title: 'Lead Others', description: 'Lead a group or serve team area', icon: 'fas fa-crown', link: 'https://onehopechurch.com/connect' },
+        { id: 'live-mission', title: 'Live on Mission', description: 'Look for ways to live on mission daily', icon: 'fas fa-compass', link: 'https://onehopechurch.com/connect' }
     ];
     
     // Find the next incomplete step
@@ -3400,10 +3400,10 @@ function openExternalLink(type) {
     
     switch(type) {
         case 'salvation':
-            url = 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus';
+            url = 'https://onehopechurch.com/blog/begin-a-relationship-with-jesus';
             break;
         case 'baptism-info':
-            url = 'https://staging.onehopechurch.com/connect/baptism';
+            url = 'https://onehopechurch.com/connect/baptism';
             break;
         case 'small-group':
             url = 'https://onehopechurch.com/connect/directory';
@@ -3412,37 +3412,37 @@ function openExternalLink(type) {
             url = 'https://donate.overflow.co/onehopechurch';
             break;
         case 'give-info':
-            url = 'https://staging.onehopechurch.com/giving';
+            url = 'https://onehopechurch.com/giving';
             break;
         case 'watch-message':
-            url = 'https://staging.onehopechurch.com/media';
+            url = 'https://onehopechurch.com/media';
             break;
         case 'next-step':
-            url = 'https://staging.onehopechurch.com/connect';
+            url = 'https://onehopechurch.com/connect';
             break;
         case 'connect':
-            url = 'https://staging.onehopechurch.com/connect';
+            url = 'https://onehopechurch.com/connect';
             break;
         case 'visit':
-            url = 'https://staging.onehopechurch.com/visit';
+            url = 'https://onehopechurch.com/visit';
             break;
         case 'prayer':
             url = 'https://onehopechurch.com/prayer';
             break;
         case 'share-testimony':
-            url = 'https://staging.onehopechurch.com/blog/how-to-share-your-testimony';
+            url = 'https://onehopechurch.com/blog/how-to-share-your-testimony';
             break;
         case 'give-go':
-            url = 'https://staging.onehopechurch.com/giving';
+            url = 'https://onehopechurch.com/giving';
             break;
         case 'lead':
-            url = 'https://staging.onehopechurch.com/connect';
+            url = 'https://onehopechurch.com/connect';
             break;
         case 'staging-home':
-            url = 'https://staging.onehopechurch.com';
+            url = 'https://onehopechurch.com';
             break;
         default:
-            url = 'https://staging.onehopechurch.com';
+            url = 'https://onehopechurch.com';
     }
     
     // Direct redirect without notification or delay
