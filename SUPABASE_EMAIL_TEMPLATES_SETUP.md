@@ -125,3 +125,6 @@ If you encounter any issues:
 ---
 
 **Need help?** Contact the development team or check Supabase documentation for email template troubleshooting.
+
+
+

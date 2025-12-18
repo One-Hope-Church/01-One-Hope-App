@@ -70,6 +70,19 @@
 - ✅ **Personalization** - User-specific recommendations
 - ✅ **Analytics** - Engagement insights for One Hope
 
+## 🔐 Grant Admin Access
+
+The reporting dashboard is limited to users with `is_admin = true` in the `users` table.
+
+1. Open the **SQL Editor** in Supabase.
+2. Run the following SQL, swapping the email for the person who should have admin access:
+   ```sql
+   UPDATE users
+   SET is_admin = true
+   WHERE planning_center_email = 'you@onehopechurch.com';
+   ```
+3. Users default to non-admin, so repeat this command for each staff member who needs access.
+
 ## 🚨 Troubleshooting
 
 ### Common Issues:

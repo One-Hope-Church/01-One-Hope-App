@@ -2400,8 +2400,8 @@ function updateHomepageNextStep() {
     // Check if user needs to take the assessment first
     if (needsAssessment()) {
         const assessmentStep = {
-            title: 'Take Next Steps Assessment',
-            description: 'Complete a quick assessment to personalize your spiritual growth journey',
+            title: 'Start My Grow Plan',
+            description: 'Complete a quick questionnaire to personalize your spiritual growth journey',
             icon: 'fas fa-clipboard-list',
             link: '#'
         };
@@ -2427,8 +2427,8 @@ function updateHomepageNextStep() {
             console.log('✅ Updated description to:', assessmentStep.description);
         }
         if (stepButton) {
-            stepButton.textContent = 'Take Assessment';
-            console.log('✅ Updated button text to: Take Assessment');
+            stepButton.textContent = 'Start Here';
+            console.log('✅ Updated button text to: Start Here');
         }
         
         // Store the current step's link for the button
@@ -2439,7 +2439,7 @@ function updateHomepageNextStep() {
     
     // Define the step progression (using frontend step IDs)
     const stepProgression = [
-        { id: 'assessment', title: 'Take Next Steps Assessment', description: 'Complete a quick assessment to personalize your spiritual growth journey', icon: 'fas fa-clipboard-list', link: '#' },
+        { id: 'assessment', title: 'Start My Grow Plan', description: 'Complete a quick questionnaire to personalize your spiritual growth journey', icon: 'fas fa-clipboard-list', link: '#' },
         { id: 'faith', title: 'Make Jesus Lord', description: 'Start your relationship with Jesus', icon: 'fas fa-cross', link: 'https://staging.onehopechurch.com/blog/begin-a-relationship-with-jesus' },
         { id: 'baptism', title: 'Get Baptized', description: 'Take the next step in your faith journey', icon: 'fas fa-water', link: 'https://staging.onehopechurch.com/connect/baptism' },
         { id: 'attendance', title: 'Attend Regularly', description: 'Make Sunday church a weekly rhythm', icon: 'fas fa-church', link: 'https://onehopechurch.com/visit' },
@@ -2609,7 +2609,7 @@ function openCurrentStepLink() {
         const link = nextStepContainer.dataset.currentStepLink;
         
         // Check if this is the assessment step
-        if (stepTitle && (stepTitle.textContent === 'Take Your Spiritual Assessment' || stepTitle.textContent === 'Take Next Steps Assessment')) {
+        if (stepTitle && (stepTitle.textContent === 'Take Your Spiritual Assessment' || stepTitle.textContent === 'Take Next Steps Assessment' || stepTitle.textContent === 'Start My Grow Plan')) {
             // Navigate to the steps tab
             showAppScreen('nextStepsScreen');
             return;

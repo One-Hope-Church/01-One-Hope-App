@@ -74,7 +74,7 @@ To test the magic link email template:
    const { data, error } = await supabase.auth.signInWithOtp({
      email: 'user@example.com',
      options: {
-       emailRedirectTo: 'https://steps.onehopechurch.com'
+       emailRedirectTo: 'https://grow.onehopechurch.com'
      }
    })
    ```
@@ -124,3 +124,6 @@ If you encounter any issues:
 ---
 
 **Need help?** Contact the development team or check Supabase documentation for magic link authentication.
+
+
+

@@ -109,3 +109,4 @@ To test the OTP flow:
 - You can have both variables, but Supabase will prioritize the link if both are present
 - For OTP-only, only include `{{ .Token }}`
 
+

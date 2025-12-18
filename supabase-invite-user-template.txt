@@ -14,7 +14,7 @@ Click the link below to accept your invitation and create your account. You'll b
    Discover and complete your spiritual growth journey
 
 Accept your invitation:
-{{ .ConfirmationURL }}&redirect_to=https://steps.onehopechurch.com/set-password
+{{ .ConfirmationURL }}&redirect_to=https://grow.onehopechurch.com/set-password
 
 ⏰ This invitation will expire in 24 hours.
 

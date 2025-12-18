@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT,
     phone TEXT,
     avatar_url TEXT,
+    is_admin BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -25,6 +26,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS planning_center_email TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
 
 -- Make previously NOT NULL columns nullable to support Supabase-first auth
 DO $$
@@ -64,6 +66,10 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_users_last_login') THEN
         CREATE INDEX idx_users_last_login ON users(last_login);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_users_is_admin') THEN
+        CREATE INDEX idx_users_is_admin ON users(is_admin);
     END IF;
 END $$;
 

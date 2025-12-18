@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT,
     phone TEXT,
     avatar_url TEXT,
+    is_admin BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_planning_center_id ON users(planning_center_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(planning_center_email);
 CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
+CREATE INDEX IF NOT EXISTS idx_users_is_admin ON users(is_admin);
 
 -- User Progress table (for tracking reading progress, streaks, etc.)
 CREATE TABLE IF NOT EXISTS user_progress (

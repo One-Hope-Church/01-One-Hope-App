@@ -41,7 +41,7 @@ const PLANNING_CENTER_BASE_URL = 'https://api.planningcenteronline.com';
 
 // Step definitions (frontend + backend mapping) for reporting/assessment
 const STEP_PROGRESSION = [
-    { dbId: 'assessment', displayId: 'assessment', label: 'Take Next Steps Assessment' },
+    { dbId: 'assessment', displayId: 'assessment', label: 'Start My Grow Plan' },
     { dbId: 'faith', displayId: 'faith', label: 'Make Jesus Lord' },
     { dbId: 'baptism', displayId: 'baptism', label: 'Get Baptized' },
     { dbId: 'attendance', displayId: 'attendance', label: 'Attend Regularly' },
@@ -1848,7 +1848,7 @@ function mapAssessmentToSteps(answers) {
     console.log('🔍 mapAssessmentToSteps called with answers:', answers);
     
     const allSteps = [
-        { stepId: 'assessment', title: 'Take Next Steps Assessment' },
+        { stepId: 'assessment', title: 'Start My Grow Plan' },
         { stepId: 'faith', title: 'Make Jesus Lord' },
         { stepId: 'baptism', title: 'Get Baptized' },
         { stepId: 'attendance', title: 'Attend Regularly' },

@@ -18,7 +18,7 @@ This guide explains how to set up the custom "Set Password" page for email invit
 3. Navigate to **Authentication** → **URL Configuration**
 4. Under **Redirect URLs**, add:
    ```
-   https://steps.onehopechurch.com/set-password
+   https://grow.onehopechurch.com/set-password
    ```
 5. Click **Save changes**
 
@@ -31,7 +31,7 @@ This guide explains how to set up the custom "Set Password" page for email invit
    - Open `supabase-invite-user-template.html`
    - Copy the entire contents
    - Paste into the HTML field in Supabase
-   - The template already includes the redirect: `&redirect_to=https://steps.onehopechurch.com/set-password`
+   - The template already includes the redirect: `&redirect_to=https://grow.onehopechurch.com/set-password`
 5. Update the plain text template:
    - Open `supabase-invite-user-template.txt`
    - Copy the entire contents
@@ -42,7 +42,7 @@ This guide explains how to set up the custom "Set Password" page for email invit
 
 The `/set-password` route is already configured in `server.js`. Make sure:
 - The server is running
-- The page is accessible at: `https://steps.onehopechurch.com/set-password`
+- The page is accessible at: `https://grow.onehopechurch.com/set-password`
 
 ## How It Works
 
@@ -133,3 +133,6 @@ You can customize the set password page:
 ---
 
 **Need help?** Check the Supabase documentation or contact the development team.
+
+
+
