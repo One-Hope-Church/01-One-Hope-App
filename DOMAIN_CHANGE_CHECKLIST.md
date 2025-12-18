@@ -80,6 +80,15 @@ All code references have been updated from `steps.onehopechurch.com` to `grow.on
    - Verify redirect URLs show `grow.onehopechurch.com`
 4. Click **Save**
 
+**Update CORS Settings (Required for Notes/API to work):**
+1. Go to **Settings** → **API**
+2. Scroll to **CORS Configuration** or **Allowed Origins**
+3. Add: `https://grow.onehopechurch.com`
+4. Remove or keep: `https://steps.onehopechurch.com` (if fully migrated, remove it)
+5. Click **Save**
+
+**Note:** Without updating CORS, notes and other Supabase API calls will fail with CORS errors.
+
 ---
 
 ### 4. Email Service Configuration (If Using Resend)
