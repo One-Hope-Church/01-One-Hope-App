@@ -1897,10 +1897,11 @@ function mapAssessmentToSteps(answers) {
             console.log('✅ Marking attendance step as completed');
         }
         
-        // Mark bible-prayer step if user practices daily Bible reading and prayer (4+ times per week)
-        if (step.stepId === 'bible-prayer' && parseInt(answers.bible_prayer) >= 4) {
+        // Mark bible-prayer step if user practices daily Bible reading and prayer (Often or Always)
+        if (step.stepId === 'bible-prayer' && parseInt(answers.bible_prayer) >= 3) {
             completed = true;
-            notes = `Practices Bible reading and prayer ${answers.bible_prayer} times per week`;
+            const frequency = answers.bible_prayer === '3' ? 'Often' : answers.bible_prayer === '4' ? 'Always' : answers.bible_prayer;
+            notes = `Practices Bible reading and prayer: ${frequency}`;
             console.log('✅ Marking bible-prayer step as completed');
         }
         
