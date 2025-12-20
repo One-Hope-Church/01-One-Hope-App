@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch {}
 
                 // Proactively refresh server-side profile/groups/registrations
-                const tokenPayload = JSON.parse(atob(storedToken));
+                // tokenPayload already declared above, reuse it
                 if (tokenPayload?.planning_center_id && tokenPayload?.planning_center_id !== 'null') {
                     fetch('/api/auth/pc/refresh', {
                         method: 'POST',
