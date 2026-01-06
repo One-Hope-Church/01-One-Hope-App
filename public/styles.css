@@ -1504,7 +1504,7 @@ body {
 /* Bottom Navigation */
 .bottom-nav {
     position: fixed;
-    bottom: calc(60px + env(safe-area-inset-bottom));
+    bottom: env(safe-area-inset-bottom);
     left: 0;
     right: 0;
     background: var(--card-bg);
@@ -1516,6 +1516,13 @@ body {
     /* Force visibility on mobile */
     min-height: 60px;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Extra padding for iPad Pro / tablet-sized devices */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .bottom-nav {
+        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+    }
 }
 
 .nav-item {
@@ -1690,7 +1697,7 @@ body {
     /* Ensure bottom navigation is always visible on mobile */
     .bottom-nav {
         position: fixed !important;
-        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+        bottom: env(safe-area-inset-bottom) !important;
         left: 0 !important;
         right: 0 !important;
         background: var(--card-bg) !important;
@@ -1739,7 +1746,7 @@ body {
     /* Force bottom navigation visibility on iOS */
     .bottom-nav {
         position: fixed !important;
-        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+        bottom: env(safe-area-inset-bottom) !important;
         left: 0 !important;
         right: 0 !important;
         background: var(--card-bg) !important;
