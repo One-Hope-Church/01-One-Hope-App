@@ -33,18 +33,15 @@ const PRIMARY_STEP_IDS = [
 ];
 
 function getRememberPreference() {
-    // Email login (OTP) always uses persistent login (30 days)
-    // No "Remember Me" checkbox in UI, so always return true
     if (typeof window === 'undefined') return true;
     try {
         const stored = localStorage.getItem('remember_me_preference');
         if (stored === 'false') return false;
-        // Default to true for persistent login (email OTP doesn't have checkbox)
-        return true;
+        if (stored === 'true') return true;
     } catch (error) {
         console.warn('⚠️ Unable to read remember preference:', error);
-        return true; // Default to persistent login
     }
+    return true;
 }
 
 // Streak tracking variables
@@ -199,33 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (storedToken) {
             try {
-                // Check if token is expired before using it
-                const tokenPayload = JSON.parse(atob(storedToken));
-                const tokenAge = Date.now() - (tokenPayload.timestamp || 0);
-                const rememberMe = tokenPayload.remember_me !== false; // Default to true
-                const maxAge = rememberMe 
-                    ? 30 * 24 * 60 * 60 * 1000 // 30 days
-                    : 24 * 60 * 60 * 1000; // 24 hours
-                
-                if (tokenAge > maxAge) {
-                    console.log('🔍 Token expired due to inactivity, redirecting to login');
-                    localStorage.removeItem('onehope_token');
-                    localStorage.removeItem('onehope_user');
-                    localStorage.removeItem('sb_access_token');
-                    localStorage.removeItem('sb_refresh_token');
-                    const hash = window.location.hash;
-                    const returnUrl = window.location.pathname + (hash || '');
-                    window.location.replace('/login?return=' + encodeURIComponent(returnUrl) + '&expired=true');
-                    return;
-                }
-                
-                // Update token timestamp to track activity (extends session on each visit)
-                // This ensures 30 days of INACTIVITY, not 30 days from login
-                tokenPayload.timestamp = Date.now();
-                const updatedToken = btoa(JSON.stringify(tokenPayload));
-                localStorage.setItem('onehope_token', updatedToken);
-                
-                console.log('🔍 Found stored token, updated activity timestamp');
+                console.log('🔍 Found stored token');
                 // Ensure onehope_user exists for UI if missing
                 let userData = storedUser ? JSON.parse(storedUser) : null;
                 if (!userData) {
@@ -265,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch {}
 
                 // Proactively refresh server-side profile/groups/registrations
-                // tokenPayload already declared above, reuse it
+                const tokenPayload = JSON.parse(atob(storedToken));
                 if (tokenPayload?.planning_center_id && tokenPayload?.planning_center_id !== 'null') {
                     fetch('/api/auth/pc/refresh', {
                         method: 'POST',
@@ -284,19 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         prepareSupabaseSession().catch(err => {
                             console.warn('Could not refresh Supabase session on load:', err);
                         });
-                        
-                        // Set up periodic session refresh (every 30 minutes)
-                        setInterval(() => {
-                            prepareSupabaseSession().catch(err => {
-                                console.warn('Periodic session refresh failed:', err);
-                            });
-                        }, 30 * 60 * 1000); // Every 30 minutes
-                        
-                        // Update token activity timestamp periodically (every 15 minutes)
-                        // This extends the session as long as user is active
-                        setInterval(() => {
-                            updateTokenActivityTimestamp();
-                        }, 15 * 60 * 1000); // Every 15 minutes
                         
                         showScreen('mainApp');
                         // Check for route in URL hash after showing main app
@@ -331,14 +289,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 showScreen('loginScreen');
             }
         } else {
-            console.log('No stored token, redirecting to login page');
-            // Redirect to login page immediately (no splash screen delay)
-            // Early redirect script in HTML should handle this, but ensure it happens
-            if (typeof window !== 'undefined' && !localStorage.getItem('onehope_token')) {
-                const hash = window.location.hash;
-                const returnUrl = window.location.pathname + (hash || '');
-                window.location.replace('/login?return=' + encodeURIComponent(returnUrl));
-            }
+            console.log('No stored token in localStorage, checking server session as fallback');
+            // Check server session even if localStorage is empty (Safari may have cleared it)
+            // This handles cases where Safari clears localStorage but server session is still valid
+            checkUserSession(0).then(() => {
+                // If session check succeeds, it will restore the user
+                // If it fails, it will show login screen
+            }).catch(() => {
+                // If checkUserSession fails or shows login, we're done
+                // The function will handle showing the login screen
+            });
         }
     }
 
@@ -410,15 +370,44 @@ async function processAuthToken(token) {
 async function checkUserSession(retryCount = 0) {
     try {
         console.log(`🔍 Checking user session... (attempt ${retryCount + 1})`);
-        const response = await fetch(`${API_BASE}/api/user`);
+        const response = await fetch(`${API_BASE}/api/user`, {
+            credentials: 'include' // Important: include cookies for session
+        });
         console.log('🔍 Session response status:', response.status);
         
         if (response.ok) {
             const data = await response.json();
             console.log('🔍 User data received:', data);
             currentUser = data.user;
+            
+            // Restore token to localStorage if it's missing (Safari may have cleared it)
+            // Wrap in try-catch since Safari may block localStorage in some cases
+            try {
+                const existingToken = localStorage.getItem('onehope_token');
+                if (!existingToken && data.user) {
+                    // Create a token from user data to restore localStorage
+                    const tokenPayload = {
+                        supabase_id: data.user.id,
+                        planning_center_id: data.user.planning_center_id || null,
+                        name: data.user.name || data.user.email || 'Friend',
+                        email: data.user.email || '',
+                        avatar_url: data.user.avatar_url || null
+                    };
+                    const token = btoa(JSON.stringify(tokenPayload));
+                    localStorage.setItem('onehope_token', token);
+                    console.log('✅ Restored token to localStorage from server session');
+                }
+            } catch (storageError) {
+                console.warn('⚠️ Could not restore token to localStorage (Safari may have restrictions):', storageError);
+                // Continue anyway - server session is still valid
+            }
+            
             await signInUser(data.user);
-            showNotification('Successfully signed in!', 'success');
+            // Don't show notification if this is a silent restore (no stored token)
+            const hadStoredToken = localStorage.getItem('onehope_token');
+            if (hadStoredToken) {
+                showNotification('Successfully signed in!', 'success');
+            }
         } else {
             console.log('🔍 No valid session');
             
@@ -430,7 +419,9 @@ async function checkUserSession(retryCount = 0) {
                 }, (retryCount + 1) * 1000);
             } else {
                 console.log('❌ Max retries reached, showing login screen');
-            showScreen('loginScreen');
+                const hash = window.location.hash;
+                const returnUrl = window.location.pathname + (hash || '');
+                window.location.replace('/login?return=' + encodeURIComponent(returnUrl));
             }
         }
     } catch (error) {
@@ -444,7 +435,9 @@ async function checkUserSession(retryCount = 0) {
             }, (retryCount + 1) * 1000);
         } else {
             console.log('❌ Max retries reached, showing login screen');
-        showScreen('loginScreen');
+            const hash = window.location.hash;
+            const returnUrl = window.location.pathname + (hash || '');
+            window.location.replace('/login?return=' + encodeURIComponent(returnUrl));
         }
     }
 }
@@ -595,15 +588,6 @@ async function initSupabaseClient() {
             return;
         }
         supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-        
-        // Proactively refresh session on init if tokens exist
-        const hasTokens = localStorage.getItem('sb_access_token') && localStorage.getItem('sb_refresh_token');
-        if (hasTokens) {
-            // Refresh session in background (don't block)
-            prepareSupabaseSession().catch(err => {
-                console.warn('Background session refresh failed:', err);
-            });
-        }
     } catch (e) {
         console.error('Failed to init Supabase:', e);
     }
@@ -714,8 +698,7 @@ async function prepareSupabaseSession() {
         persistSupabaseSessionTokens(session);
         
         const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
-        // Refresh if session expires within 1 hour (more proactive)
-        const refreshThreshold = Date.now() + 60 * 60 * 1000; // refresh 1 hour before expiration
+        const refreshThreshold = Date.now() + 2 * 60 * 1000; // refresh 2 minutes before expiration
         
         if (expiresAtMs && expiresAtMs <= refreshThreshold) {
             // Avoid hammering refresh if we just refreshed
@@ -898,65 +881,17 @@ function setAppAuthToken(profile) {
     try {
         const rememberPreference = getRememberPreference();
         const tokenPayload = {
-            supabase_id: profile.supabase_id || currentUser?.id || null,
             planning_center_id: profile.planning_center_id,
             name: profile.name || null,
             email: profile.email || null,
             avatar_url: profile.avatar_url || null,
-            timestamp: Date.now(), // This tracks last activity, not just login time
+            timestamp: Date.now(),
             remember_me: rememberPreference
         };
         const token = btoa(JSON.stringify(tokenPayload));
         localStorage.setItem('onehope_token', token);
-        localStorage.setItem('onehope_user', JSON.stringify({ 
-            id: tokenPayload.supabase_id || currentUser?.id, 
-            name: tokenPayload.name, 
-            email: tokenPayload.email, 
-            avatar_url: tokenPayload.avatar_url 
-        }));
         localStorage.setItem('remember_me_preference', rememberPreference ? 'true' : 'false');
-        
-        // Sync token to production site via postMessage (if on same origin or iframe)
-        try {
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({
-                    type: 'AUTH_SYNC',
-                    token: token,
-                    user: { 
-                        id: tokenPayload.supabase_id || currentUser?.id, 
-                        name: tokenPayload.name, 
-                        email: tokenPayload.email 
-                    }
-                }, '*');
-            }
-        } catch (e) {
-            // Cross-origin restrictions - this is expected
-        }
     } catch {}
-}
-
-// Update token activity timestamp (extends session on activity)
-function updateTokenActivityTimestamp() {
-    try {
-        const storedToken = localStorage.getItem('onehope_token');
-        if (!storedToken) return;
-        
-        const tokenPayload = JSON.parse(atob(storedToken));
-        const tokenAge = Date.now() - (tokenPayload.timestamp || 0);
-        const rememberMe = tokenPayload.remember_me !== false;
-        const maxAge = rememberMe 
-            ? 30 * 24 * 60 * 60 * 1000 // 30 days
-            : 24 * 60 * 60 * 1000; // 24 hours
-        
-        // Only update if token is still valid (not expired)
-        if (tokenAge <= maxAge) {
-            tokenPayload.timestamp = Date.now(); // Update last activity
-            const updatedToken = btoa(JSON.stringify(tokenPayload));
-            localStorage.setItem('onehope_token', updatedToken);
-        }
-    } catch (error) {
-        console.warn('⚠️ Unable to update token activity timestamp:', error);
-    }
 }
 
 async function showPcLinkModal(user, profile) {
@@ -1315,7 +1250,13 @@ async function createOrUpdateUser(profile) {
 async function signInUser(userProfile) {
     // Set current user and navigate to main app
     currentUser = userProfile;
-    localStorage.setItem('onehope_user', JSON.stringify(userProfile));
+    // Wrap localStorage in try-catch for Safari compatibility
+    try {
+        localStorage.setItem('onehope_user', JSON.stringify(userProfile));
+    } catch (storageError) {
+        console.warn('⚠️ Could not save user to localStorage (Safari may have restrictions):', storageError);
+        // Continue anyway - server session is still valid
+    }
     
     // Clear URL parameters but preserve hash for routing
     const hash = window.location.hash;
@@ -3753,15 +3694,9 @@ async function fetchAllMessageNotes() {
             throw new Error('Supabase client not initialized');
         }
         
-        // Try to prepare session, but don't fail if it's not ready yet
         const sessionReady = await prepareSupabaseSession();
         if (!sessionReady) {
-            // Try to restore session one more time
-            const restored = await restoreSupabaseSessionFromStorage();
-            if (!restored) {
-                console.warn('Supabase session not available, but continuing with notes fetch');
-                // Don't throw - let it try and see what error we get
-            }
+            throw new Error('Supabase session not available');
         }
         
         // Get current user
