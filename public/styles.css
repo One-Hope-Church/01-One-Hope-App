@@ -94,18 +94,27 @@
 
 /* Assessment screens are now controlled by JavaScript */
 
+html {
+    height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden; /* Prevent page scrolling */
+    position: fixed;
+    width: 100%;
+}
+
 body {
     font-family: var(--font-family);
     background: var(--background);
     color: var(--text-primary);
     line-height: 1.6;
-    overflow-x: hidden;
+    overflow: hidden; /* Prevent page scrolling - only content should scroll */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Mobile viewport fix */
-    min-height: 100vh;
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
-    position: relative;
+    height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    position: fixed;
+    width: 100%;
 }
 
 /* Screen Management */
@@ -428,7 +437,9 @@ body {
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
     overflow-y: auto;
-    padding-bottom: 80px; /* Space for bottom nav */
+    overflow-x: hidden;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Space for bottom nav + safe area */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .app-screen.active {
@@ -446,6 +457,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 /* Fix header spacing for reading detail screen */
