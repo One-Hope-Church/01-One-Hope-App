@@ -7,17 +7,16 @@ const selectors = {
     adminContent: document.getElementById('admin-content'),
     summaryCards: document.getElementById('summary-cards'),
     stepBuckets: document.getElementById('step-buckets'),
-    peopleTableBody: document.querySelector('#people-table tbody'),
     streakTableBody: document.querySelector('#streak-table tbody'),
-    accountsTableBody: document.querySelector('#accounts-table tbody'),
     refreshBtn: document.getElementById('refresh-btn'),
     downloadStepsCsvBtn: document.getElementById('download-steps-csv'),
     downloadPeopleStepsCsvBtn: document.getElementById('download-people-steps-csv'),
     downloadStreaksCsvBtn: document.getElementById('download-streaks-csv'),
     downloadAccountsCsvBtn: document.getElementById('download-accounts-csv'),
-    peopleTableWrapper: document.getElementById('people-table-wrapper'),
     streakTableWrapper: document.getElementById('streak-table-wrapper'),
-    accountsTableWrapper: document.getElementById('accounts-table-wrapper')
+    peopleTotalCount: document.getElementById('people-total-count'),
+    streaksTotalCount: document.getElementById('streaks-total-count'),
+    accountsTotalCount: document.getElementById('accounts-total-count')
 };
 
 const dashboardState = {
@@ -54,7 +53,18 @@ async function fetchJson(endpoint) {
 function formatDate(dateString) {
     if (!dateString) return '—';
     try {
-        const d = new Date(dateString);
+        // Parse date string as local date to avoid timezone issues
+        // If it's a date-only string (YYYY-MM-DD), parse it as local time
+        let d;
+        if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            // Date-only format: parse components and create local date
+            const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+            d = new Date(year, month - 1, day);
+        } else {
+            // Full datetime string: use as-is
+            d = new Date(dateString);
+        }
+        
         if (Number.isNaN(d.getTime())) return '—';
         return d.toLocaleDateString('en-US', {
             month: 'short',
@@ -163,36 +173,33 @@ function renderStepBuckets() {
     selectors.stepBuckets.innerHTML = bucketCards;
 }
 
-function renderPeopleTable() {
-    const tbody = selectors.peopleTableBody;
-    if (!dashboardState.steps?.users?.length) {
-        selectors.peopleTableWrapper.innerHTML = '<div class="empty-state">No assessment data yet.</div>';
-        return;
-    }
-
-    const rowsHtml = dashboardState.steps.users.map(user => `
-        <tr>
-            <td>${user.name || '—'}</td>
-            <td>${user.email || '—'}</td>
-            <td>
-                ${user.current_step_label}
-                ${user.current_step_label === 'All Steps Completed' ? '<span class="status-badge success">Complete</span>' : ''}
-            </td>
-            <td>${formatList(user.completed_steps, 'None')}</td>
-            <td>${formatDate(user.last_completed_date)}</td>
-        </tr>
-    `).join('');
-
-    tbody.innerHTML = rowsHtml;
+function renderPeopleSummary() {
+    const totalCount = dashboardState.steps?.users?.length || 0;
+    selectors.peopleTotalCount.textContent = numberWithCommas(totalCount);
 }
 
 function renderStreakTable() {
     if (!dashboardState.streaks?.rows?.length) {
         selectors.streakTableWrapper.innerHTML = '<div class="empty-state">No reading streak data yet.</div>';
+        selectors.streaksTotalCount.textContent = '0';
         return;
     }
 
-    const rowsHtml = dashboardState.streaks.rows.map(row => `
+    // Update total count
+    const totalCount = dashboardState.streaks.rows.length;
+    selectors.streaksTotalCount.textContent = numberWithCommas(totalCount);
+
+    // Sort by current_streak descending and take top 10
+    const sortedStreaks = [...dashboardState.streaks.rows]
+        .sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0))
+        .slice(0, 10);
+
+    if (sortedStreaks.length === 0) {
+        selectors.streakTableWrapper.innerHTML = '<div class="empty-state">No reading streak data yet.</div>';
+        return;
+    }
+
+    const rowsHtml = sortedStreaks.map(row => `
         <tr>
             <td>${row.name || '—'}</td>
             <td>${row.email || '—'}</td>
@@ -205,28 +212,9 @@ function renderStreakTable() {
     selectors.streakTableBody.innerHTML = rowsHtml;
 }
 
-function renderAccountsTable() {
-    if (!dashboardState.accounts?.data?.length) {
-        selectors.accountsTableWrapper.innerHTML = '<div class="empty-state">No accounts found.</div>';
-        return;
-    }
-
-    const rowsHtml = dashboardState.accounts.data.map(user => `
-        <tr>
-            <td>${user.name || '—'}</td>
-            <td>${user.planning_center_email || '—'}</td>
-            <td>${user.phone || '—'}</td>
-            <td>${formatDate(user.created_at)}</td>
-            <td>${formatDate(user.last_login)}</td>
-            <td>
-                <span class="status-badge ${user.is_admin ? 'success' : ''}">
-                    ${user.is_admin ? 'Admin' : 'Standard'}
-                </span>
-            </td>
-        </tr>
-    `).join('');
-
-    selectors.accountsTableBody.innerHTML = rowsHtml;
+function renderAccountsSummary() {
+    const totalCount = dashboardState.accounts?.total || dashboardState.accounts?.data?.length || 0;
+    selectors.accountsTotalCount.textContent = numberWithCommas(totalCount);
 }
 
 function attachDownloadHandlers() {
@@ -323,9 +311,9 @@ async function loadDashboardData(showToast = true) {
 
         renderSummaryCards();
         renderStepBuckets();
-        renderPeopleTable();
+        renderPeopleSummary();
         renderStreakTable();
-        renderAccountsTable();
+        renderAccountsSummary();
     } catch (error) {
         console.error('❌ Failed to load admin data:', error);
         alert('Failed to load admin reports. Please try again or verify your admin access.');

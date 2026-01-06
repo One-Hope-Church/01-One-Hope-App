@@ -224,26 +224,20 @@
                     <h2>Current Step by Person</h2>
                     <button id="download-people-steps-csv" class="btn btn-secondary">Download People CSV</button>
                 </div>
-                <div class="table-wrapper" id="people-table-wrapper">
-                    <table id="people-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Current Step</th>
-                                <th>Completed Steps</th>
-                                <th>Last Completed</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="card" id="people-summary-card">
+                    <h3>Total Users with Assessment Data</h3>
+                    <div class="stat" id="people-total-count">—</div>
                 </div>
             </section>
 
             <section>
                 <div class="section-header">
                     <h2>Bible Reading Streaks</h2>
-                    <button id="download-streaks-csv" class="btn btn-secondary">Download Streaks CSV</button>
+                    <button id="download-streaks-csv" class="btn btn-secondary">Download All Streaks CSV</button>
+                </div>
+                <div class="card" style="margin-bottom: 16px;">
+                    <h3>Total Users with Reading Streaks</h3>
+                    <div class="stat" id="streaks-total-count">—</div>
                 </div>
                 <div class="table-wrapper" id="streak-table-wrapper">
                     <table id="streak-table">
@@ -266,20 +260,9 @@
                     <h2>Account Directory</h2>
                     <button id="download-accounts-csv" class="btn btn-secondary">Download Accounts CSV</button>
                 </div>
-                <div class="table-wrapper" id="accounts-table-wrapper">
-                    <table id="accounts-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Created</th>
-                                <th>Last Login</th>
-                                <th>Admin</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="card" id="accounts-summary-card">
+                    <h3>Total Accounts</h3>
+                    <div class="stat" id="accounts-total-count">—</div>
                 </div>
             </section>
         </div>
