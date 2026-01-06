@@ -50,8 +50,8 @@ async function fetchJson(endpoint) {
     return response.json();
 }
 
-function formatDate(dateString) {
-    if (!dateString) return '—';
+function parseDate(dateString) {
+    if (!dateString) return null;
     try {
         // Parse date string as local date to avoid timezone issues
         // If it's a date-only string (YYYY-MM-DD), parse it as local time
@@ -65,15 +65,37 @@ function formatDate(dateString) {
             d = new Date(dateString);
         }
         
-        if (Number.isNaN(d.getTime())) return '—';
-        return d.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
+        if (Number.isNaN(d.getTime())) return null;
+        return d;
     } catch (error) {
-        return '—';
+        return null;
     }
+}
+
+function formatDate(dateString) {
+    const d = parseDate(dateString);
+    if (!d) return '—';
+    return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+function isWithinLastTwoDays(dateString) {
+    const date = parseDate(dateString);
+    if (!date) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    return checkDate.getTime() === today.getTime() || checkDate.getTime() === yesterday.getTime();
 }
 
 function formatList(items, emptyFallback = '—') {
@@ -139,7 +161,9 @@ function renderSummaryCards() {
         value: completedCount
     });
 
-    const activeReaders = dashboardState.streaks?.rows?.filter(row => row.current_streak > 0)?.length || 0;
+    const activeReaders = dashboardState.streaks?.rows?.filter(row => 
+        row.current_streak > 0 && isWithinLastTwoDays(row.last_reading_date)
+    )?.length || 0;
     summaryData.push({
         label: 'Active Reading Streaks',
         value: activeReaders
