@@ -183,7 +183,7 @@ function renderStepBuckets() {
         return;
     }
 
-    const bucketCards = dashboardState.steps.buckets.map(bucket => `
+    const bucketCards = dashboardState.steps.buckets.map((bucket, index) => `
         <div class="step-bucket">
             <h4>${bucket.label}</h4>
             <small>${bucket.dbStepId ? 'Current step' : 'Completed all steps'}</small>
@@ -191,10 +191,40 @@ function renderStepBuckets() {
                 <strong>${numberWithCommas(bucket.userCount)}</strong>
                 <span class="pill">${bucket.dbStepId ? 'In Progress' : 'Complete'}</span>
             </div>
+            <button class="btn btn-secondary" style="margin-top:12px; width:100%; font-size:12px; padding:8px 12px;" data-step-bucket-index="${index}">
+                Download CSV
+            </button>
         </div>
     `).join('');
 
     selectors.stepBuckets.innerHTML = bucketCards;
+    
+    // Attach download handlers to each bucket button
+    dashboardState.steps.buckets.forEach((bucket, index) => {
+        const button = document.querySelector(`[data-step-bucket-index="${index}"]`);
+        if (button) {
+            button.addEventListener('click', () => downloadStepBucketCsv(bucket));
+        }
+    });
+}
+
+function downloadStepBucketCsv(bucket) {
+    if (!bucket.users || bucket.users.length === 0) {
+        alert(`No users found in "${bucket.label}" step.`);
+        return;
+    }
+
+    const rows = bucket.users.map(user => ({
+        name: user.name || '',
+        email: user.email || '',
+        current_step: user.current_step_label || '',
+        completed_steps: (user.completed_steps || []).join('; '),
+        completed_count: user.completed_count || 0,
+        last_completed_date: user.last_completed_date || ''
+    }));
+
+    const safeLabel = bucket.label.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    downloadCsv(rows, `one-hope-step-${safeLabel}-${Date.now()}.csv`);
 }
 
 function renderPeopleSummary() {
