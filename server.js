@@ -212,6 +212,23 @@ app.get('/images/:filename', (req, res) => {
     res.sendFile(__dirname + '/public/images/' + req.params.filename);
 });
 
+// Routes for icon files
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(__dirname + '/public/favicon.ico');
+});
+
+app.get('/favicon.png', (req, res) => {
+    res.sendFile(__dirname + '/public/favicon.png');
+});
+
+app.get('/favicon-512.png', (req, res) => {
+    res.sendFile(__dirname + '/public/favicon-512.png');
+});
+
+app.get('/apple-touch-icon.png', (req, res) => {
+    res.sendFile(__dirname + '/public/apple-touch-icon.png');
+});
+
 // Debug route for session check
 app.get('/api/session-check', (req, res) => {
     
