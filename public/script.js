@@ -3084,35 +3084,97 @@ async function loadScriptureContent(section) {
     // Only try to fetch if we have a valid verse reference
     let verseData = null;
     if (verseReference && verseReference.trim()) {
-        // Normalize verse reference to fix API formatting issues (mirror production site exactly)
-        // Production site uses: .replace("1 ", "1").replace("2 ", "2").replace("1John ", "1 John ").replace("2John ", "2 John 1:").replace("3John:", "3 John 1:").replace("3 John", "3 John 1:").replace("Song of Solomon", "Song of Songs").replace("Philemon", "Philemon 1:").replace("Philippians", "Php")
-        // BUT: For chapter ranges like "3 John 1-15", we need to preserve them for convertVerseToPassageId
-        let normalizedVerse = verseReference;
+        // Check if verse reference contains multiple passages (comma-separated)
+        const verses = verseReference.split(',').map(v => v.trim()).filter(v => v);
         
-        // Check if it's a 3 John chapter range (e.g., "3 John 1-15" or "3John 1-15")
-        const is3JohnChapterRange = /^3\s*John\s+\d+-\d+$/i.test(normalizedVerse.trim());
-        
-        if (is3JohnChapterRange) {
-            // For chapter ranges, only fix the book name spacing, preserve the range format
-            normalizedVerse = normalizedVerse
-                .replace(/^3John\s+/i, "3 John ")
-                .replace(/^3\s+John\s+/i, "3 John ");
-            // Leave it as "3 John 1-15" for convertVerseToPassageId to handle
+        if (verses.length > 1) {
+            // Multiple passages - fetch each separately and combine
+            console.log(`📖 Fetching ${verses.length} passages for ${sectionTitle}`);
+            const passagePromises = verses.map(async (verse) => {
+                // Normalize each verse reference
+                let normalizedVerse = verse;
+                
+                // Check if it's a 3 John chapter range
+                const is3JohnChapterRange = /^3\s*John\s+\d+-\d+$/i.test(normalizedVerse.trim());
+                
+                if (is3JohnChapterRange) {
+                    normalizedVerse = normalizedVerse
+                        .replace(/^3John\s+/i, "3 John ")
+                        .replace(/^3\s+John\s+/i, "3 John ");
+                } else {
+                    normalizedVerse = normalizedVerse
+                        .replace("1 ", "1")
+                        .replace("2 ", "2")
+                        .replace("1John ", "1 John ")
+                        .replace("2John ", "2 John 1:")
+                        .replace("3John:", "3 John 1:")
+                        .replace("3 John", "3 John 1:")
+                        .replace("Song of Solomon", "Song of Songs")
+                        .replace("Philemon", "Philemon 1:")
+                        .replace("Philippians", "Php");
+                }
+                
+                const data = await fetchBibleVerse(normalizedVerse);
+                return data?.data || null;
+            });
+            
+            const passages = await Promise.all(passagePromises);
+            const validPassages = passages.filter(p => p !== null);
+            
+            if (validPassages.length > 0) {
+                // Combine passages
+                const combinedReference = validPassages.map(p => p.reference).join(', ');
+                const combinedContent = validPassages.map(p => `
+                    <div class="passage-section">
+                        <h3>${p.reference}</h3>
+                        <div class="scripture-text">${p.content}</div>
+                    </div>
+                `).join('');
+                
+                return {
+                    title: sectionTitle,
+                    content: `
+                        <div class="verse-reference-header">${sectionTitle}</div>
+                        <h2>${combinedReference}</h2>
+                        <div class="scripture-text">
+                            ${combinedContent}
+                        </div>
+                        <div class="bible-version">NIV</div>
+                    `
+                };
+            }
         } else {
-            // Apply production site normalization exactly (for non-chapter-range cases)
-            normalizedVerse = normalizedVerse
-                .replace("1 ", "1")
-                .replace("2 ", "2")
-                .replace("1John ", "1 John ")
-                .replace("2John ", "2 John 1:")
-                .replace("3John:", "3 John 1:")
-                .replace("3 John", "3 John 1:")  // Global replace like production site
-                .replace("Song of Solomon", "Song of Songs")
-                .replace("Philemon", "Philemon 1:")
-                .replace("Philippians", "Php");
+            // Single passage - use existing logic
+            // Normalize verse reference to fix API formatting issues (mirror production site exactly)
+            // Production site uses: .replace("1 ", "1").replace("2 ", "2").replace("1John ", "1 John ").replace("2John ", "2 John 1:").replace("3John:", "3 John 1:").replace("3 John", "3 John 1:").replace("Song of Solomon", "Song of Songs").replace("Philemon", "Philemon 1:").replace("Philippians", "Php")
+            // BUT: For chapter ranges like "3 John 1-15", we need to preserve them for convertVerseToPassageId
+            let normalizedVerse = verseReference;
+            
+            // Check if it's a 3 John chapter range (e.g., "3 John 1-15" or "3John 1-15")
+            const is3JohnChapterRange = /^3\s*John\s+\d+-\d+$/i.test(normalizedVerse.trim());
+            
+            if (is3JohnChapterRange) {
+                // For chapter ranges, only fix the book name spacing, preserve the range format
+                normalizedVerse = normalizedVerse
+                    .replace(/^3John\s+/i, "3 John ")
+                    .replace(/^3\s+John\s+/i, "3 John ");
+                // Leave it as "3 John 1-15" for convertVerseToPassageId to handle
+            } else {
+                // Apply production site normalization exactly (for non-chapter-range cases)
+                normalizedVerse = normalizedVerse
+                    .replace("1 ", "1")
+                    .replace("2 ", "2")
+                    .replace("1John ", "1 John ")
+                    .replace("2John ", "2 John 1:")
+                    .replace("3John:", "3 John 1:")
+                    .replace("3 John", "3 John 1:")  // Global replace like production site
+                    .replace("Song of Solomon", "Song of Songs")
+                    .replace("Philemon", "Philemon 1:")
+                    .replace("Philippians", "Php");
+            }
+            
+            verseData = await fetchBibleVerse(normalizedVerse);
         }
-        
-        verseData = await fetchBibleVerse(normalizedVerse);
     }
     
     if (verseData?.data) {

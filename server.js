@@ -1090,6 +1090,31 @@ app.get('/api/bible/daily', async (req, res) => {
         const xmlString = response.data;
         const dailyReading = parseHighlandsXML(xmlString);
 
+        // Manual override for January 25th Old Testament reading
+        // Check if the date is January 25th (any year)
+        // Handle different date formats: "2025-01-25", "01/25/2025", etc.
+        let isJanuary25 = false;
+        try {
+            const dateStr = dailyReading.date;
+            // Try parsing as ISO date (YYYY-MM-DD)
+            if (dateStr.includes('-')) {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                isJanuary25 = month === 1 && day === 25;
+            } else {
+                // Try parsing as Date object
+                const date = new Date(dateStr);
+                isJanuary25 = date.getMonth() === 0 && date.getDate() === 25; // month is 0-indexed (0 = January)
+            }
+        } catch (error) {
+            console.error('Error parsing date for January 25th check:', error);
+        }
+        
+        if (isJanuary25) {
+            console.log('📖 Applying January 25th manual override for Old Testament reading');
+            // Override Old Testament to include both passages
+            dailyReading.oldTestament = 'Genesis 50:1-26, Exodus 1:1-2:10';
+        }
+
         res.json(dailyReading);
     } catch (error) {
         console.error('❌ Bible API error:', error.response?.status, error.response?.statusText);
